@@ -602,11 +602,11 @@ function generateData(asset) {
   const data = [], vol = [];
   let basePrice = asset.price;
   
-  // Timestamp corretti: inizia da 100 candele fa e va fino ad ora
+  // Crea timestamp REALI partendo da ORA meno 2 giorni
   let now = new Date();
-  let startTime = new Date(now.getTime() - (100 * 15 * 60000)); // 100 candele da 15 min fa
-  let t = Math.floor(startTime.getTime() / 1000);
-
+  let startTime = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000)); // 2 giorni fa
+  let currentTime = startTime.getTime();
+  
   for(let i=0; i<100; i++) {
     const changePercent = (Math.random() - 0.5) * 0.008;
     const change = basePrice * changePercent;
@@ -616,11 +616,14 @@ function generateData(asset) {
     const low = Math.min(open, close) * 0.9985;
     const volume = Math.floor(Math.random() * 45000) + 8000;
 
-    data.push({ time: t, open: +open.toFixed(4), high: +high.toFixed(4), low: +low.toFixed(4), close: +close.toFixed(4) });
-    vol.push({ time: t, value: volume, color: close>=open?'#0ecb81':'#f6465d' });
+    // Timestamp in secondi (formato Lightweight Charts)
+    const timestamp = Math.floor(currentTime / 1000);
+    
+    data.push({ time: timestamp, open: +open.toFixed(4), high: +high.toFixed(4), low: +low.toFixed(4), close: +close.toFixed(4) });
+    vol.push({ time: timestamp, value: volume, color: close>=open?'#0ecb81':'#f6465d' });
     
     basePrice = close;
-    t += 900; // +15 minuti esatti
+    currentTime += (15 * 60 * 1000); // +15 minuti in millisecondi
   }
   return { data, vol };
 }
@@ -746,8 +749,14 @@ async function initChart() {
     grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     rightPriceScale: { borderColor: '#2b3139' },
-    timeScale: { borderColor: '#2b3139', timeVisible: true, secondsVisible: false }
-  });
+   timeScale: {
+  borderColor: '#2b3139',
+  timeVisible: true,
+  secondsVisible: false,
+  rightOffset: 2,
+  barSpacing: 8,
+  minBarSpacing: 4
+}
 
   state.candleSeries = state.chart.addCandlestickSeries({
     upColor: '#0ecb81', downColor: '#f6465d', borderUpColor: '#0ecb81', borderDownColor: '#f6465d', wickUpColor: '#0ecb81', wickDownColor: '#f6465d'
@@ -811,7 +820,23 @@ function calcKDJ(d, p=9) { const k=[], dj=[], j=[]; for(let i=p-1; i<d.length; i
 function calcStochRSI(d, p=14) { const r=calcRSI(d,p); const k=[], dj=[]; for(let i=p; i<r.length; i++) { let lo=r[i-p].value, hi=r[i-p].value; for(let x=i-p; x<i; x++) { if(r[x].value<lo) lo=r[x].value; if(r[x].value>hi) hi=r[x].value; } const sr=((r[i].value-lo)/(hi-lo))*100; k.push({time:r[i].time, value: sr}); if(i>=p+1) { const dv=(k[k.length-2].value+sr)/2; dj.push({time:r[i].time, value: dv}); } else dj.push({time:r[i].time, value: 50}); } return {k, d:dj}; }
 function calcWR(d, p=14) { const r=[]; for(let i=p-1; i<d.length; i++) { let hi=d[i].high, lo=d[i].low; for(let j=i-p+1; j<=i; j++) { if(d[j].high>hi) hi=d[j].high; if(d[j].low<lo) lo=d[j].low; } const wr=((hi-d[i].close)/(hi-lo))*-100; r.push({time:d[i].time, value: wr}); } return r; }
 
-function toggleInd(id) { state.indicators[id] = !state.indicators[id]; document.querySelectorAll('.ind-btn').forEach((btn, i) => { if(IND_LIST[i] === id) btn.classList.toggle('active'); }); updateChart(); }
+function toggleInd(id) { 
+  // Toggle lo stato dell'indicatore
+  state.indicators[id] = !state.indicators[id]; 
+  
+  // Aggiorna il pulsante
+  const btn = document.getElementById(`ind-${id}`);
+  if(btn) {
+    if(state.indicators[id]) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  }
+  
+  // Aggiorna il grafico
+  updateChart(); 
+}
 function changeAsset(key) { state.currentAsset = key; updateChart(); updateSignal(); }
 function changeTF(tf, btn) { state.timeframe = tf; document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); updateChart(); }
 function updateLeverage(val) { state.leverage = val; document.getElementById('lev-val').innerText = val + 'x'; }
