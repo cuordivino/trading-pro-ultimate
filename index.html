@@ -613,25 +613,29 @@ function testTelegramNotification() {
 function generateData(asset) {
   const data = [], vol = [];
   let basePrice = asset.price;
-  let t = Math.floor(Date.now()/1000) - 100*3600;
   
+  // Genera timestamp UTC reali: 100 candele da 15 minuti
+  let now = new Date();
+  let startTime = new Date(now.getTime() - (100 * 15 * 60000)); // 25 ore fa
+  let t = Math.floor(startTime.getTime() / 1000); // Timestamp in secondi UTC
+
   for(let i=0; i<100; i++) {
-    const changePercent = (Math.random() - 0.5) * 0.01;
+    const changePercent = (Math.random() - 0.5) * 0.008;
     const change = basePrice * changePercent;
     const open = basePrice;
     const close = basePrice + change;
-    const high = Math.max(open, close) * 1.002;
-    const low = Math.min(open, close) * 0.998;
-    const volume = Math.floor(Math.random() * 50000) + 10000;
-    
+    const high = Math.max(open, close) * 1.0015;
+    const low = Math.min(open, close) * 0.9985;
+    const volume = Math.floor(Math.random() * 45000) + 8000;
+
     data.push({ time: t, open: +open.toFixed(4), high: +high.toFixed(4), low: +low.toFixed(4), close: +close.toFixed(4) });
     vol.push({ time: t, value: volume, color: close>=open?'#0ecb81':'#f6465d' });
+    
     basePrice = close;
-    t += 3600;
+    t += 900; // +15 minuti esatti
   }
   return { data, vol };
 }
-
 async function fetchRealTimeData(symbol) {
   if(state.apiAlpha) {
     try {
@@ -826,8 +830,22 @@ async function initChart() {
     grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     rightPriceScale: { borderColor: '#2b3139' },
-    timeScale: { borderColor: '#2b3139', timeVisible: true }
-  });
+  timeScale: {
+  borderColor: '#2b3139',
+  timeVisible: true,
+  secondsVisible: false,
+  rightOffset: 2,
+  barSpacing: 8,
+  // Forza formato chiaro: mostra data se cambia giorno, ora se stesso giorno
+  tickMarkFormatter: (time, tickMarkType, locale) => {
+    const date = new Date(time * 1000);
+    const isToday = date.toDateString() === new Date().toDateString();
+    if (tickMarkType === LightweightCharts.TickMarkType.Day || !isToday) {
+      return date.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+    }
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  }
+}
 
   state.candleSeries = state.chart.addCandlestickSeries({
     upColor: '#0ecb81', downColor: '#f6465d',
