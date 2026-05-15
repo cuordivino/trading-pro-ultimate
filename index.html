@@ -610,6 +610,10 @@ const App = {
 
     // ==================== CHART ====================
     chart: {
+         formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    },
         canvas: null, ctx: null, width: 0, height: 0,
         padding: { top: 20, right: 60, bottom: 30, left: 10 },
         mouseX: -1, mouseY: -1,
