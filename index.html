@@ -719,6 +719,19 @@ const App = {
                 });
                 ctx.stroke();
             }
+         // Draw time labels
+ctx.fillStyle = '#848e9c';
+ctx.font = '10px SF Mono';
+ctx.textAlign = 'center';
+
+data.forEach((d, i) => {
+    // Disegna etichetta ogni 10 candele o ogni ora
+    if (i % 10 === 0 || i === data.length - 1) {
+        const x = padding.left + i * candleW + candleW / 2;
+        const timeStr = this.formatTime(d.t);
+        ctx.fillText(timeStr, x, height - padding.bottom + 15);
+    }
+});
 
             if (App.state.indicators.RSI) {
                 const rsi = App.indicators.calculateRSI(data);
