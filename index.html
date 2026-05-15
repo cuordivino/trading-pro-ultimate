@@ -726,26 +726,31 @@ formatTime(timestamp) {
                 });
                 ctx.stroke();
             }
-// Draw time labels (genera timestamp corretti dall'indice)
+// Draw time labels (FORZA ore corrette basate sul timeframe)
 ctx.fillStyle = '#848e9c';
 ctx.font = '10px SF Mono';
 ctx.textAlign = 'center';
 
-// Calcola l'ora di partenza basandoti sull'ultima candela
-const now = new Date();
-const timeframeMinutes = parseInt(App.state.timeframe) || 15;
-const startTime = new Date(now.getTime() - (data.length * timeframeMinutes * 60000));
+// Ottieni il timeframe in minuti (15m = 15, 30m = 30, ecc.)
+const tf = App.state.timeframe;
+let minutesPerCandle = 15;
+if (tf.includes('m')) minutesPerCandle = parseInt(tf);
+else if (tf.includes('H')) minutesPerCandle = parseInt(tf) * 60;
+
+// Calcola ora di inizio (ora attuale meno il numero di candele)
+const now = Date.now();
+const startTime = now - (data.length * minutesPerCandle * 60000);
 
 let lastLabelX = -100;
-const minGap = 75;
+const minGap = 70;
 
 for (let i = 0; i < data.length; i++) {
     const x = padding.left + i * candleW + candleW / 2;
     
     if (x - lastLabelX < minGap) continue;
     
-    // Calcola l'ora corretta basandoti sull'indice
-    const candleTime = new Date(startTime.getTime() + (i * timeframeMinutes * 60000));
+    // Calcola ora esatta per questa candela
+    const candleTime = new Date(startTime + (i * minutesPerCandle * 60000));
     const hh = candleTime.getHours().toString().padStart(2, '0');
     const mm = candleTime.getMinutes().toString().padStart(2, '0');
     
