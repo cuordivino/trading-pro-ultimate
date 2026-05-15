@@ -610,9 +610,9 @@ const App = {
 
     // ==================== CHART ====================
     chart: {
-        formatTime(timestamp) {
+formatTime(timestamp) {
     const date = new Date(timestamp);
-    console.log('⏰ Timestamp:', timestamp, '| Date:', date);
+    console.log('⏰ Timestamp:', timestamp, '| Data:', date);
     return date.toLocaleTimeString('it-IT', { 
         hour: '2-digit', 
         minute: '2-digit'
