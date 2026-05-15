@@ -653,11 +653,11 @@ formatTime(timestamp) {
 
         draw() {
             const { ctx, width, height, padding } = this;
-            const data = App.state.chartData;
             if (!data.length) return;
 
          // ORDINA i dati per timestamp (così le ore vanno in ordine)
-    data = [...data].sort((a, b) => a.t - b.t);
+   let data = App.state.chartData;
+data = [...data].sort((a, b) => a.t - b.t); // ✅ Usa let e spread operator
 
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
