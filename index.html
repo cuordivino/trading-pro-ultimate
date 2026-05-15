@@ -570,7 +570,7 @@ const App = {
         try {
             this.state.ws = new WebSocket(wsUrl);
             this.state.ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
+let data = JSON.parse(event.data);
                 const k = data.k;
                 this.updateCandleFromWS({
                     t: k.t, o: parseFloat(k.o), h: parseFloat(k.h),
