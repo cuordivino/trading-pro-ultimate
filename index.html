@@ -651,13 +651,17 @@ formatTime(timestamp) {
             this.draw();
         },
 
-        draw() {
-            const { ctx, width, height, padding } = this;
-            if (!data.length) return;
+      draw() {
+        const { ctx, width, height, padding } = this;
+        
+        // 1. DEFINISCI E ORDINA I DATI SUBITO
+        let data = [...App.state.chartData].sort((a, b) => a.t - b.t);
 
-         // ORDINA i dati per timestamp (così le ore vanno in ordine)
-   let data = App.state.chartData;
-data = [...data].sort((a, b) => a.t - b.t); // ✅ Usa let e spread operator
+        // 2. CONTROLLO LUNGHEZZA (ora data esiste!)
+        if (!data.length) return;
+
+        // 3. PULISCI IL CANVAS
+        ctx.clearRect(0, 0, width, height);
 
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
