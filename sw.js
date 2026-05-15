@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trading-pro-v1';
+const CACHE_NAME = 'trading-pro-nexus-v1';
 const urlsToCache = [
   './',
   './index.html',
