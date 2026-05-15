@@ -1,19 +1,19 @@
 {
-  "name": "Trading Pro Ultimate",
-  "short_name": "TPU",
-  "start_url": "../index.html",
+  "name": "Trading Pro Nexus",
+  "short_name": "Nexus",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b0e11",
   "theme_color": "#0b0e11",
-  "orientation": "any",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192/f0b90b/000000?text=TPU",
+      "src": "https://cdn-icons-png.flaticon.com/512/629/629571.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://via.placeholder.com/512/f0b90b/000000?text=TPU",
+      "src": "https://cdn-icons-png.flaticon.com/512/629/629571.png",
       "sizes": "512x512",
       "type": "image/png"
     }
