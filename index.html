@@ -723,24 +723,25 @@ formatTime(timestamp) {
                 });
                 ctx.stroke();
             }
-         // Draw time labels (sotto il grafico)
+  // Draw time labels (sotto il grafico)
 ctx.fillStyle = '#848e9c';
-ctx.font = '11px SF Mono';
+ctx.font = '10px SF Mono';
 ctx.textAlign = 'center';
 
-let lastLabelX = -100;
-const minSpacing = 80; // Distanza minima in pixel per evitare sovrapposizioni
-
-data.forEach((d, i) => {
+for (let i = 0; i < data.length; i++) {
+    const d = data[i];
     const x = padding.left + i * candleW + candleW / 2;
-
-    // Disegna solo se c'è spazio sufficiente o è l'ultima candela
-    if (x - lastLabelX >= minSpacing || i === data.length - 1) {
-        const timeStr = this.formatTime(d.t);
+    
+    // Disegna ogni 8 candele per evitare sovrapposizioni
+    if (i % 8 === 0) {
+        const date = new Date(d.t);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const timeStr = `${hours}:${minutes}`;
+        
         ctx.fillText(timeStr, x, height - padding.bottom + 15);
-        lastLabelX = x;
     }
-});
+}
 
             if (App.state.indicators.RSI) {
                 const rsi = App.indicators.calculateRSI(data);
