@@ -726,25 +726,41 @@ formatTime(timestamp) {
                 });
                 ctx.stroke();
             }
-// Draw time labels (mostra solo quando cambia l'ora)
+// Draw time labels (versione robusta)
 ctx.fillStyle = '#848e9c';
 ctx.font = '10px SF Mono';
 ctx.textAlign = 'center';
 
-let lastHour = -1;
-data.forEach((d, i) => {
-    const date = new Date(d.t);
-    const currentHour = date.getHours();
+// Funzione che gestisce timestamp rotti, stringhe o numeri
+const parseTime = (t) => {
+    if (typeof t === 'number') {
+        // Se è < 10 miliardi, sono secondi (crypto), altrimenti millisecondi
+        return new Date(t < 1e10 ? t * 1000 : t);
+    }
+    // Se è una stringa tipo "12:52", la convertiamo in data valida
+    if (typeof t === 'string' && t.includes(':')) {
+        const [h, m] = t.split(':').map(Number);
+        const d = new Date(); d.setHours(h, m, 0, 0); return d;
+    }
+    return new Date(t);
+};
+
+let lastLabelX = -100;
+const minGap = 75; // Distanza minima in pixel per non sovrapporre
+
+for (let i = 0; i < data.length; i++) {
     const x = padding.left + i * candleW + candleW / 2;
     
-    // Mostra etichetta solo se cambia l'ora o è la prima/ultima candela
-    if (currentHour !== lastHour || i === 0 || i === data.length - 1) {
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        ctx.fillText(`${hours}:${minutes}`, x, height - padding.bottom + 15);
-        lastHour = currentHour;
-    }
-});
+    // Salta se troppo vicino all'etichetta precedente
+    if (x - lastLabelX < minGap) continue;
+    
+    const date = parseTime(data[i].t);
+    const hh = date.getHours().toString().padStart(2, '0');
+    const mm = date.getMinutes().toString().padStart(2, '0');
+    
+    ctx.fillText(`${hh}:${mm}`, x, height - padding.bottom + 15);
+    lastLabelX = x;
+}
         
         ctx.fillText(timeStr, x, height - padding.bottom + 15);
     }
