@@ -761,10 +761,6 @@ for (let i = 0; i < data.length; i++) {
     ctx.fillText(`${hh}:${mm}`, x, height - padding.bottom + 15);
     lastLabelX = x;
 }
-        
-        ctx.fillText(timeStr, x, height - padding.bottom + 15);
-    }
-}
 
             if (App.state.indicators.RSI) {
                 const rsi = App.indicators.calculateRSI(data);
