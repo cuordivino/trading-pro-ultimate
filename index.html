@@ -656,6 +656,9 @@ formatTime(timestamp) {
             const data = App.state.chartData;
             if (!data.length) return;
 
+         // ORDINA i dati per timestamp (così le ore vanno in ordine)
+    data = [...data].sort((a, b) => a.t - b.t);
+
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim();
             ctx.fillRect(0, 0, width, height);
@@ -723,21 +726,25 @@ formatTime(timestamp) {
                 });
                 ctx.stroke();
             }
-  // Draw time labels (sotto il grafico)
+// Draw time labels (mostra solo quando cambia l'ora)
 ctx.fillStyle = '#848e9c';
 ctx.font = '10px SF Mono';
 ctx.textAlign = 'center';
 
-for (let i = 0; i < data.length; i++) {
-    const d = data[i];
+let lastHour = -1;
+data.forEach((d, i) => {
+    const date = new Date(d.t);
+    const currentHour = date.getHours();
     const x = padding.left + i * candleW + candleW / 2;
     
-    // Disegna ogni 8 candele per evitare sovrapposizioni
-    if (i % 8 === 0) {
-        const date = new Date(d.t);
+    // Mostra etichetta solo se cambia l'ora o è la prima/ultima candela
+    if (currentHour !== lastHour || i === 0 || i === data.length - 1) {
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
-        const timeStr = `${hours}:${minutes}`;
+        ctx.fillText(`${hours}:${minutes}`, x, height - padding.bottom + 15);
+        lastHour = currentHour;
+    }
+});
         
         ctx.fillText(timeStr, x, height - padding.bottom + 15);
     }
