@@ -45,6 +45,10 @@ def execute_trade():
 def get_balance():
     return jsonify(bybit.get_balance())
 
+@app.route('/')
+def home():
+    return "Trading Pro Ultimate - Backend Online! 🚀"
+
 if __name__ == "__main__":
     print("🚀 TRADING PRO ULTIMATE - BACKEND AVVIATO")
     print("🌐 Server: http://0.0.0.0:5000")
