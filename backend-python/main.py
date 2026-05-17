@@ -7,6 +7,7 @@ import time
 import os
 from datetime import datetime
 
+# CORRETTO: __name__
 app = Flask(__name__)
 CORS(app)
 
@@ -67,7 +68,7 @@ def get_market_data(symbol):
         'warning': 'Mock data - API not configured'
     })
 
-# === CALCOLO POSITION SIZE ===
+# === MOTORE DI CALCOLO (4 PARAMETRI) ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
     data = request.json
@@ -193,6 +194,8 @@ def alpaca_positions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# CORRETTO: __name__ == '__main__'
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+    
