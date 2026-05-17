@@ -1,4 +1,4 @@
- from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import hashlib
@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)  # ✅ CORRETTO: __name__
+app = Flask(__name__)
 CORS(app)
 
 # === CONFIGURAZIONE BROKER ===
@@ -56,7 +56,6 @@ def get_market_data(symbol):
         except Exception as e:
             print(f"Alpha Vantage error: {e}")
     
-    # Fallback: genera dati simulati se API non disponibile
     return jsonify({
         'symbol': symbol,
         'price': 100.0,
@@ -71,15 +70,7 @@ def get_market_data(symbol):
 # === CALCOLO POSITION SIZE - 4 PARAMETRI ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
-    """
-    Calcola position size con 4 parametri di rischio:
-    1. Capitale
-    2. Rischio %
-    3. Entry Price
-    4. Stop Loss
-    """
     data = request.json
-    
     capitale = float(data.get('capitale', 25000))
     rischio_pct = float(data.get('rischio_pct', 1))
     entry = float(data.get('entry', 0))
@@ -89,7 +80,6 @@ def calculate_position():
     if not entry or not stop_loss:
         return jsonify({'error': 'Entry e Stop Loss sono obbligatori'}), 400
     
-    # Calcoli
     rischio_euro = capitale * (rischio_pct / 100)
     distanza_sl = abs(entry - stop_loss)
     position_size = int(rischio_euro / distanza_sl) if distanza_sl > 0 else 0
@@ -222,6 +212,6 @@ def alpaca_positions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':  # ✅ CORRETTO: __name__ == '__main__'
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
