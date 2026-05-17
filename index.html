@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -855,44 +855,39 @@ async function initChart() {
   await updateChart();
 }
 
+// === FUNZIONE updateChart() MODIFICATA PER CHIAMARE RENDER ===
 async function updateChart() {
   const asset = state.assets[state.currentAsset];
   if(!asset) return;
   
+  // PROVA A PRENDERE DATI REALI DAL BACKEND RENDER
+  const backendUrl = 'https://trading-pro-ultimate.onrender.com';
+  
+  try {
+    const response = await fetch(`${backendUrl}/api/market/${asset.sym}`);
+    const marketData = await response.json();
+    
+    if(marketData.price && !marketData.warning) {
+      // DATI REALI RICEVUTI!
+      asset.price = marketData.price;
+      asset.change = marketData.change || 0;
+      console.log('✅ Dati reali:', asset.sym, marketData.price);
+    }
+  } catch(e) {
+    console.log('⚠️ Backend non disponibile, uso dati locali');
+  }
+  
+  // Genera grafico (ora con prezzo reale)
   const { data, vol } = generateData(asset);
   state.candleSeries.setData(data);
   state.volumeSeries.setData(vol);
   
-  Object.keys(state.series).forEach(k => { 
-    if(state.series[k]) { 
-      try { state.chart.removeSeries(state.series[k]); } catch(e){} 
-      state.series[k] = null; 
-    } 
-  });
-  
-  if(state.indicators.MA) { 
-    state.series.ma = state.chart.addLineSeries({ color: '#848e9c', lineWidth: 2 }); 
-    state.series.ma.setData(calcMA(data, 20)); 
+  // Aggiorna UI
+  if(data.length > 0) {
+    const lastPrice = data[99].close;
+    document.getElementById('chart-price').innerText = lastPrice.toFixed(4);
+    document.getElementById('t-entry').value = lastPrice.toFixed(4);
   }
-  if(state.indicators.EMA) { 
-    state.series.ema = state.chart.addLineSeries({ color: '#f0b90b', lineWidth: 2 }); 
-    state.series.ema.setData(calcEMA(data, 9)); 
-  }
-  if(state.indicators.BOLL) { 
-    const b = calcBOLL(data); 
-    state.series.bu = state.chart.addLineSeries({ color: '#00bcd4', lineWidth: 2 }); 
-    state.series.bl = state.chart.addLineSeries({ color: '#00bcd4', lineWidth: 2 }); 
-    state.series.bu.setData(b.upper); 
-    state.series.bl.setData(b.lower); 
-  }
-  if(state.indicators.SAR) { 
-    state.series.sar = state.chart.addLineSeries({ color: '#f6465d', lineWidth: 2, lineStyle: 2 }); 
-    state.series.sar.setData(calcSAR(data)); 
-  }
-  
-  state.chart.timeScale().fitContent();
-  document.getElementById('chart-price').innerText = data[99].close.toFixed(4);
-  document.getElementById('t-entry').value = data[99].close.toFixed(4);
   
   updateSubCharts(data, vol);
 }
@@ -1156,28 +1151,77 @@ function fillZ1() {
   document.getElementById('calc-sl').value=(a.z1-a.sl).toFixed(4);
 }
 
-function calculatePosition() {
-  const k=document.getElementById('calc-asset').value;
-  const a=state.assets[k];
-  const e=parseFloat(document.getElementById('calc-entry').value);
-  const s=parseFloat(document.getElementById('calc-sl').value);
-  const t=parseFloat(document.getElementById('calc-tp').value);
+// === FUNZIONE calculatePosition() MODIFICATA PER CHIAMARE RENDER ===
+async function calculatePosition() {
+  const k = document.getElementById('calc-asset').value;
+  const a = state.assets[k];
+  const entry = parseFloat(document.getElementById('calc-entry').value);
+  const stopLoss = parseFloat(document.getElementById('calc-sl').value);
+  const takeProfit = parseFloat(document.getElementById('calc-tp').value);
   
-  if(!e||!s) { alert('⚠️ Inserisci Entry e SL!'); return; }
+  if(!entry || !stopLoss) { 
+    alert('⚠️ Inserisci Entry e SL!'); 
+    return; 
+  }
   
-  const r=state.capital*(state.risk/100);
-  const rs=Math.abs(e-s);
-  const sz=Math.floor(r/rs);
-  const pf=sz*Math.abs(t-e);
-  const rr=Math.abs(t-e)/rs;
+  // CHIAMA BACKEND RENDER PER CALCOLO REALE
+  const backendUrl = 'https://trading-pro-ultimate.onrender.com';
   
-  document.getElementById('res-size').innerText=sz+' shares';
-  document.getElementById('res-risk').innerText='€'+r.toFixed(2);
-  document.getElementById('res-profit').innerText='€'+pf.toFixed(2);
-  document.getElementById('res-rr').innerText='1:'+rr.toFixed(2);
-  
-  document.getElementById('calc-result').style.display='block';
-  state.currentCalc={a,e,s,t,sz,pf};
+  try {
+    const response = await fetch(`${backendUrl}/api/calculate-position`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        capitale: state.capital,
+        rischio_pct: state.risk,
+        entry: entry,
+        stop_loss: stopLoss,
+        take_profit: takeProfit
+      })
+    });
+    
+    const result = await response.json();
+    
+    if(result.error) {
+      alert('❌ Errore: ' + result.error);
+      return;
+    }
+    
+    // MOSTRA RISULTATI DAL BACKEND
+    document.getElementById('res-size').innerText = result.position_size + ' shares';
+    document.getElementById('res-risk').innerText = '€' + result.rischio_euro.toFixed(2);
+    document.getElementById('res-profit').innerText = '€' + result.profitto_potenziale.toFixed(2);
+    document.getElementById('res-rr').innerText = '1:' + result.rr_ratio.toFixed(2);
+    document.getElementById('calc-result').style.display = 'block';
+    
+    state.currentCalc = {
+      asset: a.sym,
+      entry: entry,
+      stopLoss: stopLoss,
+      takeProfit: takeProfit,
+      positionSize: result.position_size,
+      rischioEuro: result.rischio_euro,
+      profitto: result.profitto_potenziale,
+      rrRatio: result.rr_ratio
+    };
+    
+    console.log('✅ Calcolato da Render:', result);
+    
+  } catch(e) {
+    console.error('❌ Backend error:', e);
+    // Fallback locale
+    const rischioEuro = state.capital * (state.risk / 100);
+    const distanzaSL = Math.abs(entry - stopLoss);
+    const positionSize = Math.floor(rischioEuro / distanzaSL);
+    const profitto = takeProfit ? positionSize * Math.abs(takeProfit - entry) : 0;
+    const rrRatio = takeProfit ? Math.abs(takeProfit - entry) / distanzaSL : 0;
+    
+    document.getElementById('res-size').innerText = positionSize + ' shares';
+    document.getElementById('res-risk').innerText = '€' + rischioEuro.toFixed(2);
+    document.getElementById('res-profit').innerText = '€' + profitto.toFixed(2);
+    document.getElementById('res-rr').innerText = '1:' + rrRatio.toFixed(2);
+    document.getElementById('calc-result').style.display = 'block';
+  }
 }
 
 function saveCalcTrade() {
