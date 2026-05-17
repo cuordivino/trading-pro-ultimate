@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__)  # ✅ CORRETTO: __name__
 CORS(app)
 
 # === CONFIGURAZIONE BROKER ===
@@ -56,6 +56,7 @@ def get_market_data(symbol):
         except Exception as e:
             print(f"Alpha Vantage error: {e}")
     
+    # Fallback: genera dati simulati se API non disponibile
     return jsonify({
         'symbol': symbol,
         'price': 100.0,
@@ -67,7 +68,7 @@ def get_market_data(symbol):
         'warning': 'Mock data - API not configured'
     })
 
-# === NUOVO ENDPOINT: CALCOLO POSITION SIZE AVANZATO ===
+# === CALCOLO POSITION SIZE - 4 PARAMETRI ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
     """
@@ -91,11 +92,11 @@ def calculate_position():
     # Calcoli
     rischio_euro = capitale * (rischio_pct / 100)
     distanza_sl = abs(entry - stop_loss)
-    position_size = int(rischio_euro / distanza_sl)
+    position_size = int(rischio_euro / distanza_sl) if distanza_sl > 0 else 0
     
     if take_profit:
         profitto_potenziale = position_size * abs(take_profit - entry)
-        rr_ratio = abs(take_profit - entry) / distanza_sl
+        rr_ratio = abs(take_profit - entry) / distanza_sl if distanza_sl > 0 else 0
     else:
         profitto_potenziale = 0
         rr_ratio = 0
@@ -221,6 +222,6 @@ def alpaca_positions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # ✅ CORRETTO: __name__ == '__main__'
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
