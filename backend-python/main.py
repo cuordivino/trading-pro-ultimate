@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)  # ✅ CORRETTO
+app = Flask(__name__)
 CORS(app)
 
 # === CONFIGURAZIONE BROKER ===
@@ -212,6 +212,6 @@ def alpaca_positions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':  # ✅ CORRETTO
+if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
