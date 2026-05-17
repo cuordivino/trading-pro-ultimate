@@ -613,7 +613,7 @@ function testTelegramNotification() {
 function generateData(asset) {
   const data = [], vol = [];
   let basePrice = asset.price;
-  let t = Math.floor(Date.now()/1000) - 100*3600;
+let t = Math.floor(Date.now()/1000) - 100*60;
   
   for(let i=0; i<100; i++) {
     const changePercent = (Math.random() - 0.5) * 0.01;
