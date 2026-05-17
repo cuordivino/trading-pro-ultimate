@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__)  # CORRETTO: __name__
 CORS(app)
 
 # === CONFIGURAZIONE BROKER ===
@@ -35,7 +35,7 @@ def health():
 
 @app.route('/api/market/<symbol>')
 def get_market_data(symbol):
-    """Ottieni dati di mercato reali"""
+    """Ottieni dati di mercato REALI"""
     if ALPHA_VANTAGE_KEY:
         try:
             resp = requests.get(
@@ -56,6 +56,7 @@ def get_market_data(symbol):
         except Exception as e:
             print(f"Alpha Vantage error: {e}")
     
+    # Fallback: dati simulati se API non configurata
     return jsonify({
         'symbol': symbol,
         'price': 100.0,
@@ -67,7 +68,7 @@ def get_market_data(symbol):
         'warning': 'Mock data - API not configured'
     })
 
-# === CALCOLO POSITION SIZE - 4 PARAMETRI ===
+# === CALCOLO POSITION SIZE (MOTORE DI CALCOLO) ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
     data = request.json
@@ -84,134 +85,41 @@ def calculate_position():
     distanza_sl = abs(entry - stop_loss)
     position_size = int(rischio_euro / distanza_sl) if distanza_sl > 0 else 0
     
-    if take_profit:
-        profitto_potenziale = position_size * abs(take_profit - entry)
-        rr_ratio = abs(take_profit - entry) / distanza_sl if distanza_sl > 0 else 0
-    else:
-        profitto_potenziale = 0
-        rr_ratio = 0
+    profitto_potenziale = position_size * abs(take_profit - entry) if take_profit else 0
+    rr_ratio = abs(take_profit - entry) / distanza_sl if take_profit and distanza_sl > 0 else 0
     
     return jsonify({
-        'capitale': capitale,
-        'rischio_pct': rischio_pct,
-        'rischio_euro': round(rischio_euro, 2),
-        'entry': entry,
-        'stop_loss': stop_loss,
-        'take_profit': take_profit,
         'position_size': position_size,
+        'rischio_euro': round(rischio_euro, 2),
         'profitto_potenziale': round(profitto_potenziale, 2),
         'rr_ratio': round(rr_ratio, 2),
         'valore_posizione': round(position_size * entry, 2)
     })
 
-@app.route('/api/bybit/ticker/<symbol>')
-def bybit_ticker(symbol):
-    try:
-        resp = requests.get(f'{BYBIT_BASE_URL}/v2/public/tickers?symbol={symbol}')
-        return jsonify(resp.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/bybit/kline', methods=['GET'])
-def bybit_kline():
-    symbol = request.args.get('symbol', 'BTCUSDT')
-    interval = request.args.get('interval', '15')
-    try:
-        resp = requests.get(
-            f'{BYBIT_BASE_URL}/public/linear/kline',
-            params={'symbol': symbol, 'interval': interval, 'limit': 100}
-        )
-        return jsonify(resp.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/bybit/place-order', methods=['POST'])
 def bybit_place_order():
     if not BYBIT_API_KEY or not BYBIT_API_SECRET:
         return jsonify({'error': 'API keys not configured'}), 400
-    
     data = request.json
-    side = data.get('side', 'Buy')
-    symbol = data.get('symbol', 'BTCUSDT')
-    qty = float(data.get('qty', 0.001))
-    order_type = data.get('type', 'Market')
-    price = float(data.get('price', 0)) if order_type == 'Limit' else 0
-    
     timestamp = int(time.time() * 1000)
     params = {
-        'side': side,
-        'symbol': symbol,
-        'order_type': order_type,
-        'qty': qty,
-        'price': price,
+        'side': data.get('side', 'Buy'),
+        'symbol': data.get('symbol', 'BTCUSDT'),
+        'order_type': data.get('type', 'Market'),
+        'qty': float(data.get('qty', 0.001)),
+        'price': float(data.get('price', 0)) if data.get('type') == 'Limit' else 0,
         'time_in_force': 'GoodTillCancel',
         'timestamp': timestamp,
         'api_key': BYBIT_API_KEY,
         'recv_window': 5000
     }
-    
-    sign = sign_bybit_request(params, BYBIT_API_SECRET)
-    params['sign'] = sign
-    
+    params['sign'] = sign_bybit_request(params, BYBIT_API_SECRET)
     try:
         resp = requests.post(f'{BYBIT_BASE_URL}/private/linear/order/create', data=params)
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/bybit/balance')
-def bybit_balance():
-    if not BYBIT_API_KEY or not BYBIT_API_SECRET:
-        return jsonify({'error': 'API keys not configured'}), 400
-    
-    timestamp = int(time.time() * 1000)
-    params = {
-        'api_key': BYBIT_API_KEY,
-        'timestamp': timestamp,
-        'recv_window': 5000
-    }
-    
-    sign = sign_bybit_request(params, BYBIT_API_SECRET)
-    params['sign'] = sign
-    
-    try:
-        resp = requests.get(f'{BYBIT_BASE_URL}/v2/private/wallet/balance', params=params)
-        return jsonify(resp.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/alpaca/account')
-def alpaca_account():
-    if not ALPACA_API_KEY or not ALPACA_API_SECRET:
-        return jsonify({'error': 'API keys not configured'}), 400
-    
-    headers = {
-        'APCA-API-KEY-ID': ALPACA_API_KEY,
-        'APCA-API-SECRET-KEY': ALPACA_API_SECRET
-    }
-    
-    try:
-        resp = requests.get(f'{ALPACA_BASE_URL}/v2/account', headers=headers)
-        return jsonify(resp.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/alpaca/positions')
-def alpaca_positions():
-    if not ALPACA_API_KEY or not ALPACA_API_SECRET:
-        return jsonify({'error': 'API keys not configured'}), 400
-    
-    headers = {
-        'APCA-API-KEY-ID': ALPACA_API_KEY,
-        'APCA-API-SECRET-KEY': ALPACA_API_SECRET
-    }
-    
-    try:
-        resp = requests.get(f'{ALPACA_BASE_URL}/v2/positions', headers=headers)
-        return jsonify(resp.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
+if __name__ == '__main__':  # CORRETTO: __name__
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
