@@ -627,7 +627,7 @@ let t = Math.floor(Date.now()/1000) - 100*60;
     data.push({ time: t, open: +open.toFixed(4), high: +high.toFixed(4), low: +low.toFixed(4), close: +close.toFixed(4) });
     vol.push({ time: t, value: volume, color: close>=open?'#0ecb81':'#f6465d' });
     basePrice = close;
-    t += 3600;
+    t += 60;
   }
   return { data, vol };
 }
