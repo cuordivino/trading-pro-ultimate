@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": ["https://cuordivino.github.io", "http://localhost:*", "http://127.0.0.1:*"]}})
 
 bybit = BybitClient(testnet=True)
 risk_manager = None
