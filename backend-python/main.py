@@ -68,7 +68,7 @@ def get_market_data(symbol):
         'warning': 'Mock data - API not configured'
     })
 
-# === MOTORE DI CALCOLO (4 PARAMETRI) ===
+# === MOTORE DI CALCOLO POSITION SIZE ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
     data = request.json
@@ -198,4 +198,3 @@ def alpaca_positions():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-    
