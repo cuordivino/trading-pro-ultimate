@@ -35,7 +35,6 @@ def health():
 
 @app.route('/api/market/<symbol>')
 def get_market_data(symbol):
-    """Ottieni dati di mercato reali"""
     if ALPHA_VANTAGE_KEY:
         try:
             resp = requests.get(
@@ -57,12 +56,8 @@ def get_market_data(symbol):
             print(f"Alpha Vantage error: {e}")
     
     return jsonify({
-        'symbol': symbol,
-        'price': 100.0,
-        'change': 0.5,
-        'high': 102.0,
-        'low': 98.0,
-        'volume': 1000000,
+        'symbol': symbol, 'price': 100.0, 'change': 0.5,
+        'high': 102.0, 'low': 98.0, 'volume': 1000000,
         'timestamp': datetime.now().isoformat(),
         'warning': 'Mock data - API not configured'
     })
@@ -83,7 +78,6 @@ def calculate_position():
     rischio_euro = capitale * (rischio_pct / 100)
     distanza_sl = abs(entry - stop_loss)
     position_size = int(rischio_euro / distanza_sl) if distanza_sl > 0 else 0
-    
     profitto = position_size * abs(take_profit - entry) if take_profit else 0
     rr = abs(take_profit - entry) / distanza_sl if take_profit and distanza_sl > 0 else 0
     
@@ -122,27 +116,19 @@ def bybit_place_order():
         return jsonify({'error': 'API keys not configured'}), 400
     
     data = request.json
-    side = data.get('side', 'Buy')
-    symbol = data.get('symbol', 'BTCUSDT')
-    qty = float(data.get('qty', 0.001))
-    order_type = data.get('type', 'Market')
-    price = float(data.get('price', 0)) if order_type == 'Limit' else 0
-    
     timestamp = int(time.time() * 1000)
     params = {
-        'side': side,
-        'symbol': symbol,
-        'order_type': order_type,
-        'qty': qty,
-        'price': price,
+        'side': data.get('side', 'Buy'),
+        'symbol': data.get('symbol', 'BTCUSDT'),
+        'order_type': data.get('type', 'Market'),
+        'qty': float(data.get('qty', 0.001)),
+        'price': float(data.get('price', 0)) if data.get('type') == 'Limit' else 0,
         'time_in_force': 'GoodTillCancel',
         'timestamp': timestamp,
         'api_key': BYBIT_API_KEY,
         'recv_window': 5000
     }
-    
-    sign = sign_bybit_request(params, BYBIT_API_SECRET)
-    params['sign'] = sign
+    params['sign'] = sign_bybit_request(params, BYBIT_API_SECRET)
     
     try:
         resp = requests.post(f'{BYBIT_BASE_URL}/private/linear/order/create', data=params)
@@ -161,9 +147,7 @@ def bybit_balance():
         'timestamp': timestamp,
         'recv_window': 5000
     }
-    
-    sign = sign_bybit_request(params, BYBIT_API_SECRET)
-    params['sign'] = sign
+    params['sign'] = sign_bybit_request(params, BYBIT_API_SECRET)
     
     try:
         resp = requests.get(f'{BYBIT_BASE_URL}/v2/private/wallet/balance', params=params)
