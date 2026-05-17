@@ -7,7 +7,7 @@ import time
 import os
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__)  # ✅ CORRETTO
 CORS(app)
 
 # === CONFIGURAZIONE BROKER ===
@@ -35,7 +35,7 @@ def health():
 
 @app.route('/api/market/<symbol>')
 def get_market_data(symbol):
-    """Ottieni dati di mercato reali"""
+    """Ottieni dati di mercato REALI da Alpha Vantage"""
     if ALPHA_VANTAGE_KEY:
         try:
             resp = requests.get(
@@ -56,6 +56,7 @@ def get_market_data(symbol):
         except Exception as e:
             print(f"Alpha Vantage error: {e}")
     
+    # Fallback: dati simulati se API non configurata
     return jsonify({
         'symbol': symbol,
         'price': 100.0,
@@ -64,13 +65,21 @@ def get_market_data(symbol):
         'low': 98.0,
         'volume': 1000000,
         'timestamp': datetime.now().isoformat(),
-        'warning': 'Mock data - API not configured'
+        'warning': 'Mock data - Alpha Vantage API key not configured'
     })
 
-# === CALCOLO POSITION SIZE - 4 PARAMETRI ===
+# === CALCOLO POSITION SIZE - 4 PARAMETRI DI RISCHIO ===
 @app.route('/api/calculate-position', methods=['POST'])
 def calculate_position():
+    """
+    Calcola position size con 4 parametri:
+    1. Capitale
+    2. Rischio %
+    3. Entry Price
+    4. Stop Loss
+    """
     data = request.json
+    
     capitale = float(data.get('capitale', 25000))
     rischio_pct = float(data.get('rischio_pct', 1))
     entry = float(data.get('entry', 0))
@@ -80,6 +89,7 @@ def calculate_position():
     if not entry or not stop_loss:
         return jsonify({'error': 'Entry e Stop Loss sono obbligatori'}), 400
     
+    # Calcoli
     rischio_euro = capitale * (rischio_pct / 100)
     distanza_sl = abs(entry - stop_loss)
     position_size = int(rischio_euro / distanza_sl) if distanza_sl > 0 else 0
@@ -106,6 +116,7 @@ def calculate_position():
 
 @app.route('/api/bybit/ticker/<symbol>')
 def bybit_ticker(symbol):
+    """Ottieni ticker da Bybit (crypto)"""
     try:
         resp = requests.get(f'{BYBIT_BASE_URL}/v2/public/tickers?symbol={symbol}')
         return jsonify(resp.json())
@@ -114,6 +125,7 @@ def bybit_ticker(symbol):
 
 @app.route('/api/bybit/kline', methods=['GET'])
 def bybit_kline():
+    """Ottieni candele da Bybit"""
     symbol = request.args.get('symbol', 'BTCUSDT')
     interval = request.args.get('interval', '15')
     try:
@@ -127,6 +139,7 @@ def bybit_kline():
 
 @app.route('/api/bybit/place-order', methods=['POST'])
 def bybit_place_order():
+    """Piazza ordine reale su Bybit"""
     if not BYBIT_API_KEY or not BYBIT_API_SECRET:
         return jsonify({'error': 'API keys not configured'}), 400
     
@@ -161,6 +174,7 @@ def bybit_place_order():
 
 @app.route('/api/bybit/balance')
 def bybit_balance():
+    """Ottieni saldo da Bybit"""
     if not BYBIT_API_KEY or not BYBIT_API_SECRET:
         return jsonify({'error': 'API keys not configured'}), 400
     
@@ -182,6 +196,7 @@ def bybit_balance():
 
 @app.route('/api/alpaca/account')
 def alpaca_account():
+    """Ottieni account Alpaca (azioni/ETF)"""
     if not ALPACA_API_KEY or not ALPACA_API_SECRET:
         return jsonify({'error': 'API keys not configured'}), 400
     
@@ -198,6 +213,7 @@ def alpaca_account():
 
 @app.route('/api/alpaca/positions')
 def alpaca_positions():
+    """Ottieni posizioni aperte Alpaca"""
     if not ALPACA_API_KEY or not ALPACA_API_SECRET:
         return jsonify({'error': 'API keys not configured'}), 400
     
@@ -212,6 +228,6 @@ def alpaca_positions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # ✅ CORRETTO
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
