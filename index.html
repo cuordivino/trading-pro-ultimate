@@ -626,6 +626,8 @@ formatTime(timestamp) {
 
         init() {
             this.canvas = document.getElementById('chartCanvas');
+             // TEST CONNESSIONE BACKEND
+            this.checkBackendConnection();
             this.ctx = this.canvas.getContext('2d');
             this.resize();
             window.addEventListener('resize', () => this.resize());
@@ -1281,6 +1283,19 @@ for (let i = 0; i < data.length; i++) {
 
         this.log('🚀 Trading Pro Ultimate v2.0 - Tutte le funzionalità attive!', 'success');
     }
+ 
+     // FUNZIONE PER CONTROLLARE IL BACKEND
+    async checkBackendConnection() {
+        try {
+            const response = await fetch(`${this.apiUrl}/health`);
+            const data = await response.json();
+            console.log('✅ Backend online:', data);
+            this.log(`🚀 Backend connesso! Testnet: ${data.testnet}`, 'success');
+        } catch (error) {
+            console.error('❌ Backend offline:', error);
+            this.log('⚠️ Backend non raggiungibile', 'error');
+        }
+    },
 };
 
 // Service Worker registration for PWA
