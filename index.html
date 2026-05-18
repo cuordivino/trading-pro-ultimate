@@ -856,40 +856,51 @@ async function initChart() {
 }
 
 // === FUNZIONE updateChart() MODIFICATA PER CHIAMARE RENDER ===
+// === FUNZIONE updateChart() CORRETTA PER DATI REALI ===
 async function updateChart() {
-  const asset = state.assets[state.currentAsset];
-  if(!asset) return;
-  
-  // PROVA A PRENDERE DATI REALI DAL BACKEND RENDER
-  const backendUrl = 'https://trading-pro-ultimate.onrender.com';
-  
-  try {
-    const response = await fetch(`${backendUrl}/api/market/${asset.sym}`);
-    const marketData = await response.json();
+    const asset = state.assets[state.currentAsset];
+    if(!asset) return;
     
-    if(marketData.price && !marketData.warning) {
-      // DATI REALI RICEVUTI!
-      asset.price = marketData.price;
-      asset.change = marketData.change || 0;
-      console.log('✅ Dati reali:', asset.sym, marketData.price);
+    const backendUrl = 'https://trading-pro-ultimate.onrender.com';
+    
+    try {
+        // 1. Prova a scaricare le candele REALI dallo storico (KLINE)
+        const response = await fetch(`${backendUrl}/api/kline/${asset.sym}`);
+        const klineData = await response.json();
+        
+        // Se riceviamo un array di dati veri (e non un errore)
+        if(Array.isArray(klineData) && klineData.length > 0 && !klineData.error) {
+            console.log('✅ GRAFICO: Dati storici reali caricati per', asset.sym);
+            
+            // Aggiorna il grafico con le candele vere
+            state.candleSeries.setData(klineData);
+            
+            // Calcola indicatori sui dati reali
+            updateSubCharts(klineData);
+            
+            // Aggiorna l'ultimo prezzo mostrato
+            const lastCandle = klineData[klineData.length - 1];
+            asset.price = lastCandle.close;
+            document.getElementById('chart-price').innerText = lastCandle.close.toFixed(4);
+            document.getElementById('t-entry').value = lastCandle.close.toFixed(4);
+            
+            return; // Esci, non servono dati fake
+        }
+    } catch(e) {
+        console.log('⚠️ Storico non disponibile, uso fallback');
     }
-  } catch(e) {
-    console.log('⚠️ Backend non disponibile, uso dati locali');
-  }
-  
-  // Genera grafico (ora con prezzo reale)
-  const { data, vol } = generateData(asset);
-  state.candleSeries.setData(data);
-  state.volumeSeries.setData(vol);
-  
-  // Aggiorna UI
-  if(data.length > 0) {
-    const lastPrice = data[99].close;
-    document.getElementById('chart-price').innerText = lastPrice.toFixed(4);
-    document.getElementById('t-entry').value = lastPrice.toFixed(4);
-  }
-  
-  updateSubCharts(data, vol);
+    
+    // 2. FALLBACK: Se lo storico non si scarica, usa i dati generati
+    const { data, vol } = generateData(asset);
+    state.candleSeries.setData(data);
+    state.volumeSeries.setData(vol);
+    
+    if(data.length > 0) {
+        const lastPrice = data[data.length - 1].close;
+        document.getElementById('chart-price').innerText = lastPrice.toFixed(4);
+    }
+    updateSubCharts(data, vol);
+}
 }
 
 function updateSubCharts(data, vol) {
