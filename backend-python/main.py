@@ -193,56 +193,34 @@ def alpaca_positions():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-# === NUOVO ENDPOINT PER STORICO CANDELE REALI (KLINE) ===
+# === NUOVO ENDPOINT PER STORICO CANDELE REALI (YAHOO FINANCE) ===
 @app.route('/api/kline/<symbol>')
 def get_kline_data(symbol):
-    """Scarica lo storico delle candele (5 min) da Alpha Vantage"""
-    if not ALPHA_VANTAGE_KEY:
-        return jsonify({'error': 'API Key mancante'}), 400
-        
+    """Scarica lo storico delle candele (5 min) da Yahoo Finance"""
     try:
-        # Alpha Vantage TIME_SERIES_INTRADAY (5 minuti)
-        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={ALPHA_VANTAGE_KEY}'
-        resp = requests.get(url)
-        data = resp.json()
+        # Yahoo Finance - dati gratuiti e affidabili
+        ticker = yf.Ticker(symbol)
+        # Prende ultimi 5 giorni con intervallo 5 minuti
+        hist = ticker.history(period="5d", interval="5m")
         
-        # Trova la chiave dei dati temporali
-        time_series_key = next((k for k in data.keys() if "Time Series" in k), None)
-        
-        if not time_series_key:
-            return jsonify([])
-            
-        raw_data = data[time_series_key]
         candles = []
+        for timestamp, row in hist.iterrows():
+            candles.append({
+                'time': int(timestamp.timestamp()),
+                'open': float(row['Open']),
+                'high': float(row['High']),
+                'low': float(row['Low']),
+                'close': float(row['Close']),
+                'volume': float(row['Volume'])
+            })
         
-        # Converte formato Alpha Vantage in timestamp Unix
-        for time_str, values in raw_data.items():
-            try:
-                # Converte "YYYY-MM-DD HH:MM:SS" in Timestamp Unix (secondi)
-                dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
-                timestamp = int(dt.timestamp())
-                
-                candles.append({
-                    'time': timestamp,
-                    'open': float(values['1. open']),
-                    'high': float(values['2. high']),
-                    'low': float(values['3. low']),
-                    'close': float(values['4. close']),
-                    'volume': float(values['5. volume'])
-                })
-            except Exception:
-                continue
-                
-        # Ordina dal più vecchio al più nuovo
+        # Ordina per tempo e prendi ultime 100 candele
         candles.sort(key=lambda x: x['time'])
-        
-        # Restituisce solo le ultime 100 candele
         return jsonify(candles[-100:])
         
     except Exception as e:
-        print(f"Kline error: {e}")
+        print(f"Yahoo Finance error: {e}")
         return jsonify({'error': str(e)}), 500
-
 # CORRETTO: __name__ == '__main__'
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
