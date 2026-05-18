@@ -6,7 +6,7 @@ import hmac
 import time
 import os
 from datetime import datetime
-
+import yfinance as yf
 # CORRETTO: __name__
 app = Flask(__name__)
 CORS(app)
