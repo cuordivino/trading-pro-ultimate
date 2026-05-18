@@ -233,6 +233,214 @@ def get_kline_data(symbol):
         print(f"TwelveData Exception: {e}")
         return jsonify({'error': str(e)}), 500
 # CORRETTO: __name__ == '__main__'
+# === GESTIONE SIMBOLI MULTI-EXCHANGE ===
+# Cache per non sprecare crediti API
+symbols_cache = {
+    'italy': None,
+    'nasdaq': None,
+    'nyse': None,
+    'bybit_crypto': None
+}
+cache_timestamps = {
+    'italy': 0,
+    'nasdaq': 0,
+    'nyse': 0,
+    'bybit_crypto': 0
+}
+
+TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
+
+def download_symbols(exchange_name, exchange_code, instrument_type='Common Stock'):
+    """Scarica simboli da TwelveData per un exchange specifico"""
+    import time
+    
+    # Cache di 24 ore (86400 secondi)
+    if symbols_cache[exchange_name] and (time.time() - cache_timestamps[exchange_name]) < 86400:
+        return symbols_cache[exchange_name]
+    
+    try:
+        url = f'https://api.twelvedata.com/symbols?exchange={exchange_code}&apikey={TWELVEDATA_KEY}'
+        resp = requests.get(url)
+        data = resp.json()
+        
+        if 'data' in data:
+            symbols = [s for s in data['data'] if s['instrument_type'] == instrument_type]
+            
+            symbols_cache[exchange_name] = {
+                'exchange': exchange_code,
+                'count': len(symbols),
+                'symbols': [
+                    {
+                        'symbol': s['symbol'],
+                        'name': s['description'],
+                        'currency': s['currency'],
+                        'exchange': s['exchange'],
+                        'type': 'stock'
+                    }
+                    for s in symbols
+                ]
+            }
+            
+            cache_timestamps[exchange_name] = time.time()
+            print(f"Scaricati {len(symbols)} simboli da {exchange_code}")
+            return symbols_cache[exchange_name]
+        else:
+            return {'error': f'Nessun dato da {exchange_code}'}
+    except Exception as e:
+        print(f"Error downloading {exchange_code}: {e}")
+        return {'error': str(e)}
+
+
+def download_bybit_crypto():
+    """Scarica tutte le crypto da Bybit"""
+    import time
+    
+    # Cache di 6 ore (21600 secondi)
+    if symbols_cache['bybit_crypto'] and (time.time() - cache_timestamps['bybit_crypto']) < 21600:
+        return symbols_cache['bybit_crypto']
+    
+    try:
+        url = 'https://api.bybit.com/v5/market/tickers?category=spot'
+        resp = requests.get(url)
+        data = resp.json()
+        
+        if data['retCode'] == 0:
+            crypto_list = data['result']['list']
+            
+            # Filtra solo USDT
+            usdt_pairs = [c for c in crypto_list if c['quoteCoin'] == 'USDT']
+            
+            symbols_cache['bybit_crypto'] = {
+                'exchange': 'BYBIT',
+                'count': len(usdt_pairs),
+                'symbols': [
+                    {
+                        'symbol': c['symbol'],
+                        'name': f"{c['baseCoin']} / USDT",
+                        'currency': 'USDT',
+                        'exchange': 'Bybit',
+                        'type': 'crypto',
+                        'baseCoin': c['baseCoin'],
+                        'quoteCoin': c['quoteCoin']
+                    }
+                    for c in usdt_pairs
+                ]
+            }
+            
+            cache_timestamps['bybit_crypto'] = time.time()
+            print(f"Scaricate {len(usdt_pairs)} crypto da Bybit")
+            return symbols_cache['bybit_crypto']
+        else:
+            return {'error': f'Bybit error: {data["retMsg"]}'}, 500
+    except Exception as e:
+        print(f"Error downloading Bybit crypto: {e}")
+        return {'error': str(e)}, 500
+
+
+# === ENDPOINT PER SCARICARE SIMBOLI ===
+
+@app.route('/api/symbols/italy')
+def get_italy_symbols():
+    """Tutti i titoli della Borsa Italiana (MTA)"""
+    return jsonify(download_symbols('italy', 'MTA'))
+
+
+@app.route('/api/symbols/nasdaq')
+def get_nasdaq_symbols():
+    """Tutti i titoli NASDAQ (USA)"""
+    return jsonify(download_symbols('nasdaq', 'NASDAQ'))
+
+
+@app.route('/api/symbols/nyse')
+def get_nyse_symbols():
+    """Tutti i titoli NYSE (USA)"""
+    return jsonify(download_symbols('nyse', 'NYSE'))
+
+
+@app.route('/api/symbols/sp500')
+def get_sp500_symbols():
+    """S&P 500 - I 500 titoli più importanti USA"""
+    nasdaq = download_symbols('nasdaq', 'NASDAQ')
+    nyse = download_symbols('nyse', 'NYSE')
+    
+    if 'symbols' in nasdaq and 'symbols' in nyse:
+        all_symbols = nasdaq['symbols'] + nyse['symbols']
+        unique_symbols = {s['symbol']: s for s in all_symbols}
+        
+        return jsonify({
+            'count': len(unique_symbols),
+            'symbols': list(unique_symbols.values()),
+            'note': 'NASDAQ + NYSE (include S&P 500)'
+        })
+    else:
+        return jsonify({'error': 'Impossibile caricare simboli'})
+
+
+@app.route('/api/symbols/bybit')
+def get_bybit_crypto():
+    """Tutte le crypto su Bybit (coppie USDT)"""
+    result = download_bybit_crypto()
+    if isinstance(result, tuple):
+        return result
+    return jsonify(result)
+
+
+# === ENDPOINT DI RICERCA UNIFICATA ===
+
+@app.route('/api/symbols/search/<query>')
+def search_all_symbols(query):
+    """Cerca in TUTTI gli exchange (Italia, USA, Crypto)"""
+    import time
+    
+    # Carica tutte le cache se necessario
+    download_symbols('italy', 'MTA')
+    download_symbols('nasdaq', 'NASDAQ')
+    download_symbols('nyse', 'NYSE')
+    download_bybit_crypto()
+    
+    query = query.upper().strip()
+    if len(query) < 2:
+        return jsonify({'error': 'Query troppo corta'}), 400
+    
+    results = []
+    
+    # Cerca in tutte le cache
+    for exchange_name, cache_data in symbols_cache.items():
+        if cache_data and 'symbols' in cache_data:
+            for symbol in cache_data['symbols']:
+                if query in symbol['symbol'].upper() or query in symbol['name'].upper():
+                    results.append({
+                        'symbol': symbol['symbol'],
+                        'name': symbol['name'],
+                        'exchange': symbol['exchange'],
+                        'type': symbol['type'],
+                        'currency': symbol.get('currency', 'USD')
+                    })
+    
+    # Ordina per rilevanza
+    results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
+    
+    return jsonify({
+        'query': query,
+        'count': len(results),
+        'results': results[:50]
+    })
+
+
+# === ENDPOINT PER OTTENERE TUTTI GLI EXCHANGE DISPONIBILI ===
+
+@app.route('/api/symbols/exchanges')
+def get_available_exchanges():
+    """Lista tutti gli exchange disponibili"""
+    return jsonify({
+        'exchanges': [
+            {'name': 'Borsa Italiana', 'code': 'MTA', 'endpoint': '/api/symbols/italy'},
+            {'name': 'NASDAQ (USA)', 'code': 'NASDAQ', 'endpoint': '/api/symbols/nasdaq'},
+            {'name': 'NYSE (USA)', 'code': 'NYSE', 'endpoint': '/api/symbols/nyse'},
+            {'name': 'S&P 500', 'code': 'SP500', 'endpoint': '/api/symbols/sp500'},
+            {'name': 'Bybit Crypto', 'code': 'BYBIT', 'endpoint': '/api/symbols/bybit'}
+        ]
+    })
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
