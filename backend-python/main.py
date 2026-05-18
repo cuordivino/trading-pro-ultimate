@@ -193,33 +193,42 @@ def alpaca_positions():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-# === NUOVO ENDPOINT PER STORICO CANDELE REALI (YAHOO FINANCE) ===
+# === NUOVO ENDPOINT PER STORICO CANDELE REALI (FINANCIAL MODELING PREP) ===
 @app.route('/api/kline/<symbol>')
 def get_kline_data(symbol):
-    """Scarica lo storico delle candele (5 min) da Yahoo Finance"""
+    """Scarica lo storico delle candele (5 min) da FMP"""
+    # LA TUA API KEY
+    FMP_API_KEY = 'NpuTuy9I9PQNJRJERF8Sffan5s1sVg'
+    
     try:
-        # Yahoo Finance - dati gratuiti e affidabili
-        ticker = yf.Ticker(symbol)
-        # Prende ultimi 5 giorni con intervallo 5 minuti
-        hist = ticker.history(period="5d", interval="5m")
+        # URL per dati intraday a 5 minuti (GRATIS su FMP)
+        url = f'https://financialmodelingprep.com/api/v3/historical-chart/5min/{symbol}?apikey={FMP_API_KEY}'
         
-        candles = []
-        for timestamp, row in hist.iterrows():
-            candles.append({
-                'time': int(timestamp.timestamp()),
-                'open': float(row['Open']),
-                'high': float(row['High']),
-                'low': float(row['Low']),
-                'close': float(row['Close']),
-                'volume': float(row['Volume'])
-            })
+        resp = requests.get(url)
+        data = resp.json()
         
-        # Ordina per tempo e prendi ultime 100 candele
-        candles.sort(key=lambda x: x['time'])
-        return jsonify(candles[-100:])
-        
+        # Controlla se ci sono errori dalla API
+        if isinstance(data, list) and len(data) > 0:
+            candles = []
+            for candle in data:
+                candles.append({
+                    'time': int(datetime.fromisoformat(candle['date']).timestamp()),
+                    'open': float(candle['open']),
+                    'high': float(candle['high']),
+                    'low': float(candle['low']),
+                    'close': float(candle['close']),
+                    'volume': float(candle['volume'])
+                })
+            
+            # Ordina e prendi le ultime 100
+            candles.sort(key=lambda x: x['time'])
+            return jsonify(candles[-100:])
+        else:
+            print(f"FMP: Nessun dato per {symbol}")
+            return jsonify([])
+            
     except Exception as e:
-        print(f"Yahoo Finance error: {e}")
+        print(f"FMP Error: {e}")
         return jsonify({'error': str(e)}), 500
 # CORRETTO: __name__ == '__main__'
 if __name__ == '__main__':
