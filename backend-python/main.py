@@ -385,39 +385,60 @@ def get_bybit_crypto():
     return jsonify(result)
 
 
-# === ENDPOINT DI RICERCA UNIFICATA ===
-
 @app.route('/api/symbols/search/<query>')
 def search_all_symbols(query):
-    """Cerca in TUTTI gli exchange (Italia, USA, Crypto)"""
-    import time
-    
-    # Carica tutte le cache se necessario
-    download_symbols('italy', 'MTA')
-    download_symbols('nasdaq', 'NASDAQ')
-    download_symbols('nyse', 'NYSE')
-    download_bybit_crypto()
-    
+    """Cerca in TUTTI gli exchange (senza cache globale)"""
+    TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
     query = query.upper().strip()
+    
     if len(query) < 2:
         return jsonify({'error': 'Query troppo corta'}), 400
     
     results = []
+    exchanges = ['MTA', 'NASDAQ', 'NYSE']
     
-    # Cerca in tutte le cache
-    for exchange_name, cache_data in symbols_cache.items():
-        if cache_data and 'symbols' in cache_data:
-            for symbol in cache_data['symbols']:
-                if query in symbol['symbol'].upper() or query in symbol['name'].upper():
-                    results.append({
-                        'symbol': symbol['symbol'],
-                        'name': symbol['name'],
-                        'exchange': symbol['exchange'],
-                        'type': symbol['type'],
-                        'currency': symbol.get('currency', 'USD')
-                    })
+    # Cerca in ogni exchange
+    for exchange in exchanges:
+        try:
+            url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
+            resp = requests.get(url, timeout=10)  # Timeout di 10 secondi
+            data = resp.json()
+            
+            if 'data' in data:
+                for symbol in data['data']:
+                    if query in symbol['symbol'].upper() or query in symbol['description'].upper():
+                        results.append({
+                            'symbol': symbol['symbol'],
+                            'name': symbol['description'],
+                            'exchange': exchange,
+                            'type': 'stock',
+                            'currency': symbol.get('currency', 'USD')
+                        })
+        except Exception as e:
+            print(f"Error searching {exchange}: {e}")
+            continue
     
-    # Ordina per rilevanza
+    # Cerca crypto Bybit
+    try:
+        url = 'https://api.bybit.com/v5/market/tickers?category=spot'
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        
+        if data['retCode'] == 0:
+            for crypto in data['result']['list']:
+                if crypto['quoteCoin'] == 'USDT':
+                    if query in crypto['symbol'].upper() or query in crypto['baseCoin'].upper():
+                        results.append({
+                            'symbol': crypto['symbol'],
+                            'name': f"{crypto['baseCoin']} / USDT",
+                            'exchange': 'Bybit',
+                            'type': 'crypto',
+                            'currency': 'USDT'
+                        })
+    except Exception as e:
+        print(f"Error searching Bybit: {e}")
+    
+    # Ordina e limita
     results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
     
     return jsonify({
@@ -425,8 +446,6 @@ def search_all_symbols(query):
         'count': len(results),
         'results': results[:50]
     })
-
-
 # === ENDPOINT PER OTTENERE TUTTI GLI EXCHANGE DISPONIBILI ===
 
 @app.route('/api/symbols/exchanges')
