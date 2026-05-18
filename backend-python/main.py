@@ -400,10 +400,19 @@ def search_all_symbols(query):
     # Cerca in ogni exchange
     for exchange in exchanges:
         try:
-            url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
-            resp = requests.get(url, timeout=10)  # Timeout di 10 secondi
-            data = resp.json()
+            print(f"🔍 Chiamando {exchange}...")
+                   url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
+            print(f" Chiamando {exchange}...")
             
+            resp = requests.get(url, timeout=60)
+            print(f"Status: {resp.status_code}")
+            
+            # SPOSTA QUESTA RIGA QUI SOTTO!
+            data = resp.json() 
+            
+            if 'data' in data:
+                print(f"✅ Ricevuti {len(data['data'])} simboli da {exchange}")
+                for symbol in data['data']:   
             if 'data' in data:
                 for symbol in data['data']:
                     if query in symbol['symbol'].upper() or query in symbol['description'].upper():
@@ -421,7 +430,7 @@ def search_all_symbols(query):
     # Cerca crypto Bybit
     try:
         url = 'https://api.bybit.com/v5/market/tickers?category=spot'
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=30)
         data = resp.json()
         
         if data['retCode'] == 0:
