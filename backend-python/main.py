@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+Ffrom flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import hashlib
@@ -192,6 +192,55 @@ def alpaca_positions():
         resp = requests.get(f'{ALPACA_BASE_URL}/v2/positions', headers=headers)
         return jsonify(resp.json())
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+# === NUOVO ENDPOINT PER STORICO CANDELE REALI (KLINE) ===
+@app.route('/api/kline/<symbol>')
+def get_kline_data(symbol):
+    """Scarica lo storico delle candele (5 min) da Alpha Vantage"""
+    if not ALPHA_VANTAGE_KEY:
+        return jsonify({'error': 'API Key mancante'}), 400
+        
+    try:
+        # Alpha Vantage TIME_SERIES_INTRADAY (5 minuti)
+        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=5min&apikey={ALPHA_VANTAGE_KEY}'
+        resp = requests.get(url)
+        data = resp.json()
+        
+        # Trova la chiave dei dati temporali
+        time_series_key = next((k for k in data.keys() if "Time Series" in k), None)
+        
+        if not time_series_key:
+            return jsonify([])
+            
+        raw_data = data[time_series_key]
+        candles = []
+        
+        # Converte formato Alpha Vantage in timestamp Unix
+        for time_str, values in raw_data.items():
+            try:
+                # Converte "YYYY-MM-DD HH:MM:SS" in Timestamp Unix (secondi)
+                dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+                timestamp = int(dt.timestamp())
+                
+                candles.append({
+                    'time': timestamp,
+                    'open': float(values['1. open']),
+                    'high': float(values['2. high']),
+                    'low': float(values['3. low']),
+                    'close': float(values['4. close']),
+                    'volume': float(values['5. volume'])
+                })
+            except Exception:
+                continue
+                
+        # Ordina dal più vecchio al più nuovo
+        candles.sort(key=lambda x: x['time'])
+        
+        # Restituisce solo le ultime 100 candele
+        return jsonify(candles[-100:])
+        
+    except Exception as e:
+        print(f"Kline error: {e}")
         return jsonify({'error': str(e)}), 500
 
 # CORRETTO: __name__ == '__main__'
