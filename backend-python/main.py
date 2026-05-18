@@ -193,42 +193,44 @@ def alpaca_positions():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-# === NUOVO ENDPOINT PER STORICO CANDELE REALI (FINANCIAL MODELING PREP) ===
+# === NUOVO ENDPOINT CON TWELVEDATA (Intraday Reale) ===
 @app.route('/api/kline/<symbol>')
 def get_kline_data(symbol):
-    """Scarica lo storico delle candele (5 min) da FMP"""
-    # LA TUA API KEY
-    FMP_API_KEY = 'NputUy9I9PQNJRJERF8Sffan5s1sVq'
+    """Scarica lo storico delle candele (5 min) da TwelveData"""
+    # LA TUA CHIAVE TWELVEDATA
+    TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
     
     try:
-        # URL per dati intraday a 5 minuti (GRATIS su FMP)
-        url = f'https://financialmodelingprep.com/api/v3/historical-chart/5min/{symbol}?apikey={FMP_API_KEY}'
+        # Chiede 100 candele a 5 minuti
+        url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=5min&outputsize=100&apikey={TWELVEDATA_KEY}"
         
         resp = requests.get(url)
         data = resp.json()
         
-        # Controlla se ci sono errori dalla API
-        if isinstance(data, list) and len(data) > 0:
-            candles = []
-            for candle in data:
-                candles.append({
-                    'time': int(datetime.fromisoformat(candle['date']).timestamp()),
-                    'open': float(candle['open']),
-                    'high': float(candle['high']),
-                    'low': float(candle['low']),
-                    'close': float(candle['close']),
-                    'volume': float(candle['volume'])
-                })
+        # Controlla errori
+        if 'code' in data and data['code'] == 400:
+            print(f"TwelveData Error: {data}")
+            return jsonify({'error': data['message']}), 400
             
-            # Ordina e prendi le ultime 100
-            candles.sort(key=lambda x: x['time'])
-            return jsonify(candles[-100:])
+        if 'values' in data:
+            candles = []
+            # TwelveData dà dati dal più NUOVO al più VECCHIO
+            # Il grafico vuole dal più VECCHIO al più NUOVO, quindi invertiamo
+            for k in data['values'][::-1]: 
+                candles.append({
+                    'time': int(datetime.strptime(k['datetime'], '%Y-%m-%d %H:%M:%S').timestamp()),
+                    'open': float(k['open']),
+                    'high': float(k['high']),
+                    'low': float(k['low']),
+                    'close': float(k['close']),
+                    'volume': float(k['volume'])
+                })
+            return jsonify(candles)
         else:
-            print(f"FMP: Nessun dato per {symbol}")
             return jsonify([])
             
     except Exception as e:
-        print(f"FMP Error: {e}")
+        print(f"TwelveData Exception: {e}")
         return jsonify({'error': str(e)}), 500
 # CORRETTO: __name__ == '__main__'
 if __name__ == '__main__':
