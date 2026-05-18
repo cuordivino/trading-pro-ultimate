@@ -198,7 +198,7 @@ def alpaca_positions():
 def get_kline_data(symbol):
     """Scarica lo storico delle candele (5 min) da FMP"""
     # LA TUA API KEY
-    FMP_API_KEY = 'NpuTuy9I9PQNJRJERF8Sffan5s1sVg'
+    FMP_API_KEY = 'NputUy9I9PQNJRJERF8Sffan5s1sVq'
     
     try:
         # URL per dati intraday a 5 minuti (GRATIS su FMP)
