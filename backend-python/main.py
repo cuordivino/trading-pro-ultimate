@@ -383,8 +383,6 @@ def get_bybit_crypto():
     if isinstance(result, tuple):
         return result
     return jsonify(result)
-
-
 @app.route('/api/symbols/search/<query>')
 def search_all_symbols(query):
     """Cerca in TUTTI gli exchange (senza cache globale)"""
@@ -399,15 +397,16 @@ def search_all_symbols(query):
     
     # Cerca in ogni exchange
     for exchange in exchanges:
-           try:
-            print(f" Chiamando {exchange}...")
+        for exchange in exchanges:
+        try:
+            print(f"Chiamando {exchange}...")
             url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
             resp = requests.get(url, timeout=60)
             print(f"Status: {resp.status_code}")
             data = resp.json()
             
             if 'data' in data:
-                print(f" Ricevuti {len(data['data'])} simboli da {exchange}")
+                print(f"Ricevuti {len(data['data'])} simboli da {exchange}")
                 for symbol in data['data']:
                     if query in symbol['symbol'].upper() or query in symbol['description'].upper():
                         results.append({
@@ -417,10 +416,9 @@ def search_all_symbols(query):
                             'type': 'stock',
                             'currency': symbol.get('currency', 'USD')
                         })
-    except Exception as e:
+        except Exception as e:
             print(f"Errore cercando {exchange}: {e}")
             continue
-    # Cerca crypto Bybit
     try:
         url = 'https://api.bybit.com/v5/market/tickers?category=spot'
         resp = requests.get(url, timeout=30)
