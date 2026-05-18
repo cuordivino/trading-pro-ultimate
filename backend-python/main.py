@@ -417,7 +417,7 @@ def search_all_symbols(query):
                             'type': 'stock',
                             'currency': symbol.get('currency', 'USD')
                         })
-        except Exception as e:
+    except Exception as e:
             print(f"Errore cercando {exchange}: {e}")
             continue
     # Cerca crypto Bybit
