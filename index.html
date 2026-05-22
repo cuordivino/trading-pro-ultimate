@@ -703,7 +703,6 @@ async function searchAssets(query) {
     div.classList.add('active');
     
     try {
-        // Chiama il tuo backend su Render invece di cercare in locale
         const response = await fetch(`https://trading-pro-ultimate.onrender.com/api/symbols/search/${encodeURIComponent(query)}`);
         const data = await response.json();
         
@@ -727,7 +726,6 @@ async function searchAssets(query) {
 }
 // Funzione helper per aggiungere l'asset trovato
 function selectAssetFromSearch(sym, name, exchange) {
-    // Aggiungi l'asset trovato alla lista locale temporaneamente
     const key = sym.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
     state.assets[key] = { name: name, sym: sym, cur: 'USD', price: 0, z1: 0, sl: 0, change: 0 };
     
@@ -735,6 +733,8 @@ function selectAssetFromSearch(sym, name, exchange) {
     renderAssetSelect();
     document.getElementById('search-results').classList.remove('active');
     document.getElementById('search-input').value = '';
+}
+.value = '';
 }
 function autoFillModal(query) {
   if(!query || query.length < 2) return;
