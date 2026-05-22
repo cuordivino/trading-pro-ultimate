@@ -397,8 +397,7 @@ def search_all_symbols(query):
     
     # Cerca in ogni exchange
     for exchange in exchanges:
-        for exchange in exchanges:
-        try:
+            try:
             print(f"Chiamando {exchange}...")
             url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
             resp = requests.get(url, timeout=60)
