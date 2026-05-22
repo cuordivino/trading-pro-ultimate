@@ -375,17 +375,9 @@ def get_sp500_symbols():
     else:
         return jsonify({'error': 'Impossibile caricare simboli'})
 
-
-@app.route('/api/symbols/bybit')
-def get_bybit_crypto():
-    """Tutte le crypto su Bybit (coppie USDT)"""
-    result = download_bybit_crypto()
-    if isinstance(result, tuple):
-        return result
-    return jsonify(result)
 @app.route('/api/symbols/search/<query>')
 def search_all_symbols(query):
-    """Cerca in TUTTI gli exchange (senza cache globale)"""
+    """Cerca simboli usando l'endpoint di ricerca di TwelveData (molto più veloce)"""
     TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
     query = query.upper().strip()
 
@@ -393,38 +385,35 @@ def search_all_symbols(query):
         return jsonify({'error': 'Query troppo corta'}), 400
 
     results = []
-    exchanges = ['MTA', 'NASDAQ', 'NYSE']
+    # 1. Cerca azioni su TwelveData
+    try:
+        # Usiamo symbol_search invece di scaricare tutto l'exchange
+        url = f'https://api.twelvedata.com/symbol_search?symbol={query}&apikey={TWELVEDATA_KEY}'
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        
+        print(f"TwelveData Search Response: {data}") # Debug log
+        
+        if 'data' in data:
+            for symbol in data['data']:
+                # Filtriamo solo azioni e exchange principali
+                if symbol['instrument_type'] == 'Common Stock' and symbol['exchange'] in ['NASDAQ', 'NYSE', 'MTA']:
+                    results.append({
+                        'symbol': symbol['symbol'],
+                        'name': symbol['description'],
+                        'exchange': symbol['exchange'],
+                        'type': 'stock',
+                        'currency': symbol.get('currency', 'USD')
+                    })
+    except Exception as e:
+        print(f"Errore TwelveData search: {e}")
 
-    # Cerca in ogni exchange azionario
-    for exchange in exchanges:
-        try:
-            print(f"Chiamando {exchange}...")
-            url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
-            resp = requests.get(url, timeout=60)
-            print(f"Status: {resp.status_code}")
-            data = resp.json()
-
-            if 'data' in data:
-                print(f"Ricevuti {len(data['data'])} simboli da {exchange}")
-                for symbol in data['data']:
-                    if query in symbol['symbol'].upper() or query in symbol['description'].upper():
-                        results.append({
-                            'symbol': symbol['symbol'],
-                            'name': symbol['description'],
-                            'exchange': exchange,
-                            'type': 'stock',
-                            'currency': symbol.get('currency', 'USD')
-                        })
-        except Exception as e:
-            print(f"Errore cercando {exchange}: {e}")
-            continue
-
-    # Cerca crypto su Bybit
+    # 2. Cerca crypto su Bybit
     try:
         url = 'https://api.bybit.com/v5/market/tickers?category=spot'
-        resp = requests.get(url, timeout=30)
+        resp = requests.get(url, timeout=10)
         data = resp.json()
-
+        
         if data['retCode'] == 0:
             for crypto in data['result']['list']:
                 if crypto['quoteCoin'] == 'USDT':
@@ -439,7 +428,7 @@ def search_all_symbols(query):
     except Exception as e:
         print(f"Error searching Bybit: {e}")
 
-    # Ordina e limita i risultati
+    # Ordina i risultati (prima quelli che iniziano esattamente con la query)
     results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
 
     return jsonify({
@@ -447,6 +436,14 @@ def search_all_symbols(query):
         'count': len(results),
         'results': results[:50]
     })
+@app.route('/api/symbols/bybit')
+def get_bybit_crypto():
+    """Tutte le crypto su Bybit (coppie USDT)"""
+    result = download_bybit_crypto()
+    if isinstance(result, tuple):
+        return result
+    return jsonify(result)
+
 # === ENDPOINT PER OTTENERE TUTTI GLI EXCHANGE DISPONIBILI ===
 @app.route('/api/symbols/exchanges')
 def get_available_exchanges():
