@@ -374,61 +374,57 @@ def get_sp500_symbols():
         })
     else:
         return jsonify({'error': 'Impossibile caricare simboli'})
-
 @app.route('/api/symbols/search/<query>')
 def search_all_symbols(query):
-    """Cerca simboli usando l'endpoint di ricerca di TwelveData (molto più veloce)"""
-    TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
+    """Cerca simboli (con fallback locale se API limitati)"""
     query = query.upper().strip()
-
     if len(query) < 2:
         return jsonify({'error': 'Query troppo corta'}), 400
 
     results = []
-    # 1. Cerca azioni su TwelveData
+
+    # 1. FALLBACK LOCALE (Funziona sempre, anche senza API o crediti)
+    local_assets = [
+        {'symbol': 'AAPL', 'name': 'Apple Inc.', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'TSLA', 'name': 'Tesla Inc.', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'MSFT', 'name': 'Microsoft', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'NVDA', 'name': 'NVIDIA', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'AMZN', 'name': 'Amazon', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'GOOGL', 'name': 'Alphabet', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'META', 'name': 'Meta', 'exchange': 'NASDAQ', 'type': 'stock', 'currency': 'USD'},
+        {'symbol': 'ENEL.MI', 'name': 'Enel', 'exchange': 'MTA', 'type': 'stock', 'currency': 'EUR'},
+        {'symbol': 'ENI.MI', 'name': 'Eni', 'exchange': 'MTA', 'type': 'stock', 'currency': 'EUR'},
+        {'symbol': 'MT.MI', 'name': 'Maire Tecnimont', 'exchange': 'MTA', 'type': 'stock', 'currency': 'EUR'},
+        {'symbol': 'BTCUSDT', 'name': 'Bitcoin / USDT', 'exchange': 'Bybit', 'type': 'crypto', 'currency': 'USDT'},
+        {'symbol': 'ETHUSDT', 'name': 'Ethereum / USDT', 'exchange': 'Bybit', 'type': 'crypto', 'currency': 'USDT'}
+    ]
+
+    for asset in local_assets:
+        if query in asset['symbol'] or query in asset['name'].upper():
+            results.append(asset)
+
+    # 2. Prova a chiamare TwelveData (se ci sono ancora crediti, aggiunge altri titoli)
+    TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
     try:
-        # Usiamo symbol_search invece di scaricare tutto l'exchange
         url = f'https://api.twelvedata.com/symbol_search?symbol={query}&apikey={TWELVEDATA_KEY}'
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, timeout=5)
         data = resp.json()
-        
-        print(f"TwelveData Search Response: {data}") # Debug log
-        
         if 'data' in data:
             for symbol in data['data']:
-                # Filtriamo solo azioni e exchange principali
                 if symbol['instrument_type'] == 'Common Stock' and symbol['exchange'] in ['NASDAQ', 'NYSE', 'MTA']:
-                    results.append({
-                        'symbol': symbol['symbol'],
-                        'name': symbol['description'],
-                        'exchange': symbol['exchange'],
-                        'type': 'stock',
-                        'currency': symbol.get('currency', 'USD')
-                    })
-    except Exception as e:
-        print(f"Errore TwelveData search: {e}")
-
-    # 2. Cerca crypto su Bybit
-    try:
-        url = 'https://api.bybit.com/v5/market/tickers?category=spot'
-        resp = requests.get(url, timeout=10)
-        data = resp.json()
-        
-        if data['retCode'] == 0:
-            for crypto in data['result']['list']:
-                if crypto['quoteCoin'] == 'USDT':
-                    if query in crypto['symbol'].upper() or query in crypto['baseCoin'].upper():
+                    # Evita duplicati con la lista locale
+                    if not any(r['symbol'] == symbol['symbol'] for r in results):
                         results.append({
-                            'symbol': crypto['symbol'],
-                            'name': f"{crypto['baseCoin']} / USDT",
-                            'exchange': 'Bybit',
-                            'type': 'crypto',
-                            'currency': 'USDT'
+                            'symbol': symbol['symbol'],
+                            'name': symbol['description'],
+                            'exchange': symbol['exchange'],
+                            'type': 'stock',
+                            'currency': symbol.get('currency', 'USD')
                         })
     except Exception as e:
-        print(f"Error searching Bybit: {e}")
+        print(f"TwelveData non risponde (probabilmente crediti finiti): {e}")
 
-    # Ordina i risultati (prima quelli che iniziano esattamente con la query)
+    # Ordina i risultati
     results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
 
     return jsonify({
