@@ -692,35 +692,50 @@ function displayNews(articles) {
     </div>
   `).join('');
 }
-
-function searchAssets(query) {
-  if(!query || query.length < 2) { document.getElementById('search-results').classList.remove('active'); return; }
-  const terms = query.toLowerCase().split(' ').filter(t => t.length > 0);
-  const results = Object.entries(state.assets).filter(([key, asset]) => 
-    terms.every(term => asset.name.toLowerCase().includes(term) || asset.sym.toLowerCase().includes(term))
-  );
-  
-  const div = document.getElementById('search-results');
-  if(results.length > 0) {
-    div.innerHTML = results.map(([key, asset]) => `
-      <div class="search-result-item" onclick="selectAsset('${key}')">
-        <div><div class="result-symbol">${asset.sym}</div><div class="result-name">${asset.name}</div></div>
-        <div class="result-price">${asset.price.toFixed(2)}</div>
-      </div>
-    `).join('');
+async function searchAssets(query) {
+    if(!query || query.length < 2) { 
+        document.getElementById('search-results').classList.remove('active'); 
+        return; 
+    }
+    
+    const div = document.getElementById('search-results');
+    div.innerHTML = '<div class="loading-search">🔍 Ricerca globale in corso...</div>';
     div.classList.add('active');
-  } else {
-    div.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text2)">Nessun risultato</div>';
-    div.classList.add('active');
-  }
+    
+    try {
+        // Chiama il tuo backend su Render invece di cercare in locale
+        const response = await fetch(`https://trading-pro-ultimate.onrender.com/api/symbols/search/${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if(data.results && data.results.length > 0) {
+            div.innerHTML = data.results.map(r => `
+                <div class="search-result-item" onclick="selectAssetFromSearch('${r.symbol}', '${r.name}', '${r.exchange}')">
+                    <div>
+                        <div class="result-symbol">${r.symbol}</div>
+                        <div class="result-name">${r.name}</div>
+                        <div class="result-exchange">${r.exchange}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            div.innerHTML = '<div class="no-results">Nessun risultato trovato</div>';
+        }
+    } catch(e) {
+        console.error('Search error:', e);
+        div.innerHTML = '<div class="no-results">Errore di connessione al server</div>';
+    }
 }
-
-function selectAsset(key) {
-  changeAsset(key);
-  document.getElementById('search-results').classList.remove('active');
-  document.getElementById('search-input').value = '';
+// Funzione helper per aggiungere l'asset trovato
+function selectAssetFromSearch(sym, name, exchange) {
+    // Aggiungi l'asset trovato alla lista locale temporaneamente
+    const key = sym.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+    state.assets[key] = { name: name, sym: sym, cur: 'USD', price: 0, z1: 0, sl: 0, change: 0 };
+    
+    changeAsset(key);
+    renderAssetSelect();
+    document.getElementById('search-results').classList.remove('active');
+    document.getElementById('search-input').value = '';
 }
-
 function autoFillModal(query) {
   if(!query || query.length < 2) return;
   const q = query.toLowerCase();
@@ -734,7 +749,6 @@ function autoFillModal(query) {
     document.getElementById('new-sl').value = match.sl;
   }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search-input');
   if(searchInput) {
