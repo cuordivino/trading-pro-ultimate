@@ -438,8 +438,10 @@ def search_all_symbols(query):
                         })
     except Exception as e:
         print(f"Error searching Bybit: {e}")
+
     # Ordina e limita i risultati
     results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
+
     return jsonify({
         'query': query,
         'count': len(results),
