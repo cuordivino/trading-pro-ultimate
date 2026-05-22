@@ -395,9 +395,9 @@ def search_all_symbols(query):
     results = []
     exchanges = ['MTA', 'NASDAQ', 'NYSE']
     
-    # Cerca in ogni exchange
+    # Cerca in ogni exchange azionario
     for exchange in exchanges:
-            try:
+        try:
             print(f"Chiamando {exchange}...")
             url = f'https://api.twelvedata.com/symbols?exchange={exchange}&apikey={TWELVEDATA_KEY}'
             resp = requests.get(url, timeout=60)
@@ -418,6 +418,8 @@ def search_all_symbols(query):
         except Exception as e:
             print(f"Errore cercando {exchange}: {e}")
             continue
+            
+    # Cerca crypto su Bybit
     try:
         url = 'https://api.bybit.com/v5/market/tickers?category=spot'
         resp = requests.get(url, timeout=30)
@@ -436,15 +438,14 @@ def search_all_symbols(query):
                         })
     except Exception as e:
         print(f"Error searching Bybit: {e}")
-    
-    # Ordina e limita
+        
+    # Ordina e limita i risultati
     results.sort(key=lambda x: (x['symbol'] != query, x['symbol'].startswith(query)))
-    
-    return jsonify({
+        return jsonify({
         'query': query,
         'count': len(results),
         'results': results[:50]
-    })
+    }) 
 # === ENDPOINT PER OTTENERE TUTTI GLI EXCHANGE DISPONIBILI ===
 
 @app.route('/api/symbols/exchanges')
