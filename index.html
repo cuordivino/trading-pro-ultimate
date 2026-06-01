@@ -611,27 +611,53 @@ function testTelegramNotification() {
 }
 
 function generateData(asset) {
-  const data = [], vol = [];
-  let basePrice = asset.price;
-let t = Math.floor(Date.now()/1000) - 100*60 + (2*3600);
-  
-  for(let i=0; i<100; i++) {
-    const changePercent = (Math.random() - 0.5) * 0.01;
-    const change = basePrice * changePercent;
-    const open = basePrice;
-    const close = basePrice + change;
-    const high = Math.max(open, close) * 1.002;
-    const low = Math.min(open, close) * 0.998;
-    const volume = Math.floor(Math.random() * 50000) + 10000;
+    const data = [], vol = [];
+    let basePrice = asset.price;
     
-    data.push({ time: t, open: +open.toFixed(4), high: +high.toFixed(4), low: +low.toFixed(4), close: +close.toFixed(4) });
-    vol.push({ time: t, value: volume, color: close>=open?'#0ecb81':'#f6465d' });
-    basePrice = close;
-    t += 60;
-  }
-  return { data, vol };
+    // Calcola l'intervallo in minuti in base al timeframe selezionato
+    let intervalMinutes = 1;
+    const tf = state.timeframe.toLowerCase();
+    if(tf.includes('m')) {
+        intervalMinutes = parseInt(tf);
+    } else if(tf.includes('h')) {
+        intervalMinutes = parseInt(tf) * 60;
+    } else if(tf.includes('w')) {
+        intervalMinutes = 7 * 24 * 60;
+    }
+    
+    const intervalSeconds = intervalMinutes * 60;
+    
+    // Parti da 100 candele fa
+    let t = Math.floor(Date.now()/1000) - (100 * intervalSeconds);
+    
+    for(let i=0; i<100; i++) {
+        const changePercent = (Math.random() - 0.5) * 0.01;
+        const change = basePrice * changePercent;
+        const open = basePrice;
+        const close = basePrice + change;
+        const high = Math.max(open, close) * 1.002;
+        const low = Math.min(open, close) * 0.998;
+        const volume = Math.floor(Math.random() * 50000) + 10000;
+        
+        data.push({ 
+            time: t, 
+            open: +open.toFixed(4), 
+            high: +high.toFixed(4), 
+            low: +low.toFixed(4), 
+            close: +close.toFixed(4) 
+        });
+        vol.push({ 
+            time: t, 
+            value: volume, 
+            color: close>=open?'#0ecb81':'#f6465d' 
+        });
+        
+        basePrice = close;
+        t += intervalSeconds; // Aggiungi l'intervallo corretto
+    }
+    
+    return { data, vol };
 }
-
 async function fetchRealTimeData(symbol) {
   if(state.apiAlpha) {
     try {
