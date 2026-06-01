@@ -866,7 +866,11 @@ async function initChart() {
     grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     rightPriceScale: { borderColor: '#2b3139' },
-    timeScale: { borderColor: '#2b3139', timeVisible: true }
+    timeScale: { 
+    borderColor: '#2b3139', 
+    timeVisible: true,
+    timeZone: 'Europe/Rome' 
+}
   });
 
   state.candleSeries = state.chart.addCandlestickSeries({
