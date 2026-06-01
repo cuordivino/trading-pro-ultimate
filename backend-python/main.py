@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 import yfinance as yf
 # CORRETTO: __name__
 app = Flask(__name__)
@@ -199,10 +199,12 @@ def get_kline_data(symbol):
     """Scarica lo storico delle candele (5 min) da TwelveData"""
     # LA TUA CHIAVE TWELVEDATA
     TWELVEDATA_KEY = '9f793095b1004638b251baa4013e667d'
+        # Prendi l'intervallo dalla query string (default: 5min)
+    interval = request.args.get('interval', '5min')
     
     try:
         # Chiede 100 candele a 5 minuti
-        url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=5min&outputsize=100&apikey={TWELVEDATA_KEY}"
+        url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval={interval}&outputsize=100&apikey={TWELVEDATA_KEY}"
         
         resp = requests.get(url)
         data = resp.json()
@@ -218,7 +220,7 @@ def get_kline_data(symbol):
             # Il grafico vuole dal più VECCHIO al più NUOVO, quindi invertiamo
             for k in data['values'][::-1]: 
                 candles.append({
-                    'time': int(datetime.strptime(k['datetime'], '%Y-%m-%d %H:%M:%S').timestamp()),
+            'time': int(datetime.strptime(k['datetime'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc).timestamp()),
                     'open': float(k['open']),
                     'high': float(k['high']),
                     'low': float(k['low']),
