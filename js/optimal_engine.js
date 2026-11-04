@@ -19,7 +19,7 @@ window.OptimalEngine = {
 
   // Local Volume Profile Range: 'session' | '4h' | '24h' | 'visible'
   volumeProfileRange: 'session',
-  volumeProfileVisible: true,
+  volumeProfileVisible: false,
   currentVolumeProfile: { poc: 0, vah: 0, val: 0, totalVolume: 0, bins: [] },
 
   // Current Optimal Setup

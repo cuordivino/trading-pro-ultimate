@@ -415,7 +415,7 @@
                 <button class="tf-pill" onclick="changeTimeframe('4h', this)">4h</button>
                 <button class="tf-pill" onclick="changeTimeframe('1d', this)">1d</button>
                 <button class="tf-pill" onclick="changeTimeframe('1w', this)">1w</button>
-                <button class="tf-pill" onclick="changeTimeframe('1M', this)">1M</button>
+                <button class="tf-pill" onclick="changeTimeframe('1M', this)" title="Timeframe Mensile (1 Mese)">1Mese</button>
               </div>
 
               <!-- Timeframe Custom Dropdown ("Apertura a tendina Bybit") -->
@@ -438,7 +438,7 @@
               </div>
 
               <!-- OpenMarket Volume Profile Quick Toggle -->
-              <button id="btn-toggle-vp" class="tf-pill active" style="margin-left:auto; display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
+              <button id="btn-toggle-vp" class="tf-pill" style="margin-left:auto; display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
                 <span>📊 Volumi Locali (POC)</span>
               </button>
             </div>

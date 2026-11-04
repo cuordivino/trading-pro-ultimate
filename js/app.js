@@ -376,12 +376,12 @@ async function loadCandleHistory() {
   // 2. High-fidelity synthetic sequence generator (200 candles) for FTSE MIB, US Stocks, Forex, or offline
   // Backwards random walk ensuring the latest candle close is EXACTLY targetPrice with exact precision and Rome timezone seconds
   if (!candles || !candles.length) {
-    const count = 200; // Amplified sequence
+    const count = 180; // Optimal institutional candle sequence
     const tfSeconds = getTimeframeSeconds(interval);
     const now = Math.floor(Date.now() / 1000);
     const alignedNow = Math.floor(now / tfSeconds) * tfSeconds; // Quantize to exact bar boundary
-    const tfVol = Math.sqrt(tfSeconds / 900);
-    const stepScale = targetPrice * 0.0035 * tfVol;
+    const tfVol = Math.min(2.2, Math.max(0.5, Math.sqrt(tfSeconds / 900)));
+    const stepScale = targetPrice * 0.0016 * tfVol;
 
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(targetPrice, symbol) : (asset ? (asset.precision || 2) : 2);
     const f = Math.pow(10, prec);

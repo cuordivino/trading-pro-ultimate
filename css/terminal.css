@@ -2614,7 +2614,7 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   /* 9. Local Volume Profile Overlay */
   #chart-vp-overlay {
     width: 90px !important;
-    right: 50px !important;
+    right: 76px !important;
     top: 25px !important;
     bottom: 25px !important;
   }

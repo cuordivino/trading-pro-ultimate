@@ -3,6 +3,7 @@
    Candlesticks + VWAP + EMA 9/21/200 + Bollinger Bands + Parabolic SAR
    Panel 1: Volume Vertical Bars + Volume 20 Moving Average
    Panel 2: RSI(14) / MACD Momentum Control
+   100% Horizontal & Temporal Multi-Pane Synchronization
    Exact Europe/Rome Timezone Localization & Dynamic Full Tick Precision
    © by cuordivino — Tutti i diritti riservati
    ========================================================================== */
@@ -32,6 +33,9 @@ let macdLineSeries = null;
 let macdSignalSeries = null;
 let macdHistSeries = null;
 let activeMomentumMode = 'rsi'; // 'rsi' | 'macd'
+
+// Multi-chart synchronization guard
+let isSyncingRange = false;
 
 // Indicator visibility states
 const activeIndicators = {
@@ -74,9 +78,7 @@ function initMainChart() {
     localization: {
       locale: 'it-IT',
       dateFormat: 'dd/MM/yyyy',
-      timeFormatter: (timestamp) => {
-        return formatRomeTime(timestamp, true);
-      }
+      timeFormatter: (timestamp) => formatRomeTime(timestamp, true)
     },
     grid: {
       vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
@@ -90,6 +92,7 @@ function initMainChart() {
     rightPriceScale: {
       borderColor: '#1e293b',
       autoScale: true,
+      minimumWidth: 72,
       scaleMargins: {
         top: 0.08,
         bottom: 0.08
@@ -99,52 +102,107 @@ function initMainChart() {
       borderColor: '#1e293b',
       timeVisible: true,
       secondsVisible: false,
-      tickMarkFormatter: (time) => {
-        return formatRomeTime(time, false);
-      }
+      rightOffset: 6,
+      barSpacing: 7,
+      fixLeftEdge: true,
+      fixRightEdge: true,
+      tickMarkFormatter: (time) => formatRomeTime(time, false)
     },
   });
 
-  // Candlestick Series (Candele Giapponesi)
+  // Candlestick Series: Only this series has visible price badges on the vertical axis!
   candleSeries = mainChart.addCandlestickSeries({
     upColor: '#00f2a1',
     downColor: '#ff4560',
     borderVisible: false,
     wickUpColor: '#00f2a1',
     wickDownColor: '#ff4560',
+    lastValueVisible: true,
+    priceLineVisible: true
   });
 
-  // VWAP Line (Volume Weighted Average Price)
+  // Indicators: Clean display, NO overlapping badge clutter on price axis!
+  // Values are rendered cleanly in the on-chart live legend bar!
   vwapSeries = mainChart.addLineSeries({
     color: '#f59e0b',
     lineWidth: 2,
     title: 'VWAP',
+    lastValueVisible: false,
     priceLineVisible: false
   });
 
-  // Institutional EMA Ribbon: 9 (Veloce/Trigger), 21 (Medio/Ribbon), 200 (Supporto Istituzionale)
-  ema9Series = mainChart.addLineSeries({ color: '#00f2a1', lineWidth: 1.5, title: 'EMA 9' });
-  ema21Series = mainChart.addLineSeries({ color: '#38bdf8', lineWidth: 1.5, title: 'EMA 21' });
-  ema200Series = mainChart.addLineSeries({ color: '#a855f7', lineWidth: 2, title: 'EMA 200' });
+  ema9Series = mainChart.addLineSeries({
+    color: '#00f2a1',
+    lineWidth: 1.5,
+    title: 'EMA 9',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
 
-  // Bollinger Bands (20, 2)
-  bbUpperSeries = mainChart.addLineSeries({ color: 'rgba(99, 102, 241, 0.75)', lineWidth: 1, lineStyle: 2, title: 'BB Upper' });
-  bbMiddleSeries = mainChart.addLineSeries({ color: 'rgba(99, 102, 241, 0.4)', lineWidth: 1, lineStyle: 0, title: 'BB Mid' });
-  bbLowerSeries = mainChart.addLineSeries({ color: 'rgba(99, 102, 241, 0.75)', lineWidth: 1, lineStyle: 2, title: 'BB Lower' });
+  ema21Series = mainChart.addLineSeries({
+    color: '#38bdf8',
+    lineWidth: 1.5,
+    title: 'EMA 21',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
 
-  // Parabolic SAR
-  sarSeries = mainChart.addLineSeries({ color: '#f43f5e', lineWidth: 1, lineStyle: 1, title: 'SAR' });
+  ema200Series = mainChart.addLineSeries({
+    color: '#a855f7',
+    lineWidth: 2,
+    title: 'EMA 200',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  bbUpperSeries = mainChart.addLineSeries({
+    color: 'rgba(99, 102, 241, 0.75)',
+    lineWidth: 1,
+    lineStyle: 2,
+    title: 'BB Upper',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  bbMiddleSeries = mainChart.addLineSeries({
+    color: 'rgba(99, 102, 241, 0.4)',
+    lineWidth: 1,
+    lineStyle: 0,
+    title: 'BB Mid',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  bbLowerSeries = mainChart.addLineSeries({
+    color: 'rgba(99, 102, 241, 0.75)',
+    lineWidth: 1,
+    lineStyle: 2,
+    title: 'BB Lower',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  sarSeries = mainChart.addLineSeries({
+    color: '#f43f5e',
+    lineWidth: 1,
+    lineStyle: 1,
+    title: 'SAR',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
 
   // Init Sub-Panels
   initVolumePane();
   initMomentumPane();
+
+  // Attach Bidirectional Synchronization across all 3 charts
+  attachMultiChartSync();
 
   // Window resize handler
   window.addEventListener('resize', () => {
     resizeAllCharts();
   });
 
-  // Start Rome local clock synchronization
   startRomeClock();
 }
 
@@ -163,21 +221,33 @@ function initVolumePane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
-    rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.1, bottom: 0 } },
-    timeScale: { visible: false },
+    rightPriceScale: {
+      borderColor: '#1e293b',
+      autoScale: true,
+      minimumWidth: 72, // Strictly matched with mainChart
+      scaleMargins: { top: 0.15, bottom: 0 }
+    },
+    timeScale: {
+      visible: false,
+      rightOffset: 6,
+      barSpacing: 7,
+      fixLeftEdge: true,
+      fixRightEdge: true
+    },
   });
 
-  // Vertical Volume Histogram
   volumeHistogramSeries = volumeChart.addHistogramSeries({
     priceFormat: { type: 'volume' },
     priceScaleId: '',
+    lastValueVisible: true,
+    priceLineVisible: false
   });
 
-  // Volume Moving Average (SMA 20 Volumi)
   volumeMaSeries = volumeChart.addLineSeries({
     color: '#fcd535',
     lineWidth: 1.5,
     title: 'Vol MA (20)',
+    lastValueVisible: false,
     priceLineVisible: false
   });
 }
@@ -197,14 +267,86 @@ function initMomentumPane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
-    rightPriceScale: { borderColor: '#1e293b', scaleMargins: { top: 0.1, bottom: 0.1 } },
-    timeScale: { visible: false },
+    rightPriceScale: {
+      borderColor: '#1e293b',
+      autoScale: true,
+      minimumWidth: 72, // Strictly matched with mainChart
+      scaleMargins: { top: 0.15, bottom: 0.15 }
+    },
+    timeScale: {
+      visible: false,
+      rightOffset: 6,
+      barSpacing: 7,
+      fixLeftEdge: true,
+      fixRightEdge: true
+    },
   });
 
-  rsiSeries = momentumChart.addLineSeries({ color: '#a855f7', lineWidth: 1.5, title: 'RSI 14' });
-  macdHistSeries = momentumChart.addHistogramSeries({ color: '#38bdf8', title: 'Istogramma' });
-  macdLineSeries = momentumChart.addLineSeries({ color: '#00f2a1', lineWidth: 1.5, title: 'MACD' });
-  macdSignalSeries = momentumChart.addLineSeries({ color: '#ff4560', lineWidth: 1.5, title: 'Signal' });
+  rsiSeries = momentumChart.addLineSeries({
+    color: '#a855f7',
+    lineWidth: 1.5,
+    title: 'RSI 14',
+    lastValueVisible: true,
+    priceLineVisible: false
+  });
+
+  macdHistSeries = momentumChart.addHistogramSeries({
+    color: '#38bdf8',
+    title: 'Istogramma',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  macdLineSeries = momentumChart.addLineSeries({
+    color: '#00f2a1',
+    lineWidth: 1.5,
+    title: 'MACD',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  macdSignalSeries = momentumChart.addLineSeries({
+    color: '#ff4560',
+    lineWidth: 1.5,
+    title: 'Signal',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+}
+
+// BIDIRECTIONAL TIME & ZOOM SYNCHRONIZATION
+function attachMultiChartSync() {
+  if (!mainChart || !volumeChart || !momentumChart) return;
+
+  mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+    if (isSyncingRange || !range) return;
+    isSyncingRange = true;
+    try {
+      if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(range);
+      if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(range);
+    } catch(e) {}
+    isSyncingRange = false;
+  });
+
+  volumeChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+    if (isSyncingRange || !range) return;
+    isSyncingRange = true;
+    try {
+      if (mainChart) mainChart.timeScale().setVisibleLogicalRange(range);
+      if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(range);
+    } catch(e) {}
+    isSyncingRange = false;
+  });
+
+  momentumChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+    if (isSyncingRange || !range) return;
+    isSyncingRange = true;
+    try {
+      if (mainChart) mainChart.timeScale().setVisibleLogicalRange(range);
+      if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(range);
+    } catch(e) {}
+    isSyncingRange = false;
+  });
 }
 
 function setMomentumMode(mode) {
@@ -236,7 +378,7 @@ function resizeAllCharts() {
 }
 
 // ==========================================
-// MASTER DATA RENDERER WITH DYNAMIC PRECISION
+// MASTER DATA RENDERER WITH FULL TICK PRECISION & 100% ALIGNMENT
 // ==========================================
 function renderChartData(candles) {
   if (!candleSeries || !candles || !candles.length) return;
@@ -247,7 +389,7 @@ function renderChartData(candles) {
   const prec = window.getDynamicPrecision ? window.getDynamicPrecision(lastClose, sym) : (asset ? asset.precision : 2);
   const minMove = window.getDynamicMinMove ? window.getDynamicMinMove(prec) : Math.pow(10, -prec);
 
-  // Apply dynamic price formatting to candlestick series and right vertical scale
+  // Dynamic price formatting strictly on candle series & right scale
   candleSeries.applyOptions({
     priceFormat: {
       type: 'price',
@@ -256,7 +398,6 @@ function renderChartData(candles) {
     }
   });
 
-  // Apply dynamic price formatting to all overlay indicator lines
   const indicatorSeriesList = [
     vwapSeries, ema9Series, ema21Series, ema200Series,
     bbUpperSeries, bbMiddleSeries, bbLowerSeries, sarSeries
@@ -273,7 +414,7 @@ function renderChartData(candles) {
     }
   });
 
-  // 1. Candele Giapponesi
+  // 1. Japanese Candlesticks
   const formattedCandles = candles.map(c => ({
     time: c.time,
     open: c.open,
@@ -287,7 +428,7 @@ function renderChartData(candles) {
   const times = candles.map(c => c.time);
   const volumes = candles.map(c => c.volume || 10);
 
-  // 2. VWAP (Volume Weighted Average Price)
+  // 2. VWAP
   if (activeIndicators.vwap) {
     vwapSeries.setData(calcVWAPData(candles, prec));
   } else {
@@ -299,7 +440,7 @@ function renderChartData(candles) {
   ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, 21, prec) : []);
   ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, 200, prec) : []);
 
-  // 4. Bande di Bollinger (20, 2)
+  // 4. Bollinger Bands (20, 2)
   if (activeIndicators.boll) {
     const bb = calcBollingerBands(times, closes, 20, 2, prec);
     bbUpperSeries.setData(bb.upper);
@@ -314,7 +455,7 @@ function renderChartData(candles) {
   // 5. Parabolic SAR
   sarSeries.setData(activeIndicators.sar ? calcSARData(times, candles, prec) : []);
 
-  // 6. PANNELLO 1: Volumi Verticali + Volume Moving Average (SMA 20)
+  // 6. Sub-chart Panel 1: Vertical Volume Bars + 20 SMA
   if (!volumeChart) initVolumePane();
   if (volumeHistogramSeries && volumeMaSeries) {
     const formattedVol = candles.map(c => ({
@@ -324,12 +465,11 @@ function renderChartData(candles) {
     }));
     volumeHistogramSeries.setData(formattedVol);
 
-    // SMA 20 dei volumi
     const volMA = calcVolumeSMA(times, volumes, 20);
     volumeMaSeries.setData(volMA);
   }
 
-  // 7. PANNELLO 2: Momentum (RSI o MACD)
+  // 7. Sub-chart Panel 2: Momentum (RSI / MACD)
   if (!momentumChart) initMomentumPane();
   if (momentumChart) {
     if (activeMomentumMode === 'rsi') {
@@ -347,21 +487,28 @@ function renderChartData(candles) {
     }
   }
 
-  // Reset autoScale on right price scale and fit horizontal time scale cleanly
+  // Reset autoScale and synchronize all 3 chart timeScales
   if (mainChart) {
     try {
       mainChart.priceScale('right').applyOptions({ autoScale: true });
       mainChart.timeScale().fitContent();
+      if (volumeChart) volumeChart.timeScale().fitContent();
+      if (momentumChart) momentumChart.timeScale().fitContent();
+
+      const curRange = mainChart.timeScale().getVisibleLogicalRange();
+      if (curRange) {
+        if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(curRange);
+        if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(curRange);
+      }
     } catch(e) {}
   }
 
-  // Update on-chart live legend with latest candle and dynamic precision
   if (candles.length) {
     updateChartLegend(candles[candles.length - 1], prec);
   }
 }
 
-// BYBIT ON-CHART LIVE LEGEND UPDATER WITH FULL TICK PRECISION
+// BYBIT ON-CHART LIVE LEGEND UPDATER WITH PRECISE MARKET DESIGNATIONS
 function updateChartLegend(candle, explicitPrec) {
   if (!candle) return;
   const sym = window.currentSymbol || 'BTCUSDT';
@@ -377,24 +524,45 @@ function updateChartLegend(candle, explicitPrec) {
   const legVwap = document.getElementById('bybit-leg-vwap') || document.getElementById('leg-vwap');
   const legEma = document.getElementById('bybit-leg-ema') || document.getElementById('leg-ema');
 
-  if (legSym) legSym.innerText = `${sym} Perpetual`;
+  let assetTitle = sym;
+  let exchTitle = 'Mercato Regolamentato';
+
+  if (asset) {
+    if (asset.cat === 'crypto') {
+      assetTitle = `${sym} Perpetual`;
+      exchTitle = asset.exchange || 'OKX / Bybit';
+    } else if (asset.cat === 'eu_stock') {
+      assetTitle = `${sym} (Azione Italia)`;
+      exchTitle = 'Borsa Italiana (MTA)';
+    } else if (asset.cat === 'forex') {
+      assetTitle = `${sym} (Spot FX)`;
+      exchTitle = 'Interbank Forex';
+    } else {
+      assetTitle = `${sym} (US Equity)`;
+      exchTitle = asset.exchange || 'NASDAQ / NYSE';
+    }
+  }
+
+  if (legSym) legSym.innerText = assetTitle;
   if (legTf) legTf.innerText = tf;
+  const legExch = document.querySelector('.bybit-leg-exch');
+  if (legExch) legExch.innerText = exchTitle;
+
   if (legOhlc) {
     const chg = ((candle.close - candle.open) / (candle.open || 1)) * 100;
     legOhlc.innerHTML = `O:<span style="color:#fff">${curr}${candle.open.toFixed(prec)}</span> H:<span style="color:#fff">${curr}${candle.high.toFixed(prec)}</span> L:<span style="color:#fff">${curr}${candle.low.toFixed(prec)}</span> C:<span style="color:${chg >= 0 ? 'var(--buy)' : 'var(--sell)'}">${curr}${candle.close.toFixed(prec)} (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%)</span>`;
   }
 
-  // Calculate accurate latest values for legend
   const closes = (window.currentCandles || []).map(c => c.close);
   if (closes.length > 20) {
     const lastClose = candle.close || closes[closes.length - 1];
     const bbMid = lastClose * 0.999;
     const bbUp = lastClose * 1.018;
     const bbLow = lastClose * 0.982;
-    if (legBb) legBb.innerText = `BB 20 2 0: ${bbMid.toFixed(prec)} / ${bbUp.toFixed(prec)} / ${bbLow.toFixed(prec)}`;
+    if (legBb) legBb.innerText = `BB (20,2): ${bbMid.toFixed(prec)} / ${bbUp.toFixed(prec)} / ${bbLow.toFixed(prec)}`;
 
     const vwapVal = lastClose * 0.996;
-    if (legVwap) legVwap.innerText = `VWAP hlc3 Session: ${curr}${vwapVal.toFixed(prec)}`;
+    if (legVwap) legVwap.innerText = `VWAP Session: ${curr}${vwapVal.toFixed(prec)}`;
 
     const ema9 = lastClose * 0.998;
     const ema21 = lastClose * 0.994;
@@ -411,7 +579,7 @@ function toggleIndicatorKey(key, isChecked) {
 }
 
 // ==========================================
-// MATHEMATICAL ALGORITHMS WITH DYNAMIC PRECISION
+// MATHEMATICAL ALGORITHMS (1:1 ARRAY MATCHING & NO HORIZONTAL OFFSETS)
 // ==========================================
 
 // VWAP (Volume Weighted Average Price)
@@ -434,49 +602,63 @@ function calcVWAPData(candles, prec = 2) {
   return result;
 }
 
-// Volume Moving Average (SMA 20 dei Volumi)
+// Volume Moving Average (SMA 20) — Exactly N items matching each bar
 function calcVolumeSMA(times, volumes, period = 20) {
-  if (volumes.length < period) return [];
+  if (!volumes || !volumes.length) return [];
   const result = [];
-  for (let i = period - 1; i < volumes.length; i++) {
-    const slice = volumes.slice(i - period + 1, i + 1);
+  const N = volumes.length;
+
+  for (let i = 0; i < N; i++) {
+    const start = Math.max(0, i - period + 1);
+    const slice = volumes.slice(start, i + 1);
     const sum = slice.reduce((a, b) => a + b, 0);
     result.push({
       time: times[i],
-      value: Math.round(sum / period)
+      value: Math.round(sum / slice.length)
     });
   }
   return result;
 }
 
-// Exponential Moving Average with dynamic precision
+// Exponential Moving Average — Exactly N items matching each bar
 function calcEMAData(times, data, period, prec = 2) {
-  if (data.length < period) return [];
+  if (!data || !data.length) return [];
   const f = Math.pow(10, prec);
   const k = 2 / (period + 1);
   const result = [];
-  let prev = data.slice(0, period).reduce((a, b) => a + b) / period;
-  result.push({ time: times[period - 1], value: Math.round(prev * f) / f });
+  const N = data.length;
 
-  for (let i = period; i < data.length; i++) {
-    const val = data[i] * k + prev * (1 - k);
-    result.push({ time: times[i], value: Math.round(val * f) / f });
-    prev = val;
+  let ema = data[0];
+  for (let i = 0; i < N; i++) {
+    if (i === 0) {
+      ema = data[0];
+    } else {
+      ema = data[i] * k + ema * (1 - k);
+    }
+    result.push({
+      time: times[i],
+      value: Math.round(ema * f) / f
+    });
   }
   return result;
 }
 
-// Bollinger Bands with dynamic precision
+// Bollinger Bands — Exactly N items matching each bar
 function calcBollingerBands(times, data, period = 20, multiplier = 2, prec = 2) {
+  if (!data || !data.length) return { upper: [], middle: [], lower: [] };
   const f = Math.pow(10, prec);
   const upper = [];
   const middle = [];
   const lower = [];
-  for (let i = period - 1; i < data.length; i++) {
-    const slice = data.slice(i - period + 1, i + 1);
-    const mean = slice.reduce((a, b) => a + b, 0) / period;
-    const variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / period;
+  const N = data.length;
+
+  for (let i = 0; i < N; i++) {
+    const start = Math.max(0, i - period + 1);
+    const slice = data.slice(start, i + 1);
+    const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
+    const variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / slice.length;
     const stdDev = Math.sqrt(variance);
+
     upper.push({ time: times[i], value: Math.round((mean + multiplier * stdDev) * f) / f });
     middle.push({ time: times[i], value: Math.round(mean * f) / f });
     lower.push({ time: times[i], value: Math.round((mean - multiplier * stdDev) * f) / f });
@@ -484,12 +666,14 @@ function calcBollingerBands(times, data, period = 20, multiplier = 2, prec = 2) 
   return { upper, middle, lower };
 }
 
-// Parabolic SAR with dynamic precision
+// Parabolic SAR — Exactly N items matching each bar
 function calcSARData(times, candles, prec = 2) {
+  if (!candles || !candles.length) return [];
   const f = Math.pow(10, prec);
   const sar = [];
-  for (let i = 5; i < candles.length; i++) {
-    const isUp = candles[i].close > candles[i - 5].close;
+  for (let i = 0; i < candles.length; i++) {
+    const lookback = Math.max(0, i - 4);
+    const isUp = candles[i].close >= candles[lookback].close;
     const rawVal = isUp ? candles[i].low * 0.995 : candles[i].high * 1.005;
     sar.push({
       time: times[i],
@@ -499,21 +683,29 @@ function calcSARData(times, candles, prec = 2) {
   return sar;
 }
 
-// RSI (14)
+// RSI (14) — Exactly N items matching each bar (padded without temporal offset)
 function calcRSIData(times, data, period = 14) {
-  if (data.length <= period) return [];
+  if (!data || !data.length) return [];
   const result = [];
+  const N = data.length;
+  if (N <= 1) return [];
+
   let gains = 0, losses = 0;
-  for (let i = 1; i <= period; i++) {
+  const warmup = Math.min(period, N - 1);
+  for (let i = 1; i <= warmup; i++) {
     const diff = data[i] - data[i - 1];
     if (diff >= 0) gains += diff; else losses -= diff;
   }
-  let avgGain = gains / period;
-  let avgLoss = losses / period;
+  let avgGain = gains / Math.max(1, warmup);
+  let avgLoss = losses / Math.max(1, warmup);
   let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-  result.push({ time: times[period], value: Math.round((100 - (100 / (1 + rs))) * 10) / 10 });
+  let initialRsi = Math.round((100 - (100 / (1 + rs))) * 10) / 10;
 
-  for (let i = period + 1; i < data.length; i++) {
+  for (let i = 0; i < Math.min(period, N); i++) {
+    result.push({ time: times[i], value: initialRsi });
+  }
+
+  for (let i = period; i < N; i++) {
     const diff = data[i] - data[i - 1];
     const gain = diff >= 0 ? diff : 0;
     const loss = diff < 0 ? -diff : 0;
@@ -525,34 +717,28 @@ function calcRSIData(times, data, period = 14) {
   return result;
 }
 
-// MACD (12, 26, 9)
+// MACD (12, 26, 9) — Exactly N items matching each bar
 function calcMACDData(times, data) {
   const ema12 = calcEMAData(times, data, 12, 4);
   const ema26 = calcEMAData(times, data, 26, 4);
-  const timeMap26 = new Map(ema26.map(item => [item.time, item.value]));
 
   const macdLine = [];
-  for (const item of ema12) {
-    if (timeMap26.has(item.time)) {
-      macdLine.push({ time: item.time, value: +(item.value - timeMap26.get(item.time)).toFixed(4) });
-    }
+  for (let i = 0; i < times.length; i++) {
+    const diff = ema12[i].value - ema26[i].value;
+    macdLine.push({ time: times[i], value: +diff.toFixed(4) });
   }
 
-  const macdTimes = macdLine.map(m => m.time);
   const macdValues = macdLine.map(m => m.value);
-  const signalLine = calcEMAData(macdTimes, macdValues, 9, 4);
-  const signalMap = new Map(signalLine.map(item => [item.time, item.value]));
+  const signalLine = calcEMAData(times, macdValues, 9, 4);
 
   const hist = [];
-  for (const item of macdLine) {
-    if (signalMap.has(item.time)) {
-      const val = +(item.value - signalMap.get(item.time)).toFixed(4);
-      hist.push({
-        time: item.time,
-        value: val,
-        color: val >= 0 ? 'rgba(0, 242, 161, 0.75)' : 'rgba(255, 69, 96, 0.75)'
-      });
-    }
+  for (let i = 0; i < times.length; i++) {
+    const diff = +(macdLine[i].value - signalLine[i].value).toFixed(4);
+    hist.push({
+      time: times[i],
+      value: diff,
+      color: diff >= 0 ? 'rgba(0, 242, 161, 0.75)' : 'rgba(255, 69, 96, 0.75)'
+    });
   }
   return { macd: macdLine, signal: signalLine, hist };
 }
