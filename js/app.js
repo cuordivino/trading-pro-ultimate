@@ -244,10 +244,8 @@ async function pollActiveQuote() {
   if (!q) {
     const base = asset ? asset.basePrice : 100.00;
     const curr = asset ? asset.currency : '$';
-    const seed = (Date.now() / 60000) % 100;
-    const drift = Math.sin(seed) * 0.003;
-    const price = Math.round((base * (1 + drift)) * 100) / 100;
-    const chg = Math.round((drift * 100 + 1.25) * 100) / 100;
+    const price = base;
+    const chg = 1.25;
 
     q = {
       symbol: sym,
@@ -288,33 +286,33 @@ async function pollActiveQuote() {
   if (volElem) volElem.innerText = q.volume.toLocaleString();
 
   const entryInput = document.getElementById('t-entry');
-  if (entryInput && (!entryInput.value || parseFloat(entryInput.value) === 0)) {
+  if (entryInput) {
     entryInput.value = q.price;
     const slInput = document.getElementById('t-sl');
     const tpInput = document.getElementById('t-tp');
-    if (slInput && !slInput.value) slInput.value = (q.price * 0.95).toFixed(prec);
-    if (tpInput && !tpInput.value) tpInput.value = (q.price * 1.15).toFixed(prec);
+    if (slInput) slInput.value = (q.price * 0.97).toFixed(prec);
+    if (tpInput) tpInput.value = (q.price * 1.06).toFixed(prec);
     recalcPosition();
   }
 }
 
 function getTimeframeSeconds(tf) {
   if (!tf) return 900;
-  tf = tf.toLowerCase();
-  if (tf === '1s') return 1;
-  if (tf === '1m') return 60;
-  if (tf === '3m') return 180;
-  if (tf === '5m') return 300;
-  if (tf === '15m') return 900;
-  if (tf === '30m') return 1800;
-  if (tf === '1h') return 3600;
-  if (tf === '2h') return 7200;
-  if (tf === '4h') return 14400;
-  if (tf === '6h') return 21600;
-  if (tf === '12h') return 43200;
-  if (tf === '1d' || tf === 'd') return 86400;
-  if (tf === '1w' || tf === 'w') return 604800;
-  if (tf === '1m_month' || tf === '1m' && tf.length > 2) return 2592000;
+  if (tf === '1M' || tf === 'M' || tf === '1m_month') return 2592000;
+  const ltf = tf.toLowerCase();
+  if (ltf === '1s') return 1;
+  if (ltf === '1m') return 60;
+  if (ltf === '3m') return 180;
+  if (ltf === '5m') return 300;
+  if (ltf === '15m') return 900;
+  if (ltf === '30m') return 1800;
+  if (ltf === '1h') return 3600;
+  if (ltf === '2h') return 7200;
+  if (ltf === '4h') return 14400;
+  if (ltf === '6h') return 21600;
+  if (ltf === '12h') return 43200;
+  if (ltf === '1d' || ltf === 'd') return 86400;
+  if (ltf === '1w' || ltf === 'w') return 604800;
   return 900;
 }
 
@@ -388,11 +386,11 @@ async function loadCandleHistory() {
 
     for (let i = count - 1; i >= 0; i--) {
       const cTime = now - ((count - 1 - i) * tfSeconds);
-      const close = p;
+      const close = (i === count - 1) ? targetPrice : p;
       const change = (Math.random() - 0.495) * stepScale;
       const open = Math.round((close - change) * 100) / 100;
-      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.6)) * 100) / 100;
-      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.6)) * 100) / 100;
+      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.5)) * 100) / 100;
+      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.5)) * 100) / 100;
       const volume = Math.round((Math.random() * 8000 + 1200) * tfVol);
 
       tempCandles.unshift({

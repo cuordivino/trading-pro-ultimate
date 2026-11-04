@@ -2313,13 +2313,22 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 }
 
 @media (max-width: 860px) {
-  /* 1. Global Mobile Reset */
+  /* 1. Global Mobile Reset with iOS Safe Area Notch Padding */
   html, body {
     overflow-x: hidden !important;
     width: 100% !important;
   }
   body {
+    padding-top: max(env(safe-area-inset-top, 0px), 24px) !important;
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ticker Marquee Ribbon with safe spacing below iPhone status bar */
+  .ticker-tape-wrapper {
+    height: 32px !important;
+    margin-top: 4px !important;
+    box-sizing: border-box !important;
   }
 
   /* 2. Top Telemetry Bar (Hidden on Mobile for screen space) */

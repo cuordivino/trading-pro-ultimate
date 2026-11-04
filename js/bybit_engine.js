@@ -89,8 +89,8 @@ window.BybitEngine = {
   updateNonCryptoTick: function() {
     if (!this.activeAsset) return;
     const base = this.activeAsset.basePrice;
-    const drift = (Math.random() - 0.495) * (base * 0.002);
-    this.tickerData.lastPrice = Math.round((this.tickerData.lastPrice + drift) * 100) / 100;
+    const drift = (Math.random() - 0.5) * (base * 0.0006);
+    this.tickerData.lastPrice = Math.round((base + drift) * 100) / 100;
     this.renderBybitTelemetry();
   },
 
