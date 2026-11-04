@@ -488,16 +488,28 @@ function renderMegaAssetList(assets) {
     }
 
     const groups = {
-      crypto: { label: '🪙 Crypto (Bybit / OKX / Kraken)', items: [] },
-      eu_stock: { label: '🇮🇹 FTSE MIB (Borsa Italiana)', items: [] },
-      us_stock: { label: '🇺🇸 USA Equity (S&P 500 / NASDAQ)', items: [] },
-      forex: { label: '💱 Forex & Materie Prime', items: [] },
-      other: { label: '🌐 Altri Titoli', items: [] }
+      crypto: { label: '🪙 Criptovalute (Listini OKX & Bybit)', items: [] },
+      eu_stock: { label: '🇮🇹 Azionario Italia (FTSE MIB & Mid Cap)', items: [] },
+      us_stock: { label: '🇺🇸 Azionario USA (S&P 500, NASDAQ-100 & Mid Cap)', items: [] },
+      commodities: { label: '🛢️ Materie Prime & Metalli (CME / ICE / LME)', items: [] },
+      forex: { label: '💱 Mercato Valutario (Forex Majors & Crosses)', items: [] },
+      etf: { label: '📊 ETF & Indici Benchmark', items: [] },
+      other: { label: '🌐 Altri Strumenti Finanziari', items: [] }
     };
 
     favAssets.forEach(a => {
-      const g = groups[a.cat] || groups.other;
-      g.items.push(a);
+      const isCommodity = (a.cat === 'forex' || a.cat === 'commodities') && (
+        ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT', 'USOIL', 'BRENT', 'NATGAS', 'XAUUSD', 'XAGUSD'].includes(a.symbol) ||
+        (a.sector && (a.sector.includes('Metalli') || a.sector.includes('Energetici') || a.sector.includes('Soft Commodities') || a.sector.includes('Agricole')))
+      );
+
+      if (isCommodity) {
+        groups.commodities.items.push(a);
+      } else if (groups[a.cat]) {
+        groups[a.cat].items.push(a);
+      } else {
+        groups.other.items.push(a);
+      }
     });
 
     let html = '';

@@ -535,8 +535,14 @@ function updateChartLegend(candle, explicitPrec) {
       assetTitle = `${sym} (Azione Italia)`;
       exchTitle = 'Borsa Italiana (MTA)';
     } else if (asset.cat === 'forex') {
-      assetTitle = `${sym} (Spot FX)`;
-      exchTitle = 'Interbank Forex';
+      const commSyms = ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT', 'XAUUSD', 'XAGUSD', 'USOIL', 'BRENT', 'NATGAS'];
+      if (commSyms.includes(sym)) {
+        assetTitle = `${sym} (${asset.name.split('(')[0].trim()})`;
+        exchTitle = asset.exchange || 'CME / ICE / LME';
+      } else {
+        assetTitle = `${sym} (Spot FX)`;
+        exchTitle = 'Interbank Forex';
+      }
     } else {
       assetTitle = `${sym} (US Equity)`;
       exchTitle = asset.exchange || 'NASDAQ / NYSE';

@@ -1,10 +1,10 @@
 /**
  * TRADING PRO ULTIMATE™ — COMPENDIO ENCICLOPEDICO ASSETS
- * Riferimento Ufficiale Guide PDF: Borsa Italiana (Tutti i Titoli A-Z), NASDAQ-100, S&P 500, Forex Majors & Exotics, Crypto OKX/Bybit
+ * Riferimento Ufficiale Guide PDF: Borsa Italiana (Tutti i Titoli A-Z), NASDAQ-100, S&P 500, Forex Majors & Exotics, Crypto OKX/Bybit, Guida agli Asset Globali (Materie Prime CME/ICE/LME)
  * © by cuordivino — Tutti i diritti riservati
  */
 
-// Motore Dinamico Precisione Decimale (fino a 0.00000001 per meme token e forex micro-pip)
+// Motore Dinamico Precisione Decimale (fino a 0.00000001 per meme token e micro-pip)
 window.getDynamicPrecision = function(price, symbol) {
   if (symbol) {
     const s = symbol.toUpperCase().trim().replace('/', '').replace('.MI', '');
@@ -12,15 +12,18 @@ window.getDynamicPrecision = function(price, symbol) {
     if (s.includes('FLOKI')) return 6;
     if (s.endsWith('JPY')) return 3;
     if (['EURUSD', 'GBPUSD', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD', 'EURGBP', 'USDCNY', 'USDCNH', 'USDHKD', 'USDSGD'].includes(s)) return 4;
+    // Commodities specific precision
+    if (['RB', 'HO', 'NG', 'NATGAS'].includes(s)) return 4;
+    if (['HG', 'COPPER', 'SB'].includes(s)) return 4;
   }
   const p = Math.abs(Number(price) || 0);
   if (p === 0) return 2;
   if (p < 0.0001) return 8;
   if (p < 0.01) return 6;
   if (p < 1.0) return 4;   // es. ENA ~$0.1835, TIT.MI ~€0.2650, DOGE ~$0.1650, ADA ~$0.3850
-  if (p < 10.0) return 4;  // es. NEAR ~$4.0200, STLAM.MI ~€4.1500, SUI ~$2.1500
-  if (p < 100.0) return 2; // es. PST.MI ~€14.20, UCG.MI ~€78.65, ENEL.MI ~€9.68
-  return 2;                // es. BTC ~$80,210.00, ETH ~$2,420.50, NVDA ~$142.50
+  if (p < 10.0) return 4;  // es. NEAR ~$4.0200, STLAM.MI ~€4.1500, NG ~$2.7480, RB ~$2.1240, HO ~$2.2850
+  if (p < 100.0) return 2; // es. PST.MI ~€14.20, UCG.MI ~€78.65, CL ~$71.85, SI ~$32.84
+  return 2;                // es. BTC ~$80,210.00, GC ~$2,746.50, NVDA ~$142.50
 };
 
 window.getDynamicMinMove = function(precision) {
@@ -29,7 +32,38 @@ window.getDynamicMinMove = function(precision) {
 
 window.GlobalMarketAssets = [
   // =========================================================================
-  // 1. FOREX & COMMODITIES (GUIDA PDF FOREX: CORE MAJORS, COMMODITIES, CROSSES, EXOTICS)
+  // 1. MATERIE PRIME (GUIDA AGLI ASSET GLOBALI: METALLI PREZIOSI, ENERGETICI, METALLI INDUSTRIALI, AGRICOLI)
+  // =========================================================================
+  // Metalli Preziosi (COMEX / NYMEX)
+  { symbol: 'GC', name: 'Oro (Gold Futures)', cat: 'forex', exchange: 'COMEX / London AM Fix', basePrice: 2746.50, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+  { symbol: 'SI', name: 'Argento (Silver Futures)', cat: 'forex', exchange: 'COMEX', basePrice: 32.84, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+  { symbol: 'PL', name: 'Platino (Platinum Futures)', cat: 'forex', exchange: 'NYMEX', basePrice: 1012.40, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+  { symbol: 'PA', name: 'Palladio (Palladium Futures)', cat: 'forex', exchange: 'NYMEX', basePrice: 1115.60, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+
+  // Energetici (NYMEX / ICE)
+  { symbol: 'CL', name: 'Petrolio Greggio WTI (Light Sweet Crude)', cat: 'forex', exchange: 'NYMEX', basePrice: 71.85, currency: '$', precision: 2, sector: 'Energetici' },
+  { symbol: 'BRN', name: 'Petrolio Greggio Brent (North Sea Crude)', cat: 'forex', exchange: 'ICE', basePrice: 75.42, currency: '$', precision: 2, sector: 'Energetici' },
+  { symbol: 'NG', name: 'Gas Naturale (Henry Hub US Benchmark)', cat: 'forex', exchange: 'NYMEX', basePrice: 2.7480, currency: '$', precision: 4, sector: 'Energetici' },
+  { symbol: 'RB', name: 'Benzina RBOB (Reformulated Gasoline)', cat: 'forex', exchange: 'NYMEX', basePrice: 2.1240, currency: '$', precision: 4, sector: 'Energetici' },
+  { symbol: 'HO', name: 'Gasolio da Riscaldamento (Heating Oil)', cat: 'forex', exchange: 'NYMEX', basePrice: 2.2850, currency: '$', precision: 4, sector: 'Energetici' },
+
+  // Metalli Industriali (LME / CME)
+  { symbol: 'HG', name: 'Rame (Copper Grade A)', cat: 'forex', exchange: 'LME / CME', basePrice: 4.4250, currency: '$', precision: 4, sector: 'Metalli Industriali (Base Metals)' },
+  { symbol: 'ALI', name: 'Alluminio Primario (Aluminium)', cat: 'forex', exchange: 'LME / CME', basePrice: 2620.00, currency: '$', precision: 2, sector: 'Metalli Industriali (Base Metals)' },
+  { symbol: 'ZN', name: 'Zinco Primario (Zinc SHG)', cat: 'forex', exchange: 'LME / CME', basePrice: 3120.00, currency: '$', precision: 2, sector: 'Metalli Industriali (Base Metals)' },
+  { symbol: 'NI', name: 'Nichel (Nickel Class 1)', cat: 'forex', exchange: 'LME / CME', basePrice: 16180.00, currency: '$', precision: 2, sector: 'Metalli Industriali (Base Metals)' },
+
+  // Materie Prime Agricole (CBOT / ICE)
+  { symbol: 'ZW', name: 'Grano Tenero (Wheat Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 572.50, currency: '¢', precision: 2, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'ZC', name: 'Mais Giallo (Corn Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 418.25, currency: '¢', precision: 2, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'ZS', name: 'Soia (Soybeans Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 998.50, currency: '¢', precision: 2, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'KC', name: 'Caffè Arabica (Coffee "C" Contract)', cat: 'forex', exchange: 'ICE', basePrice: 248.60, currency: '¢', precision: 2, sector: 'Soft Commodities' },
+  { symbol: 'CC', name: 'Cacao (Cocoa Futures)', cat: 'forex', exchange: 'ICE', basePrice: 7280.00, currency: '$', precision: 2, sector: 'Soft Commodities' },
+  { symbol: 'SB', name: 'Zucchero Greggio (Sugar No. 11)', cat: 'forex', exchange: 'ICE', basePrice: 22.15, currency: '¢', precision: 2, sector: 'Soft Commodities' },
+  { symbol: 'CT', name: 'Cotone (Cotton No. 2)', cat: 'forex', exchange: 'ICE', basePrice: 72.80, currency: '¢', precision: 2, sector: 'Soft Commodities' },
+
+  // =========================================================================
+  // 2. MERCATO FOREX (GUIDA PDF FOREX: CORE MAJORS, COMMODITIES, CROSSES, EXOTICS)
   // =========================================================================
   { symbol: 'EURUSD', name: 'Euro / Dollaro USA (Fiber)', cat: 'forex', exchange: 'Interbank Forex', basePrice: 1.0850, currency: '$', precision: 4, sector: 'Core Majors' },
   { symbol: 'USDJPY', name: 'Dollaro USA / Yen Giapponese (Gopher)', cat: 'forex', exchange: 'Interbank Forex', basePrice: 152.42, currency: '¥', precision: 3, sector: 'Core Majors' },
@@ -44,14 +78,14 @@ window.GlobalMarketAssets = [
   { symbol: 'USDCNY', name: 'Dollaro USA / Renminbi Cinese (Onshore/Offshore)', cat: 'forex', exchange: 'Interbank Forex', basePrice: 7.1245, currency: '¥', precision: 4, sector: 'Exotics' },
   { symbol: 'USDHKD', name: 'Dollaro USA / Dollaro Hong Kong (Pegged)', cat: 'forex', exchange: 'Interbank Forex', basePrice: 7.7780, currency: 'HK$', precision: 4, sector: 'Exotics' },
   { symbol: 'USDSGD', name: 'Dollaro USA / Dollaro Singapore', cat: 'forex', exchange: 'Interbank Forex', basePrice: 1.3210, currency: 'S$', precision: 4, sector: 'Exotics' },
-  { symbol: 'XAUUSD', name: 'Oro Spot / Dollaro USA (Gold Bullion)', cat: 'forex', exchange: 'Bullion Spot', basePrice: 2746.50, currency: '$', precision: 2, sector: 'Commodities' },
-  { symbol: 'XAGUSD', name: 'Argento Spot / Dollaro USA (Silver Bullion)', cat: 'forex', exchange: 'Bullion Spot', basePrice: 32.84, currency: '$', precision: 2, sector: 'Commodities' },
-  { symbol: 'USOIL', name: 'WTI Crude Oil (Petrolio Greggio)', cat: 'forex', exchange: 'Commodities', basePrice: 71.85, currency: '$', precision: 2, sector: 'Commodities' },
-  { symbol: 'BRENT', name: 'Brent Crude Oil (Petrolio Brent)', cat: 'forex', exchange: 'Commodities', basePrice: 75.42, currency: '$', precision: 2, sector: 'Commodities' },
-  { symbol: 'NATGAS', name: 'Natural Gas Henry Hub', cat: 'forex', exchange: 'Commodities', basePrice: 2.748, currency: '$', precision: 3, sector: 'Commodities' },
+  { symbol: 'XAUUSD', name: 'Oro Spot / Dollaro USA (Gold Spot)', cat: 'forex', exchange: 'Bullion Spot', basePrice: 2746.50, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+  { symbol: 'XAGUSD', name: 'Argento Spot / Dollaro USA (Silver Spot)', cat: 'forex', exchange: 'Bullion Spot', basePrice: 32.84, currency: '$', precision: 2, sector: 'Metalli Preziosi' },
+  { symbol: 'USOIL', name: 'WTI Crude Oil (Spot Petrolio)', cat: 'forex', exchange: 'Commodities', basePrice: 71.85, currency: '$', precision: 2, sector: 'Energetici' },
+  { symbol: 'BRENT', name: 'Brent Crude Oil (Spot Brent)', cat: 'forex', exchange: 'Commodities', basePrice: 75.42, currency: '$', precision: 2, sector: 'Energetici' },
+  { symbol: 'NATGAS', name: 'Natural Gas Henry Hub', cat: 'forex', exchange: 'Commodities', basePrice: 2.7480, currency: '$', precision: 4, sector: 'Energetici' },
 
   // =========================================================================
-  // 2. BORSA ITALIANA — COMPENDIO COMPLETO A-Z DA PDF UFFICIALE (FTSE MIB, STAR, EURONEXT MILAN, GROWTH)
+  // 3. BORSA ITALIANA — COMPENDIO COMPLETO A-Z DA PDF UFFICIALE (FTSE MIB, STAR, EURONEXT MILAN, GROWTH)
   // =========================================================================
   { symbol: 'A2A.MI', name: 'A2A S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 2.240, currency: '€', precision: 3, sector: 'FTSE MIB • Utility' },
   { symbol: 'ACE.MI', name: 'Acea S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 17.85, currency: '€', precision: 2, sector: 'Euronext Milan • Utility' },
@@ -60,7 +94,9 @@ window.GlobalMarketAssets = [
   { symbol: 'ARN.MI', name: 'Ariston Holding', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 4.12, currency: '€', precision: 2, sector: 'Euronext Milan • Riscaldamento/Industria' },
   { symbol: 'G.MI', name: 'Assicurazioni Generali', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 44.02, currency: '€', precision: 2, sector: 'FTSE MIB • Assicurazioni' },
   { symbol: 'AZM.MI', name: 'Azimut Holding', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 26.40, currency: '€', precision: 2, sector: 'FTSE MIB • Servizi Finanziari' },
-  { symbol: 'BFF.MI', name: 'BFF Bank', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.85, currency: '€', precision: 2, sector: 'Euronext Milan • Finanza Specialistica' },
+  { symbol: 'ANIM.MI', name: 'Anima Holding S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 4.18, currency: '€', precision: 2, sector: 'FTSE Italia Mid Cap • Risparmio Gestito' },
+  { symbol: 'BF.MI', name: 'B.F. S.p.A. (Bonifiche Ferraresi)', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 3.92, currency: '€', precision: 2, sector: 'FTSE Italia Mid Cap • Agricoltura / Alimentare' },
+  { symbol: 'BFF.MI', name: 'BFF Bank', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.85, currency: '€', precision: 2, sector: 'FTSE Italia Mid Cap • Finanza Specialistica' },
   { symbol: 'BPE.MI', name: 'BPER Banca', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 6.35, currency: '€', precision: 2, sector: 'FTSE MIB • Banche' },
   { symbol: 'BGEN.MI', name: 'Banca Generali', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 43.80, currency: '€', precision: 2, sector: 'FTSE MIB • Servizi Finanziari' },
   { symbol: 'BMED.MI', name: 'Banca Mediolanum', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 11.90, currency: '€', precision: 2, sector: 'FTSE MIB • Servizi Finanziari' },
@@ -103,7 +139,8 @@ window.GlobalMarketAssets = [
   { symbol: 'RAI.MI', name: 'Rai Way S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 5.40, currency: '€', precision: 2, sector: 'Euronext Milan • Torri & Trasmissione' },
   { symbol: 'REC.MI', name: 'Recordati S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 54.20, currency: '€', precision: 2, sector: 'FTSE MIB • Farmaceutica' },
   { symbol: 'STM.MI', name: 'STMicroelectronics', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 40.91, currency: '€', precision: 2, sector: 'FTSE MIB • Semiconduttori' },
-  { symbol: 'SFL.MI', name: 'Safilo Group', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 1.150, currency: '€', precision: 3, sector: 'Euronext Milan • Occhialeria' },
+  { symbol: 'SFL.MI', name: 'Sanlorenzo S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 38.40, currency: '€', precision: 2, sector: 'FTSE Italia Mid Cap / STAR • Nautica di Lusso' },
+  { symbol: 'SAFILO.MI', name: 'Safilo Group S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 1.150, currency: '€', precision: 3, sector: 'Euronext Milan • Occhialeria' },
   { symbol: 'SPM.MI', name: 'Saipem S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 2.480, currency: '€', precision: 3, sector: 'FTSE MIB • Servizi Petroliferi' },
   { symbol: 'SAB.MI', name: 'Saras S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 1.750, currency: '€', precision: 3, sector: 'Euronext Milan • Raffinazione' },
   { symbol: 'SESA.MI', name: 'Sesa S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 92.50, currency: '€', precision: 2, sector: 'STAR • IT Services & Cloud' },
@@ -120,9 +157,10 @@ window.GlobalMarketAssets = [
   { symbol: 'UNI.MI', name: 'Unipol Gruppo', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 12.30, currency: '€', precision: 2, sector: 'FTSE MIB • Assicurazioni' },
   { symbol: 'VLA.MI', name: 'Valsoia S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.80, currency: '€', precision: 2, sector: 'Euronext Milan • Alimentare Sano' },
   { symbol: 'ZUC.MI', name: 'Zucchi S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 1.200, currency: '€', precision: 3, sector: 'Euronext Milan • Tessile Casa' },
+  { symbol: 'YSY.MI', name: 'Reply S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 138.50, currency: '€', precision: 2, sector: 'FTSE Italia Mid Cap / STAR • IT / Consulenza Tech' },
 
   // =========================================================================
-  // 3. NASDAQ-100 — GUIDA PDF UFFICIALE (GIGANTI TECH, E-COMMERCE, AUTOMOTIVE, BIOTECH)
+  // 4. NASDAQ-100 — GUIDA PDF UFFICIALE (GIGANTI TECH, E-COMMERCE, AUTOMOTIVE, BIOTECH)
   // =========================================================================
   { symbol: 'AAPL', name: 'Apple Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 234.80, currency: '$', precision: 2, sector: 'Tech • Elettronica di Consumo' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 142.50, currency: '$', precision: 2, sector: 'Tech • Semiconduttori & AI' },
@@ -155,7 +193,7 @@ window.GlobalMarketAssets = [
   { symbol: 'ISRG', name: 'Intuitive Surgical', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 518.00, currency: '$', precision: 2, sector: 'Health Care • Chirurgia Robotica' },
 
   // =========================================================================
-  // 4. S&P 500 — GUIDA PDF UFFICIALE (FINANCIALS, HEALTHCARE, INDUSTRIALS, ENERGY, STAPLES)
+  // 5. S&P 500 — GUIDA PDF UFFICIALE (FINANCIALS, HEALTHCARE, INDUSTRIALS, ENERGY, STAPLES)
   // =========================================================================
   { symbol: 'ACN', name: 'Accenture plc', cat: 'us_stock', exchange: 'NYSE', basePrice: 354.20, currency: '$', precision: 2, sector: 'InfoTech • IT Consulting' },
   { symbol: 'CRM', name: 'Salesforce Inc.', cat: 'us_stock', exchange: 'NYSE', basePrice: 290.00, currency: '$', precision: 2, sector: 'InfoTech • Cloud Software' },
@@ -199,7 +237,7 @@ window.GlobalMarketAssets = [
   { symbol: 'PG', name: 'The Procter & Gamble Company', cat: 'us_stock', exchange: 'NYSE', basePrice: 168.00, currency: '$', precision: 2, sector: 'Staples • Household Products' },
   { symbol: 'KO', name: 'The Coca-Cola Company', cat: 'us_stock', exchange: 'NYSE', basePrice: 66.80, currency: '$', precision: 2, sector: 'Staples • Soft Drinks' },
   { symbol: 'PM', name: 'Philip Morris International', cat: 'us_stock', exchange: 'NYSE', basePrice: 128.00, currency: '$', precision: 2, sector: 'Staples • Tobacco' },
-  { symbol: 'CL', name: 'Colgate-Palmolive Company', cat: 'us_stock', exchange: 'NYSE', basePrice: 98.50, currency: '$', precision: 2, sector: 'Staples • Household Products' },
+  { symbol: 'CL.US', name: 'Colgate-Palmolive Company', cat: 'us_stock', exchange: 'NYSE', basePrice: 98.50, currency: '$', precision: 2, sector: 'Staples • Household Products' },
   { symbol: 'XOM', name: 'Exxon Mobil Corporation', cat: 'us_stock', exchange: 'NYSE', basePrice: 118.00, currency: '$', precision: 2, sector: 'Energy • Integrated Oil & Gas' },
   { symbol: 'CVX', name: 'Chevron Corporation', cat: 'us_stock', exchange: 'NYSE', basePrice: 154.50, currency: '$', precision: 2, sector: 'Energy • Integrated Oil & Gas' },
   { symbol: 'COP', name: 'ConocoPhillips', cat: 'us_stock', exchange: 'NYSE', basePrice: 108.40, currency: '$', precision: 2, sector: 'Energy • Oil & Gas Exploration' },
@@ -212,49 +250,111 @@ window.GlobalMarketAssets = [
   { symbol: 'IWM', name: 'iShares Russell 2000 ETF', cat: 'etf', exchange: 'NYSE Arca', basePrice: 228.00, currency: '$', precision: 2, sector: 'ETF • Small Cap' },
   { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average', cat: 'etf', exchange: 'NYSE Arca', basePrice: 432.50, currency: '$', precision: 2, sector: 'ETF • Blue Chips' },
 
+  // S&P MidCap 400 & NASDAQ (Compendio Multimercato Globale)
+  { symbol: 'CHTR', name: 'Charter Communications Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 382.40, currency: '$', precision: 2, sector: 'NASDAQ-100 • Telecomunicazioni' },
+  { symbol: 'DECK', name: 'Deckers Outdoor Corp.', cat: 'us_stock', exchange: 'NYSE', basePrice: 165.20, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Abbigliamento & Calzature' },
+  { symbol: 'EEFT', name: 'Euronet Worldwide Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 108.50, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Elaborazione Pagamenti' },
+  { symbol: 'GME', name: 'GameStop Corp.', cat: 'us_stock', exchange: 'NYSE', basePrice: 24.50, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Specialty Retail' },
+  { symbol: 'LSCC', name: 'Lattice Semiconductor Corp.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 48.20, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Semiconduttori' },
+  { symbol: 'MANH', name: 'Manhattan Associates Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 274.00, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Software Logistici' },
+  { symbol: 'MEDP', name: 'Medpace Holdings Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 318.50, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Ricerca Clinica (CRO)' },
+  { symbol: 'WING', name: 'Wingstop Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 348.00, currency: '$', precision: 2, sector: 'S&P MidCap 400 • Ristorazione / Catene' },
+
   // =========================================================================
-  // 5. CRIPTOVALUTE — GUIDA PDF UFFICIALE OKX & BYBIT (LAYER 0/1, L2, DEFI, STABLE, MEME)
+  // 6. CRIPTOVALUTE — GUIDA PDF UFFICIALE OKX & BYBIT (LAYER 0/1, L2, DEFI, STABLE, MEME)
   // =========================================================================
-  { symbol: 'BTCUSDT', name: 'Bitcoin (Oro Digitale)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 80210.00, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'ETHUSDT', name: 'Ethereum (Smart Contract Platform)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2420.50, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'SOLUSDT', name: 'Solana (High Throughput Monolithic)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 94.80, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'BNBUSDT', name: 'BNB (Ecosistema BNB Chain)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 716.35, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'ADAUSDT', name: 'Cardano (Ricerca Peer-Reviewed)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.3850, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'DOTUSDT', name: 'Polkadot (Interoperabilità Multi-Chain)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 4.65, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'BTCUSDT', name: 'Bitcoin (Digital Gold / Store of Value)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 80210.00, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'ETHUSDT', name: 'Ethereum (Smart Contracts Leader)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2420.50, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'SOLUSDT', name: 'Solana (High-Performance Layer 1)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 94.80, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'BNBUSDT', name: 'BNB (BNB Chain Ecosystem)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 716.35, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'ADAUSDT', name: 'Cardano (Peer-reviewed Blockchain)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.3850, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'DOTUSDT', name: 'Polkadot (Interoperability Network)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 4.65, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
   { symbol: 'AVAXUSDT', name: 'Avalanche (Subnet Enterprise EVM)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 8.74, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'SUIUSDT', name: 'Sui Network (L1 Parallelo Move)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2.1500, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'XRPUSDT', name: 'Ripple (Liquidità & Rimesse Bancarie)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.5850, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
-  { symbol: 'TONUSDT', name: 'Toncoin (Ecosistema Telegram L1)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 5.10, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'SUIUSDT', name: 'Sui Network (Move-based Layer 1)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2.1500, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'XRPUSDT', name: 'Ripple (Cross-Border Payments)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.5850, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
+  { symbol: 'TONUSDT', name: 'Toncoin (Telegram Native Ecosystem)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 5.10, currency: '$', precision: 2, sector: 'Layer 0 & Layer 1' },
   { symbol: 'NEARUSDT', name: 'NEAR Protocol (Chain Abstraction & Sharding)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 4.0200, currency: '$', precision: 4, sector: 'Layer 0 & Layer 1' },
   { symbol: 'ENAUSDT', name: 'Ethena (Synthetic Dollar Protocol)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.1835, currency: '$', precision: 4, sector: 'DeFi & Stable' },
   { symbol: 'HYPEUSDT', name: 'Hyperliquid Perp (High Speed DEX)', cat: 'crypto', exchange: 'Bybit / OKX', basePrice: 83.45, currency: '$', precision: 2, sector: 'DeFi & Perp' },
   { symbol: 'KORUUSDT', name: 'South Korea Bull 3X Perpetual', cat: 'crypto', exchange: 'Bybit', basePrice: 10.43, currency: '$', precision: 2, sector: 'Derivati Sintetici' },
   { symbol: 'INTCUSDT', name: 'Intel Perpetual Derivative', cat: 'crypto', exchange: 'Bybit', basePrice: 58.12, currency: '$', precision: 2, sector: 'Derivati Sintetici' },
   { symbol: 'BMNRUSDT', name: 'Bitmine Perpetual Derivative', cat: 'crypto', exchange: 'Bybit', basePrice: 21.89, currency: '$', precision: 2, sector: 'Derivati Sintetici' },
-  { symbol: 'ARBUSDT', name: 'Arbitrum One (Optimistic Rollup L2)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.6200, currency: '$', precision: 4, sector: 'Infrastrutture L2' },
-  { symbol: 'OPUSDT', name: 'Optimism (Superchain EVM L2)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.7500, currency: '$', precision: 4, sector: 'Infrastrutture L2' },
-  { symbol: 'POLUSDT', name: 'Polygon Ecosystem Token (ex MATIC)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.3800, currency: '$', precision: 4, sector: 'Infrastrutture L2' },
-  { symbol: 'MNTUSDT', name: 'Mantle Network (Ethereum Modular L2)', cat: 'crypto', exchange: 'Bybit', basePrice: 0.7200, currency: '$', precision: 4, sector: 'Infrastrutture L2' },
-  { symbol: 'STRKUSDT', name: 'Starknet (ZK-Rollup Scalability)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.4400, currency: '$', precision: 4, sector: 'Infrastrutture L2' },
-  { symbol: 'LINKUSDT', name: 'Chainlink (Oracoli Decentralizzati)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 12.80, currency: '$', precision: 2, sector: 'Oracoli & DeFi' },
-  { symbol: 'AAVEUSDT', name: 'Aave (Mercati Monetari Decentralizzati)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 165.00, currency: '$', precision: 2, sector: 'Oracoli & DeFi' },
-  { symbol: 'UNIUSDT', name: 'Uniswap (Protocollo DEX AMM)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 8.40, currency: '$', precision: 2, sector: 'Oracoli & DeFi' },
-  { symbol: 'MKRUSDT', name: 'MakerDAO (Governance DAI)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1480.00, currency: '$', precision: 2, sector: 'Oracoli & DeFi' },
-  { symbol: 'LDOUSDT', name: 'Lido DAO (Liquid Staking ETH)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.2500, currency: '$', precision: 4, sector: 'Oracoli & DeFi' },
-  { symbol: 'USDT', name: 'Tether USD (Stablecoin Riserve Fiat)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Stablecoin' },
-  { symbol: 'USDC', name: 'USD Coin (Circle Regolamentata)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Stablecoin' },
-  { symbol: 'DAI', name: 'Dai Stablecoin (Decentralizzata Collateralizzata)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Stablecoin' },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin (Pioniere Meme Coin)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.1650, currency: '$', precision: 4, sector: 'Meme & Community' },
-  { symbol: 'SHIBUSDT', name: 'Shiba Inu (Ecosistema Shibarium)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00001850, currency: '$', precision: 8, sector: 'Meme & Community' },
-  { symbol: 'PEPEUSDT', name: 'Pepe (Internet Culture Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00000980, currency: '$', precision: 8, sector: 'Meme & Community' },
-  { symbol: 'BONKUSDT', name: 'Bonk (Community Meme Solana)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00002250, currency: '$', precision: 8, sector: 'Meme & Community' },
-  { symbol: 'WIFUSDT', name: 'dogwifhat (Solana Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2.4500, currency: '$', precision: 4, sector: 'Meme & Community' },
-  { symbol: 'FLOKIUSDT', name: 'Floki (Gaming & Utility Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.000155, currency: '$', precision: 6, sector: 'Meme & Community' }
+  { symbol: 'ARBUSDT', name: 'Arbitrum One (Optimistic Rollup Ethereum)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.6200, currency: '$', precision: 4, sector: 'Soluzioni di Scalabilità & Layer 2' },
+  { symbol: 'OPUSDT', name: 'Optimism (OP Stack Infrastructure)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.7500, currency: '$', precision: 4, sector: 'Soluzioni di Scalabilità & Layer 2' },
+  { symbol: 'POLUSDT', name: 'Polygon POL / MATIC (Multi-chain Scaling)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.3800, currency: '$', precision: 4, sector: 'Soluzioni di Scalabilità & Layer 2' },
+  { symbol: 'MNTUSDT', name: 'Mantle (Modular L2 Bybit Ecosystem)', cat: 'crypto', exchange: 'Bybit', basePrice: 0.7200, currency: '$', precision: 4, sector: 'Soluzioni di Scalabilità & Layer 2' },
+  { symbol: 'STRKUSDT', name: 'Starknet (ZK-Rollup Layer 2)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.4400, currency: '$', precision: 4, sector: 'Soluzioni di Scalabilità & Layer 2' },
+  { symbol: 'LINKUSDT', name: 'Chainlink (Decentralized Oracle Network)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 12.80, currency: '$', precision: 2, sector: 'Oracoli & Finanza Decentrata (DeFi)' },
+  { symbol: 'AAVEUSDT', name: 'Aave (DeFi Lending Market)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 165.00, currency: '$', precision: 2, sector: 'Oracoli & Finanza Decentrata (DeFi)' },
+  { symbol: 'UNIUSDT', name: 'Uniswap (Decentralized Exchange DEX)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 8.40, currency: '$', precision: 2, sector: 'Oracoli & Finanza Decentrata (DeFi)' },
+  { symbol: 'MKRUSDT', name: 'MakerDAO / Sky (Stablecoin Governance)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1480.00, currency: '$', precision: 2, sector: 'Oracoli & Finanza Decentrata (DeFi)' },
+  { symbol: 'LDOUSDT', name: 'Lido DAO (Liquid Staking ETH)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.2500, currency: '$', precision: 4, sector: 'Oracoli & Finanza Decentrata (DeFi)' },
+  { symbol: 'USDT', name: 'Tether USD (Riserve Fiat Tether Ltd.)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Monete Ancorate (Stablecoin)' },
+  { symbol: 'USDC', name: 'USD Coin (Circle Regolamentato)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Monete Ancorate (Stablecoin)' },
+  { symbol: 'DAI', name: 'Dai Stablecoin (Collaterale Decentralizzato)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 1.0000, currency: '$', precision: 4, sector: 'Monete Ancorate (Stablecoin)' },
+  { symbol: 'DOGEUSDT', name: 'Dogecoin (Pioniere Meme Community)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.1650, currency: '$', precision: 4, sector: 'Meme & Token di Comunità' },
+  { symbol: 'SHIBUSDT', name: 'Shiba Inu (Shibarium L2 Dedicated)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00001850, currency: '$', precision: 8, sector: 'Meme & Token di Comunità' },
+  { symbol: 'PEPEUSDT', name: 'Pepe (Internet Culture High Beta)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00000980, currency: '$', precision: 8, sector: 'Meme & Token di Comunità' },
+  { symbol: 'BONKUSDT', name: 'Bonk (Meme Nativo Solana)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00002250, currency: '$', precision: 8, sector: 'Meme & Token di Comunità' },
+  { symbol: 'WIFUSDT', name: 'dogwifhat (Solana Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 2.4500, currency: '$', precision: 4, sector: 'Meme & Token di Comunità' },
+  { symbol: 'FLOKIUSDT', name: 'Floki (Gaming & Utility Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.000155, currency: '$', precision: 6, sector: 'Meme & Token di Comunità' }
 ];
+
+// Commodity & Cross Aliases Mapping for Ultra-Accurate Search & Selection
+const COMMODITY_ALIASES = {
+  // Metalli Preziosi
+  'GC': 'GC', 'GOLD': 'GC', 'ORO': 'GC', 'XAUUSD': 'XAUUSD',
+  'SI': 'SI', 'SILVER': 'SI', 'ARGENTO': 'SI', 'XAGUSD': 'XAGUSD',
+  'PL': 'PL', 'PLATINUM': 'PL', 'PLATINO': 'PL',
+  'PA': 'PA', 'PALLADIUM': 'PA', 'PALLADIO': 'PA',
+
+  // Energetici
+  'CL': 'CL', 'WTI': 'CL', 'CRUDE': 'CL', 'PETROLIO': 'CL', 'USOIL': 'USOIL',
+  'BRN': 'BRN', 'BZ': 'BRN', 'BRENT': 'BRENT',
+  'NG': 'NG', 'NATGAS': 'NG', 'NAT_GAS': 'NG', 'GAS': 'NG',
+  'RB': 'RB', 'RBOB': 'RB', 'BENZINA': 'RB',
+  'HO': 'HO', 'HEATING': 'HO', 'GASOLIO': 'HO',
+
+  // Metalli Industriali
+  'HG': 'HG', 'COPPER': 'HG', 'RAME': 'HG',
+  'ALI': 'ALI', 'AL': 'ALI', 'ALUMINIUM': 'ALI', 'ALLUMINIO': 'ALI',
+  'ZN': 'ZN', 'ZINC': 'ZN', 'ZINCO': 'ZN',
+  'NI': 'NI', 'NICKEL': 'NI', 'NICHEL': 'NI',
+
+  // Materie Prime Agricole (Softs & Grains)
+  'ZW': 'ZW', 'WHEAT': 'ZW', 'GRANO': 'ZW', 'FRUMENTO': 'ZW',
+  'ZC': 'ZC', 'CORN': 'ZC', 'MAIS': 'ZC',
+  'ZS': 'ZS', 'SOY': 'ZS', 'SOIA': 'ZS', 'SOYBEANS': 'ZS',
+  'KC': 'KC', 'COFFEE': 'KC', 'CAFFE': 'KC', 'CAFFÈ': 'KC',
+  'CC': 'CC', 'COCOA': 'CC', 'CACAO': 'CC',
+  'SB': 'SB', 'SUGAR': 'SB', 'ZUCCHERO': 'SB',
+  'CT': 'CT', 'COTTON': 'CT', 'COTONE': 'CT',
+
+  // Cripto Shortcuts (OKX / Bybit)
+  'BTC': 'BTCUSDT', 'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'BNB': 'BNBUSDT',
+  'MNT': 'MNTUSDT', 'ARB': 'ARBUSDT', 'LINK': 'LINKUSDT', 'ADA': 'ADAUSDT',
+  'DOT': 'DOTUSDT', 'XRP': 'XRPUSDT', 'SUI': 'SUIUSDT', 'OP': 'OPUSDT',
+  'STRK': 'STRKUSDT', 'MATIC': 'POLUSDT', 'POL': 'POLUSDT', 'AAVE': 'AAVEUSDT',
+  'UNI': 'UNIUSDT', 'MKR': 'MKRUSDT', 'SKY': 'MKRUSDT', 'DOGE': 'DOGEUSDT',
+  'SHIB': 'SHIBUSDT', 'PEPE': 'PEPEUSDT', 'BONK': 'BONKUSDT', 'WIF': 'WIFUSDT',
+  'FLOKI': 'FLOKIUSDT', 'NEAR': 'NEARUSDT', 'ENA': 'ENAUSDT', 'HYPE': 'HYPEUSDT',
+
+  // Borsa Italiana Shortcuts & Mid Cap
+  'UNICREDIT': 'UCG.MI', 'INTESA': 'ISP.MI', 'FERRARI': 'RACE.MI', 'POSTE': 'PST.MI',
+  'ENEL': 'ENEL.MI', 'ENI': 'ENI.MI', 'STELLANTIS': 'STLAM.MI', 'MONCLER': 'MONC.MI',
+  'AMPLIFON': 'AMP.MI', 'ANIMA': 'ANIM.MI', 'BONIFICHE': 'BF.MI', 'BFF': 'BFF.MI',
+  'BREMBO': 'BRE.MI', 'JUVENTUS': 'JUVE.MI', 'OVS': 'OVS.MI', 'SANLORENZO': 'SFL.MI',
+  'REPLY': 'YSY.MI', 'REY.MI': 'YSY.MI', 'TECHNOGYM': 'TNG.MI', 'INWIT': 'INW.MI',
+
+  // USA Equities & Mid Cap Shortcuts
+  'CHARTER': 'CHTR', 'DECKERS': 'DECK', 'EURONET': 'EEFT', 'GAMESTOP': 'GME',
+  'LATTICE': 'LSCC', 'MANHATTAN': 'MANH', 'MEDPACE': 'MEDP', 'WINGSTOP': 'WING',
+  'COLGATE': 'CL.US'
+};
 
 // FAVORITES MANAGER
 window.FavoritesManager = {
-  STORAGE_KEY: 'tpu_favorite_assets_v4',
+  STORAGE_KEY: 'tpu_favorite_assets_v6',
 
   getFavorites: function() {
     try {
@@ -263,10 +363,11 @@ window.FavoritesManager = {
     } catch (e) {}
 
     return [
-      'PST.MI', 'UCG.MI', 'ISP.MI', 'ENEL.MI', 'ENI.MI', 'RACE.MI', 'STM.MI',
-      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'NEARUSDT', 'ENAUSDT',
-      'NVDA', 'AAPL', 'MSFT', 'TSLA', 'PLTR',
-      'EURUSD', 'XAUUSD', 'USOIL'
+      'PST.MI', 'UCG.MI', 'ISP.MI', 'ENEL.MI', 'RACE.MI', 'ANIM.MI', 'SFL.MI', 'YSY.MI',
+      'GC', 'SI', 'CL', 'BRN', 'HG', 'ZW', 'KC', 'CC',
+      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'NEARUSDT', 'ENAUSDT', 'MNTUSDT', 'HYPEUSDT',
+      'NVDA', 'AAPL', 'MSFT', 'TSLA', 'GME', 'WING',
+      'EURUSD', 'GBPUSD', 'USDJPY'
     ];
   },
 
@@ -306,7 +407,13 @@ window.FavoritesManager = {
 
 window.getAssetBySymbol = function(symbol) {
   if (!symbol) return null;
-  const s = symbol.toUpperCase().trim();
+  let s = symbol.toUpperCase().trim();
+
+  // Alias lookup for commodities & tokens (es. 'ORO' -> 'GC', 'RAME' -> 'HG', 'CACAO' -> 'CC')
+  if (COMMODITY_ALIASES[s]) {
+    s = COMMODITY_ALIASES[s];
+  }
+
   const cleanBare = s.replace('.MI', '').replace('/', '').replace('-PERP', '').replace('USDT', '');
 
   // 1. Exact or Clean Match
@@ -325,18 +432,19 @@ window.getAssetBySymbol = function(symbol) {
   const isCrypto = s.endsWith('USDT') || s.endsWith('USD') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(c => s.includes(c));
   const isItalian = s.endsWith('.MI');
   const isForex = ['EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'].some(fx => s.startsWith(fx) && s.length === 6);
+  const isCommodity = ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT'].includes(s);
 
-  const basePrice = isCrypto ? (s.includes('ENA') ? 0.1835 : (s.includes('NEAR') ? 4.0200 : 10.00)) : (isItalian ? 14.20 : (isForex ? 1.0850 : 150.00));
+  const basePrice = isCrypto ? (s.includes('ENA') ? 0.1835 : (s.includes('NEAR') ? 4.0200 : 10.00)) : (isItalian ? 14.20 : (isForex ? 1.0850 : (isCommodity ? 100.00 : 150.00)));
   const precision = window.getDynamicPrecision(basePrice, s);
 
   return {
     symbol: s,
-    name: `${s} (${isItalian ? 'Borsa Italiana' : (isCrypto ? 'OKX/Bybit' : (isForex ? 'Forex' : 'US Market'))})`,
+    name: `${s} (${isItalian ? 'Borsa Italiana' : (isCrypto ? 'OKX/Bybit' : (isCommodity ? 'CME / ICE / LME' : (isForex ? 'Forex' : 'US Market')))})`,
     cat: isCrypto ? 'crypto' : (isItalian ? 'eu_stock' : (isForex ? 'forex' : 'us_stock')),
-    exchange: isItalian ? 'Borsa Italiana' : (isCrypto ? 'OKX / Bybit' : (isForex ? 'Interbank Forex' : 'NASDAQ / NYSE')),
+    exchange: isItalian ? 'Borsa Italiana' : (isCrypto ? 'OKX / Bybit' : (isCommodity ? 'CME / ICE / LME' : (isForex ? 'Interbank Forex' : 'NASDAQ / NYSE'))),
     basePrice: basePrice,
     currency: isItalian ? '€' : (s.endsWith('JPY') ? '¥' : (isForex && s.includes('GBP') ? '£' : '$')),
     precision: precision,
-    sector: isItalian ? 'Azionario Italia' : (isCrypto ? 'Criptovalute' : (isForex ? 'Mercato Valutario' : 'Azionario USA'))
+    sector: isItalian ? 'Azionario Italia' : (isCrypto ? 'Criptovalute' : (isCommodity ? 'Materie Prime (Commodities)' : (isForex ? 'Mercato Valutario' : 'Azionario USA')))
   };
 };
