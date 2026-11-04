@@ -6,7 +6,6 @@
   <title>Trading Pro Ultimate™ × cuordivino</title>
   
   <!-- PWA & Mobile Meta Tags -->
-  <!-- Deploy Version: 2026.11.04-v3 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#07090e">
@@ -224,13 +223,74 @@
   <main class="main-wrapper">
 
     <!-- ====================================================================
-         VIEW 1: TERMINAL PRO (CHART & DOCKED EXECUTION)
+         VIEW 1: TERMINAL PRO (BYBIT PERPETUAL INTERFACE × 100% RESPONSIVE)
          ==================================================================== -->
     <div id="tab-terminal" class="view-panel active">
-      <div class="terminal-pro-grid">
+
+      <!-- BYBIT OFFICIAL PERPETUAL TELEMETRY STRIP -->
+      <div class="bybit-telemetry-strip">
+        <div class="bb-tele-item">
+          <span class="k">Contratto</span>
+          <span class="v" style="color:var(--accent); font-size:13px">BTCUSDT Perp</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Ultimo Prezzo</span>
+          <span class="v text-green" style="font-size:14px" id="bb-last-price">$80,355.50</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Index Price</span>
+          <span class="v" id="bb-index-price">$80,393.32</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Mark Price</span>
+          <span class="v" id="bb-mark-price">$80,355.50</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Variazione 24h</span>
+          <span class="v text-green" id="bb-24h-chg">+3.46%</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Massimo 24h</span>
+          <span class="v" id="bb-24h-high">$81,181.10</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Minimo 24h</span>
+          <span class="v" id="bb-24h-low">$75,673.20</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Volume 24h</span>
+          <span class="v" id="bb-24h-vol">97,968 BTC</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Turnover 24h</span>
+          <span class="v" id="bb-24h-turnover">$7.68B</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Funding Rate / Countdown</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="v text-accent" id="bb-funding-rate">0.0100%</span>
+            <span class="v" style="font-size:10px; color:var(--text-muted)" id="bb-funding-countdown">03:45:12</span>
+          </div>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Open Interest</span>
+          <span class="v" id="bb-open-interest">67,244 BTC</span>
+        </div>
+      </div>
+
+      <!-- MOBILE VIEW SWITCHER (VISIBLE ON TABLETS/SMARTPHONES) -->
+      <div class="mobile-view-switcher">
+        <button class="m-view-btn active" onclick="switchMobileTerminalView('chart', this)">📊 Grafico</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('book', this)">📖 Book</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('order', this)">⚡ Ordine</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('positions', this)">📜 Posizioni</button>
+      </div>
+
+      <!-- BYBIT 3-COLUMN RESPONSIVE GRID -->
+      <div class="bybit-terminal-grid">
         
-        <!-- MAIN CHART WINDOW CARD -->
-        <div class="window-card">
+        <!-- COLUMN 1: CANDLESTICK CHART & TECHNICAL TOOLS -->
+        <div class="window-card" id="bb-col-chart">
           <div class="window-header">
             <div class="window-title">
               <span>📈 Grafico Professionale Candele</span>
@@ -365,11 +425,47 @@
           </div>
         </div>
 
-        <!-- DOCKED ORDER EXECUTION WINDOW CARD -->
-        <div class="window-card">
+        <!-- COLUMN 2: BYBIT ORDER BOOK & RECENT TRADES -->
+        <div class="bb-book-trades-card" id="bb-col-book">
+          <div class="bb-book-tabs-header">
+            <button class="bb-subtab-btn active" id="bb-tab-ob-btn" onclick="switchBookSubTab('orderbook')">
+              📖 Order Book (L2 Depth)
+            </button>
+            <button class="bb-subtab-btn" id="bb-tab-tr-btn" onclick="switchBookSubTab('trades')">
+              ⚡ Trade Recenti
+            </button>
+          </div>
+
+          <!-- Order Book View -->
+          <div id="bb-view-orderbook" style="display:flex; flex-direction:column; height:100%;">
+            <div class="bb-ob-head">
+              <span>Prezzo (USDT)</span>
+              <span>Dim. (BTC)</span>
+              <span>Totale</span>
+            </div>
+            <div class="bb-ob-body" id="bb-orderbook-rows">
+              <!-- Injected dynamically via bybit_engine.js -->
+            </div>
+          </div>
+
+          <!-- Recent Trades View -->
+          <div id="bb-view-trades" style="display:none; flex-direction:column; height:100%;" class="bb-trades-wrap">
+            <div class="bb-ob-head">
+              <span>Prezzo (USDT)</span>
+              <span>Dim. (BTC)</span>
+              <span>Ora</span>
+            </div>
+            <div style="flex:1; overflow-y:auto;" id="bb-recent-trades-rows">
+              <!-- Injected dynamically via bybit_engine.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 3: BYBIT PERPETUAL ORDER EXECUTION PANEL -->
+        <div class="window-card order-execution-col" id="bb-col-order">
           <div class="window-header">
             <div class="window-title">
-              <span>⚡ Esecuzione Ordine & Rischio</span>
+              <span>⚡ Esecuzione Ordine Bybit</span>
             </div>
             <div class="window-controls">
               <span style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-right:4px">
@@ -382,54 +478,77 @@
           <div class="window-body">
             <div class="order-execution-window">
               
-              <!-- LONG / SHORT SWITCH GRID -->
+              <!-- MARGIN MODE: CROSS / ISOLATED -->
+              <div class="bb-margin-toggles">
+                <button class="bb-margin-btn active" data-margin="cross" onclick="BybitEngine.setMarginMode('cross')">Cross Margin</button>
+                <button class="bb-margin-btn" data-margin="isolated" onclick="BybitEngine.setMarginMode('isolated')">Isolated Margin</button>
+              </div>
+
+              <!-- ORDER TYPE: MARKET / LIMIT / CONDITIONAL -->
+              <div class="bb-ot-tabs">
+                <button class="bb-ot-btn active" data-ot="Market" onclick="BybitEngine.setOrderType('Market')">Market</button>
+                <button class="bb-ot-btn" data-ot="Limit" onclick="BybitEngine.setOrderType('Limit')">Limit</button>
+                <button class="bb-ot-btn" data-ot="Conditional" onclick="BybitEngine.setOrderType('Conditional')">Conditional</button>
+              </div>
+
+              <!-- BUY / SELL LONG / SHORT SWITCH GRID -->
               <div class="side-switch-grid">
                 <button class="side-btn long active" id="btn-mode-long" onclick="setTradeSide('LONG')">
-                  ▲ LONG / BUY
+                  ▲ BUY / LONG
                 </button>
                 <button class="side-btn short" id="btn-mode-short" onclick="setTradeSide('SHORT')">
-                  ▼ SHORT / SELL
+                  ▼ SELL / SHORT
                 </button>
               </div>
 
-              <!-- Leverage Presets Pills ("Pulsanti di selezione rapida") -->
+              <!-- Leverage Presets Pills -->
               <div class="form-field">
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
                   <span>LEVA FINANZIARIA</span>
-                  <span>1x - 30x</span>
+                  <span>1x - 100x</span>
                 </div>
                 <div class="presets-row">
                   <div class="preset-chip lev-chip" data-val="1" onclick="setLeveragePreset(1, this)">1x</div>
-                  <div class="preset-chip lev-chip" data-val="2" onclick="setLeveragePreset(2, this)">2x</div>
                   <div class="preset-chip lev-chip" data-val="5" onclick="setLeveragePreset(5, this)">5x</div>
                   <div class="preset-chip lev-chip active" data-val="10" onclick="setLeveragePreset(10, this)">10x</div>
-                  <div class="preset-chip lev-chip" data-val="20" onclick="setLeveragePreset(20, this)">20x</div>
-                  <div class="preset-chip lev-chip" data-val="30" onclick="setLeveragePreset(30, this)">30x</div>
+                  <div class="preset-chip lev-chip" data-val="25" onclick="setLeveragePreset(25, this)">25x</div>
+                  <div class="preset-chip lev-chip" data-val="50" onclick="setLeveragePreset(50, this)">50x</div>
+                  <div class="preset-chip lev-chip" data-val="100" onclick="setLeveragePreset(100, this)">100x</div>
                 </div>
-                <input type="range" min="1" max="30" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
+                <input type="range" min="1" max="100" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
               </div>
 
-              <!-- Risk % Presets Pills -->
+              <!-- Order Price & Trigger (if Limit/Conditional) -->
+              <div class="form-field" id="bb-entry-field-wrap" style="display:none;">
+                <label>Prezzo Ordine ($)</label>
+                <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="BybitEngine.recalcBybitOrderMetrics()">
+              </div>
+
+              <div class="form-field" id="bb-trigger-field-wrap" style="display:none;">
+                <label>Prezzo Trigger Condizionale ($)</label>
+                <input type="number" step="any" class="terminal-input" id="bb-trigger-price" placeholder="Trigger price...">
+              </div>
+
+              <!-- Order Quantity (BTC) & Quick Percentage Chips -->
               <div class="form-field">
                 <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
-                  <span>RISCHIO PER OPERAZIONE (% CAPITALE)</span>
-                  <span>Consigliato: 1.0% - 2.0%</span>
+                  <span>QUANTITÀ ORDINE (BTC)</span>
+                  <span>Valore Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
                 </div>
-                <div class="presets-row">
-                  <div class="preset-chip risk-chip" onclick="setRiskPreset(0.5, this)">0.5%</div>
-                  <div class="preset-chip risk-chip" onclick="setRiskPreset(1.0, this)">1.0%</div>
-                  <div class="preset-chip risk-chip active" onclick="setRiskPreset(1.5, this)">1.5%</div>
-                  <div class="preset-chip risk-chip" onclick="setRiskPreset(2.0, this)">2.0%</div>
-                  <div class="preset-chip risk-chip" onclick="setRiskPreset(3.0, this)">3.0%</div>
+                <input type="number" step="0.001" class="terminal-input" id="bb-order-qty" value="0.100" oninput="BybitEngine.recalcBybitOrderMetrics()">
+                
+                <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100%) -->
+                <div class="bb-pct-chips-row">
+                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(10)">10%</div>
+                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(25)">25%</div>
+                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(50)">50%</div>
+                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(75)">75%</div>
+                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(100)">100%</div>
                 </div>
               </div>
 
-              <!-- Price & Strategy Inputs -->
+              <!-- Strategy Mentor & TP/SL -->
               <div class="input-grid-2col">
-                <div class="form-field">
-                  <label>Prezzo Entry ($)</label>
-                  <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="recalcPosition()">
-                </div>
                 <div class="form-field">
                   <label>Strategia Mentor</label>
                   <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
@@ -438,53 +557,43 @@
                     <option value="Dalio All-Weather">Dalio All-Weather</option>
                     <option value="Simons Quant">Simons Quant</option>
                     <option value="Burry Contrarian">Burry Contrarian</option>
-                    <option value="Livermore Pivot">Livermore Pivot</option>
+                    <option value="Freqtrade ML">Freqtrade ML</option>
                     <option value="Discretionary" selected>Discrezionale</option>
                   </select>
                 </div>
-              </div>
-
-              <div class="input-grid-2col">
                 <div class="form-field">
                   <label>Stop Loss ($)</label>
                   <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="recalcPosition()">
                 </div>
-                <div class="form-field">
-                  <label>Take Profit ($)</label>
-                  <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
-                </div>
               </div>
 
-              <!-- Position Sizing Real-Time Metrics -->
+              <div class="form-field">
+                <label>Take Profit ($)</label>
+                <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
+              </div>
+
+              <!-- Bybit Real-Time Position Sizing & Liquidation Metrics -->
               <div class="pos-summary">
                 <div class="pos-row">
-                  <span>Size Unità Calcolata:</span>
-                  <span id="pos-res-units" style="font-weight:800; color:var(--accent)">0</span>
+                  <span>Costo / Margine Iniziale:</span>
+                  <span id="bb-cost-val" style="font-weight:800; color:var(--accent)">$0.00</span>
                 </div>
                 <div class="pos-row">
-                  <span>Margine Impegnato:</span>
-                  <span id="pos-res-margin">$0.00</span>
-                </div>
-                <div class="pos-row">
-                  <span>Rischio Capitale:</span>
-                  <span id="pos-res-risk" style="color:var(--sell); font-weight:700">$0.00</span>
-                </div>
-                <div class="pos-row">
-                  <span>Profitto Stimato:</span>
-                  <span id="pos-res-profit" style="color:var(--buy); font-weight:700">$0.00</span>
+                  <span>Prezzo Liquidazione Stimato:</span>
+                  <span id="bb-liq-val" style="color:var(--sell); font-weight:800; font-family:var(--font-mono)">$0.00</span>
                 </div>
                 <div class="pos-row">
                   <span>Rapporto R/R:</span>
-                  <span id="pos-res-rr" style="font-weight:800">1 : 0</span>
+                  <span id="pos-res-rr" style="font-weight:800">1 : 2.5</span>
                 </div>
-                <div class="pos-row">
-                  <span>Prezzo Liquidazione Est.:</span>
-                  <span id="pos-res-liq" style="color:var(--sell); font-family:var(--font-mono)">N/A</span>
+                <div class="pos-row" style="display:none;">
+                  <span id="pos-res-units">0.1</span>
+                  <span id="pos-res-margin">$0.00</span>
+                  <span id="pos-res-liq">$0.00</span>
                 </div>
-                <div id="pos-res-warn" style="color:var(--accent); font-size:10px; margin-top:4px; display:none;"></div>
               </div>
 
-              <!-- ACCORDION DRAWER: Multi-Target TP ("Apertura a tendina") -->
+              <!-- ACCORDION DRAWER: Multi-Target TP -->
               <div class="accordion-drawer" id="multi-tp-drawer">
                 <div class="accordion-header" onclick="toggleDrawer('multi-tp-drawer')">
                   <span>Target Multi-Scaglione (TP1, TP2, TP3 Runner)</span>
@@ -509,7 +618,7 @@
 
               <!-- Execute Order Button -->
               <button class="btn-action-primary btn-buy" id="btn-execute-order" onclick="executeTrade()">
-                Apri Posizione LONG / BUY
+                Apri Posizione BUY / LONG
               </button>
 
               <!-- Motivated Telegram Signal Dispatch Button -->
@@ -534,6 +643,50 @@
         </div>
 
       </div>
+
+      <!-- BOTTOM DOCK: BYBIT ACTIVE POSITIONS & ORDERS -->
+      <div class="bb-positions-dock" id="bb-col-positions">
+        <div class="bb-pos-tabs-header">
+          <div class="bb-pos-tab active" onclick="switchPositionsSubTab('positions', this)">Posizioni Attive (1)</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('closed', this)">PnL Chiuso</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('open_orders', this)">Ordini Aperti (0)</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('history', this)">Storico Ordini</div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="pro-terminal-table">
+            <thead>
+              <tr>
+                <th>Contratto</th>
+                <th>Dimensione</th>
+                <th>Prezzo Entry</th>
+                <th>Mark Price</th>
+                <th>Prezzo Liq.</th>
+                <th>Margine Impegnato</th>
+                <th>PnL Non Realizzato (ROI)</th>
+                <th>TP / SL</th>
+                <th>Azione</th>
+              </tr>
+            </thead>
+            <tbody id="bb-positions-table-body">
+              <tr>
+                <td><b style="color:var(--text-main)">BTCUSDT Perp</b> <span class="strat-tag" style="background:rgba(0,242,161,0.15); color:var(--buy)">LONG 10x</span></td>
+                <td style="font-family:var(--font-mono)">0.250 BTC</td>
+                <td style="font-family:var(--font-mono)">$80,100.00</td>
+                <td style="font-family:var(--font-mono)" id="bb-pos-mark">$80,355.50</td>
+                <td style="font-family:var(--font-mono); color:var(--sell)">$72,400.00</td>
+                <td style="font-family:var(--font-mono)">$2,002.50</td>
+                <td class="text-green" style="font-weight:800; font-family:var(--font-mono)" id="bb-pos-pnl">+$63.88 (+3.19%)</td>
+                <td>$84,000.00 / $77,500.00</td>
+                <td>
+                  <button class="btn btn-secondary" style="padding:3px 8px; font-size:10px; color:var(--sell)" onclick="showToast('Posizione BTCUSDT chiusa a mercato!', 'info')">Chiudi Market</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <!-- ====================================================================
@@ -1163,9 +1316,34 @@
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <div class="mobile-bottom-nav">
+    <button class="m-bottom-nav-item active" onclick="switchMainTab('tab-terminal', this)">
+      <span class="icon">📈</span>
+      <span>Terminale</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-consensus', this)">
+      <span class="icon">🧠</span>
+      <span>Consensus</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
+      <span class="icon">🤖</span>
+      <span>Quant (4)</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-chat', this)">
+      <span class="icon">💬</span>
+      <span>Chat AI</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-journal', this)">
+      <span class="icon">📓</span>
+      <span>Diario</span>
+    </button>
+  </div>
+
   <!-- Application Logic Scripts -->
   <script src="js/auth.js"></script>
   <script src="js/chart.js"></script>
+  <script src="js/bybit_engine.js"></script>
   <script src="js/quant_engines.js"></script>
   <script src="js/skills.js"></script>
   <script src="js/trading.js"></script>
@@ -1174,6 +1352,57 @@
   <script src="js/app.js"></script>
 
   <script>
+    // Bybit Subtab Switcher: Orderbook vs Trades
+    function switchBookSubTab(tab) {
+      const btnOb = document.getElementById('bb-tab-ob-btn');
+      const btnTr = document.getElementById('bb-tab-tr-btn');
+      const viewOb = document.getElementById('bb-view-orderbook');
+      const viewTr = document.getElementById('bb-view-trades');
+
+      if (tab === 'orderbook') {
+        btnOb?.classList.add('active');
+        btnTr?.classList.remove('active');
+        if (viewOb) viewOb.style.display = 'flex';
+        if (viewTr) viewTr.style.display = 'none';
+      } else {
+        btnTr?.classList.add('active');
+        btnOb?.classList.remove('active');
+        if (viewTr) viewTr.style.display = 'flex';
+        if (viewOb) viewOb.style.display = 'none';
+      }
+    }
+
+    // Bybit Bottom Positions Subtabs
+    function switchPositionsSubTab(tabKey, element) {
+      document.querySelectorAll('.bb-pos-tab').forEach(b => b.classList.remove('active'));
+      if (element) element.classList.add('active');
+      if (window.showToast) window.showToast(`Sezione ${tabKey.toUpperCase()} attiva`, 'info');
+    }
+
+    // Mobile Terminal View Switcher (Chart / Book / Order / Positions)
+    function switchMobileTerminalView(viewKey, btn) {
+      document.querySelectorAll('.m-view-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const chartCol = document.getElementById('bb-col-chart');
+      const bookCol = document.getElementById('bb-col-book');
+      const orderCol = document.getElementById('bb-col-order');
+      const posDock = document.getElementById('bb-col-positions');
+
+      if (window.innerWidth <= 860) {
+        if (chartCol) chartCol.style.display = viewKey === 'chart' ? 'block' : 'none';
+        if (bookCol) bookCol.style.display = viewKey === 'book' ? 'flex' : 'none';
+        if (orderCol) orderCol.style.display = viewKey === 'order' ? 'block' : 'none';
+        if (posDock) posDock.style.display = viewKey === 'positions' ? 'block' : 'none';
+
+        if (viewKey === 'chart' && window.mainChart) {
+          setTimeout(() => {
+            window.mainChart.timeScale().fitContent();
+          }, 60);
+        }
+      }
+    }
+
     // Copyright Modal Handlers
     function openCopyrightModal() {
       document.getElementById('copyright-modal')?.classList.add('open');

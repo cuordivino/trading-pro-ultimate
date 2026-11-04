@@ -165,6 +165,10 @@ async function selectAsset(symbol) {
   if (window.QuantEngines) {
     window.QuantEngines.renderQuantEnginesTab();
   }
+
+  if (window.BybitEngine) {
+    window.BybitEngine.init(symbol);
+  }
 }
 
 async function pollActiveQuote() {

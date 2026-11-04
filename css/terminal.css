@@ -1968,3 +1968,392 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   color: var(--sell);
   border-color: var(--sell);
 }
+
+
+/* ==========================================================================
+   BYBIT OFFICIAL PERPETUAL INTERFACE & FULL RESPONSIVE DOCK
+   Matches https://www.bybit.com/en/trade/usdt/BTCUSDT
+   ========================================================================== */
+
+/* Bybit Header Telemetry Strip */
+.bybit-telemetry-strip {
+  background: #080c16;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 11px;
+  scrollbar-width: none;
+}
+.bybit-telemetry-strip::-webkit-scrollbar { display: none; }
+.bb-tele-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bb-tele-item .k {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.bb-tele-item .v {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* Bybit 3-Column Terminal Pro Grid */
+.bybit-terminal-grid {
+  display: grid;
+  grid-template-columns: 1fr 310px 340px;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Middle Column: Orderbook & Recent Trades */
+.bb-book-trades-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  height: 640px;
+  overflow: hidden;
+}
+.bb-book-tabs-header {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+}
+.bb-subtab-btn {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+.bb-subtab-btn.active {
+  color: #fff;
+  border-bottom-color: var(--cyan);
+  background: rgba(255,255,255,0.02);
+}
+
+/* Order Book Table Structure */
+.bb-ob-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 6px 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.bb-ob-head span:nth-child(2), .bb-ob-head span:nth-child(3) { text-align: right; }
+.bb-ob-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 4px 0;
+  overflow: hidden;
+}
+.bb-ob-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bb-ob-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+.bb-ob-row span:nth-child(2), .bb-ob-row span:nth-child(3) { text-align: right; }
+.bb-ob-row.ask .bb-ob-price { color: var(--sell); font-weight: 700; }
+.bb-ob-row.bid .bb-ob-price { color: var(--buy); font-weight: 700; }
+.bb-ob-row .bb-ob-size { color: var(--text-main); }
+.bb-ob-row .bb-ob-sum { color: var(--text-muted); }
+.bb-ob-depth-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.18;
+}
+.bb-ob-depth-bar.ask { background: var(--sell); }
+.bb-ob-depth-bar.bid { background: var(--buy); }
+
+.bb-ob-mid-divider {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.3);
+}
+.bb-ob-mid-price {
+  font-size: 15px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+}
+.bb-ob-mid-spread {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Recent Trades Table */
+.bb-trades-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.bb-trade-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.bb-trade-row span:nth-child(2), .bb-trade-row span:nth-child(3) { text-align: right; }
+.bb-trade-row.buy .bb-tr-price { color: var(--buy); font-weight: 700; }
+.bb-trade-row.sell .bb-tr-price { color: var(--sell); font-weight: 700; }
+.bb-trade-row .bb-tr-time { color: var(--text-muted); font-size: 10px; }
+
+/* Bybit Order Panel Controls */
+.bb-margin-toggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.bb-margin-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bb-margin-btn.active {
+  background: rgba(6,182,212,0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.bb-ot-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.bb-ot-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bb-ot-btn.active {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+  color: #fff;
+}
+
+/* Percentage Quick Sizing Pills */
+.bb-pct-chips-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+.bb-pct-chip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 0;
+  text-align: center;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.bb-pct-chip:hover {
+  border-color: var(--cyan);
+  color: #fff;
+}
+
+/* Bottom Positions & Orders Dock */
+.bb-positions-dock {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+  overflow: hidden;
+}
+.bb-pos-tabs-header {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+}
+.bb-pos-tab {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.bb-pos-tab.active {
+  color: #fff;
+  border-bottom-color: var(--accent);
+  background: rgba(255,255,255,0.02);
+}
+
+/* Mobile View Switcher */
+.mobile-view-switcher {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: #080c16;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.m-view-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 7px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: center;
+}
+.m-view-btn.active {
+  background: var(--cyan);
+  color: #000;
+  border-color: var(--cyan);
+  font-weight: 800;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: rgba(8, 12, 22, 0.98);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 9999;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+}
+.m-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: all 0.2s;
+}
+.m-bottom-nav-item .icon { font-size: 16px; }
+.m-bottom-nav-item.active {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   RESPONSIVENESS (TABLETS & MOBILE SMARTPHONES)
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .bybit-terminal-grid {
+    grid-template-columns: 1fr 300px;
+  }
+  .bb-book-trades-card {
+    height: 580px;
+  }
+  .order-execution-col {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .bybit-terminal-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .mobile-view-switcher {
+    display: grid;
+  }
+  .mobile-bottom-nav {
+    display: grid;
+  }
+  body {
+    padding-bottom: 65px; /* space for bottom nav */
+  }
+  .terminal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .nav-tabs-container {
+    overflow-x: auto;
+    width: 100%;
+    scrollbar-width: none;
+  }
+  .header-right-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .active-asset-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .top-telemetry-bar {
+    display: none; /* hidden on small mobile to save vertical space */
+  }
+  .bb-book-trades-card {
+    height: 440px;
+  }
+  #chart-container {
+    height: 380px !important;
+  }
+}
