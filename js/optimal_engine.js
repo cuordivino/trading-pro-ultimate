@@ -113,11 +113,16 @@ window.OptimalEngine = {
 
     if (minPrice >= maxPrice) return;
 
-    // Divide price range into 24 bins
+    // Divide price range into 24 bins with dynamic precision
+    const sym = window.currentSymbol || 'BTCUSDT';
+    const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(minPrice, sym) : (asset ? (asset.precision || 2) : 2);
+    const curr = asset ? (asset.currency || '$') : '$';
+
     const numBins = 24;
     const binSize = (maxPrice - minPrice) / numBins;
     const bins = new Array(numBins).fill(0).map((_, i) => ({
-      price: +(minPrice + (i * binSize)).toFixed(2),
+      price: +(minPrice + (i * binSize)).toFixed(prec),
       vol: 0
     }));
 
@@ -167,7 +172,9 @@ window.OptimalEngine = {
       val: val,
       totalVolume: Math.round(totalVol),
       bins: bins,
-      maxBinVol: maxBinVol
+      maxBinVol: maxBinVol,
+      precision: prec,
+      currency: curr
     };
 
     this.renderVolumeProfileOverlay();
@@ -187,21 +194,24 @@ window.OptimalEngine = {
     const vp = this.currentVolumeProfile;
     if (!vp || !vp.bins || !vp.bins.length) return;
 
+    const prec = vp.precision !== undefined ? vp.precision : 2;
+    const curr = vp.currency || '$';
+
     overlay.innerHTML = `
       <div class="vp-telemetry-badge">
         <span style="color:var(--text-muted)">Volumi Locali (${this.volumeProfileRange.toUpperCase()}):</span>
-        <span style="color:var(--accent); font-weight:800">POC $${vp.poc}</span>
-        <span style="color:var(--cyan)">VAH $${vp.vah}</span>
-        <span style="color:var(--purple)">VAL $${vp.val}</span>
+        <span style="color:var(--accent); font-weight:800">POC ${curr}${Number(vp.poc).toFixed(prec)}</span>
+        <span style="color:var(--cyan)">VAH ${curr}${Number(vp.vah).toFixed(prec)}</span>
+        <span style="color:var(--purple)">VAL ${curr}${Number(vp.val).toFixed(prec)}</span>
         <span style="color:var(--text-dim)">Vol: ${vp.totalVolume.toLocaleString()}</span>
       </div>
       <div class="vp-bars-container">
         ${vp.bins.slice().reverse().map(b => {
           const widthPct = Math.min(100, Math.round((b.vol / (vp.maxBinVol || 1)) * 100));
-          const isPoc = b.price === vp.poc;
+          const isPoc = Math.abs(b.price - vp.poc) < (0.0000001);
           return `
             <div class="vp-bar-row ${isPoc ? 'is-poc' : ''}">
-              <span class="vp-bar-price">${b.price}</span>
+              <span class="vp-bar-price">${Number(b.price).toFixed(prec)}</span>
               <div class="vp-bar-track">
                 <div class="vp-bar-fill ${isPoc ? 'poc-fill' : ''}" style="width:${widthPct}%"></div>
               </div>

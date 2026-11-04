@@ -249,8 +249,8 @@ window.BybitEngine = {
     const t = this.tickerData;
     const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
     const curr = asset ? asset.currency : '$';
-    const prec = asset ? (asset.precision || 2) : 2;
-    const isCrypto = asset ? asset.cat === 'crypto' : (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(s => this.currentSymbol.includes(s)));
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(t.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
+    const isCrypto = asset ? asset.cat === 'crypto' : (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(s => this.currentSymbol.includes(s)));
 
     // Bybit Header Telemetry Bar Elements
     const pContract = document.getElementById('bb-tele-contract');
@@ -323,9 +323,13 @@ window.BybitEngine = {
     const spreadVal = document.getElementById('bb-ob-spread');
     if (!obContainer) return;
 
+    const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
+    const curr = asset ? asset.currency : '$';
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
+
     const { bids, asks, spread, spreadPct } = this.activeOrderBook;
     if (spreadVal) {
-      spreadVal.innerText = `$${spread.toFixed(2)} (${spreadPct.toFixed(3)}%)`;
+      spreadVal.innerText = `${curr}${spread.toFixed(prec)} (${spreadPct.toFixed(3)}%)`;
     }
 
     const maxBidVol = bids.length ? Math.max(...bids.map(b => b.size)) : 1;
@@ -345,7 +349,7 @@ window.BybitEngine = {
         return `
           <div class="bb-ob-row ask" onclick="BybitEngine.setPriceFromOrderBook(${a.price})">
             <div class="bb-ob-depth-bar ask" style="width:${depthPct}%"></div>
-            <span class="bb-ob-price">${a.price.toFixed(2)}</span>
+            <span class="bb-ob-price">${a.price.toFixed(prec)}</span>
             <span class="bb-ob-size">${a.size.toFixed(3)}</span>
             <span class="bb-ob-sum">${(a.price * a.size / 1000).toFixed(1)}k</span>
           </div>
@@ -357,9 +361,9 @@ window.BybitEngine = {
     html += `
       <div class="bb-ob-mid-divider">
         <span class="bb-ob-mid-price ${this.tickerData.price24hPcnt >= 0 ? 'text-green' : 'text-red'}">
-          $${this.tickerData.lastPrice.toFixed(2)}
+          ${curr}${this.tickerData.lastPrice.toFixed(prec)}
         </span>
-        <span class="bb-ob-mid-spread">Spread $${spread.toFixed(2)}</span>
+        <span class="bb-ob-mid-spread">Spread ${curr}${spread.toFixed(prec)}</span>
       </div>
     `;
 
@@ -370,7 +374,7 @@ window.BybitEngine = {
         return `
           <div class="bb-ob-row bid" onclick="BybitEngine.setPriceFromOrderBook(${b.price})">
             <div class="bb-ob-depth-bar bid" style="width:${depthPct}%"></div>
-            <span class="bb-ob-price">${b.price.toFixed(2)}</span>
+            <span class="bb-ob-price">${b.price.toFixed(prec)}</span>
             <span class="bb-ob-size">${b.size.toFixed(3)}</span>
             <span class="bb-ob-sum">${(b.price * b.size / 1000).toFixed(1)}k</span>
           </div>
@@ -386,11 +390,13 @@ window.BybitEngine = {
     const container = document.getElementById('bb-recent-trades-rows');
     if (!container) return;
 
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : 2;
+
     container.innerHTML = this.recentTrades.slice(0, 15).map(tr => {
       const isBuy = tr.side === 'Buy';
       return `
         <div class="bb-trade-row ${isBuy ? 'buy' : 'sell'}">
-          <span class="bb-tr-price">${tr.price.toFixed(2)}</span>
+          <span class="bb-tr-price">${tr.price.toFixed(prec)}</span>
           <span class="bb-tr-size">${tr.size.toFixed(3)}</span>
           <span class="bb-tr-time">${tr.time}</span>
         </div>

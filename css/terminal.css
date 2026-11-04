@@ -2319,7 +2319,7 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     width: 100% !important;
   }
   body {
-    padding-top: max(env(safe-area-inset-top, 0px), 24px) !important;
+    padding-top: max(env(safe-area-inset-top, 0px), 50px) !important;
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
   }
@@ -2327,7 +2327,7 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   /* Ticker Marquee Ribbon with safe spacing below iPhone status bar */
   .ticker-tape-wrapper {
     height: 32px !important;
-    margin-top: 4px !important;
+    margin-top: 6px !important;
     box-sizing: border-box !important;
   }
 

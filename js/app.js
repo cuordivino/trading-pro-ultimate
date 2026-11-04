@@ -246,13 +246,14 @@ async function pollActiveQuote() {
     const curr = asset ? asset.currency : '$';
     const price = base;
     const chg = 1.25;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, sym) : (asset ? (asset.precision || 2) : 2);
 
     q = {
       symbol: sym,
       price: price,
       change: chg,
-      high: Math.round(price * 1.02 * 100) / 100,
-      low: Math.round(price * 0.98 * 100) / 100,
+      high: +(price * 1.02).toFixed(prec),
+      low: +(price * 0.98).toFixed(prec),
       volume: asset && asset.cat === 'eu_stock' ? 24500000 : 48200000,
       currency: curr
     };
@@ -274,7 +275,7 @@ async function pollActiveQuote() {
   const volElem = document.getElementById('active-metric-vol');
 
   const curr = q.currency || '$';
-  const prec = asset ? (asset.precision || 2) : 2;
+  const prec = window.getDynamicPrecision ? window.getDynamicPrecision(q.price, sym) : (asset ? (asset.precision || 2) : 2);
 
   if (priceElem) priceElem.innerText = `${curr}${q.price.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (chgBadge) {
@@ -373,24 +374,28 @@ async function loadCandleHistory() {
   }
 
   // 2. High-fidelity synthetic sequence generator (200 candles) for FTSE MIB, US Stocks, Forex, or offline
-  // Backwards random walk ensuring the latest candle close is EXACTLY targetPrice
+  // Backwards random walk ensuring the latest candle close is EXACTLY targetPrice with exact precision and Rome timezone seconds
   if (!candles || !candles.length) {
     const count = 200; // Amplified sequence
     const tfSeconds = getTimeframeSeconds(interval);
     const now = Math.floor(Date.now() / 1000);
+    const alignedNow = Math.floor(now / tfSeconds) * tfSeconds; // Quantize to exact bar boundary
     const tfVol = Math.sqrt(tfSeconds / 900);
     const stepScale = targetPrice * 0.0035 * tfVol;
+
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(targetPrice, symbol) : (asset ? (asset.precision || 2) : 2);
+    const f = Math.pow(10, prec);
 
     let p = targetPrice;
     const tempCandles = [];
 
     for (let i = count - 1; i >= 0; i--) {
-      const cTime = now - ((count - 1 - i) * tfSeconds);
+      const cTime = alignedNow - ((count - 1 - i) * tfSeconds);
       const close = (i === count - 1) ? targetPrice : p;
       const change = (Math.random() - 0.495) * stepScale;
-      const open = Math.round((close - change) * 100) / 100;
-      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.5)) * 100) / 100;
-      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.5)) * 100) / 100;
+      const open = Math.round((close - change) * f) / f;
+      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.5)) * f) / f;
+      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.5)) * f) / f;
       const volume = Math.round((Math.random() * 8000 + 1200) * tfVol);
 
       tempCandles.unshift({
@@ -559,33 +564,84 @@ let megaSearchTimer = null;
 function onMegaSearchInput(query) {
   clearTimeout(megaSearchTimer);
   megaSearchTimer = setTimeout(async () => {
-    query = query.trim().toUpperCase();
-    const allAssets = window.GlobalMarketAssets || curatedAssets;
+    const q = (query || '').trim().toUpperCase();
+    const allAssets = window.GlobalMarketAssets || curatedAssets || [];
 
-    if (!query) {
+    if (!q) {
       filterMegaCategory(activeMegaCategory);
       return;
     }
 
-    const filtered = allAssets.filter(a =>
-      a.symbol.includes(query) ||
-      a.name.toUpperCase().includes(query) ||
-      (a.exchange && a.exchange.toUpperCase().includes(query))
-    );
+    // Coherent multi-tier ranking:
+    // 1. Exact match
+    // 2. Starts with query (symbol)
+    // 3. Contains query (symbol)
+    // 4. Contains query (name or exchange)
+    const exact = [];
+    const starts = [];
+    const symContains = [];
+    const nameContains = [];
 
-    if (!filtered.some(a => a.symbol === query)) {
-      filtered.push({
-        symbol: query,
-        name: `${query} (Custom Asset)`,
-        cat: 'custom',
-        exchange: 'Global',
-        basePrice: 100,
-        currency: '$'
-      });
+    allAssets.forEach(a => {
+      const sym = a.symbol.toUpperCase();
+      const nm = (a.name || '').toUpperCase();
+      const ex = (a.exchange || '').toUpperCase();
+
+      if (sym === q) {
+        exact.push(a);
+      } else if (sym.startsWith(q)) {
+        starts.push(a);
+      } else if (sym.includes(q)) {
+        symContains.push(a);
+      } else if (nm.includes(q) || ex.includes(q)) {
+        nameContains.push(a);
+      }
+    });
+
+    let filtered = [...exact, ...starts, ...symContains, ...nameContains];
+
+    // If query not yet in static catalog, create a smart dynamic entry
+    if (!filtered.some(a => a.symbol === q)) {
+      const isCrypto = q.endsWith('USDT') || q.endsWith('USD') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU', 'INTC', 'BMNR'].some(c => q.includes(c));
+      const isItal = q.endsWith('.MI');
+      const isFx = ['EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'].some(fx => q.startsWith(fx) && q.length === 6);
+      const cat = isCrypto ? 'crypto' : (isItal ? 'eu_stock' : (isFx ? 'forex' : 'us_stock'));
+      const exchange = isCrypto ? 'Bybit/OKX/Kraken' : (isItal ? 'MTA Milano' : (isFx ? 'Interbank Forex' : 'NASDAQ/NYSE'));
+      const curr = isItal ? '€' : (q.endsWith('JPY') ? '¥' : '$');
+      const base = isCrypto ? 1.00 : (isItal ? 15.00 : (isFx ? 1.0850 : 100.00));
+      const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, q) : 2;
+
+      const dynamicAsset = {
+        symbol: q,
+        name: `${q} (${exchange})`,
+        cat: cat,
+        exchange: exchange,
+        basePrice: base,
+        currency: curr,
+        precision: prec
+      };
+
+      filtered.unshift(dynamicAsset);
+
+      // Async live lookup from Bybit v5 linear tickers for crypto pairs
+      if (isCrypto) {
+        const cleanSym = q.endsWith('USDT') ? q : `${q}USDT`;
+        fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${cleanSym}`)
+          .then(r => r.json())
+          .then(json => {
+            if (json.result && json.result.list && json.result.list.length) {
+              const t = json.result.list[0];
+              const liveP = parseFloat(t.lastPrice);
+              dynamicAsset.basePrice = liveP;
+              dynamicAsset.precision = window.getDynamicPrecision(liveP, q);
+              renderMegaAssetList(filtered);
+            }
+          }).catch(() => {});
+      }
     }
 
     renderMegaAssetList(filtered);
-  }, 150);
+  }, 40); // Ultra-responsive 40ms debounce
 }
 
 // ==========================================
