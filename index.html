@@ -23,6 +23,54 @@
 </head>
 <body>
 
+  <!-- GATEKEEPER SECURITY OVERLAY (PROTEZIONE ACCESSO CON PASSWORD) -->
+  <div id="terminal-gatekeeper" class="gatekeeper-overlay">
+    <div class="gatekeeper-card">
+      <div class="gatekeeper-shield-icon">
+        <div class="shield-halo"></div>
+        <span>🔒</span>
+      </div>
+
+      <div class="gatekeeper-brand">
+        <div class="gk-title">TRADING PRO <span class="accent-pro">ULTIMATE™</span></div>
+        <div class="gk-author">© by cuordivino — Accesso Riservato</div>
+      </div>
+
+      <div class="gk-badge">TERMINALE AD ACCESSO PROTETTO</div>
+
+      <p class="gk-desc">
+        Questa piattaforma contiene algoritmi quantitativi proprietari, motori di trading e comitati decisionali riservati. Inserisci la password di autorizzazione fornita dall'amministratore per accedere.
+      </p>
+
+      <div class="gk-form">
+        <div class="gk-input-wrapper">
+          <input type="password" id="gatekeeper-pwd" class="gk-input" placeholder="Inserisci Password di Accesso..." autofocus onkeydown="if(event.key==='Enter') verifyTerminalPassword()">
+          <button type="button" class="gk-eye-btn" onclick="toggleGatekeeperPwdVisibility()" title="Mostra/Nascondi Password">👁️</button>
+        </div>
+
+        <div class="gk-remember-row">
+          <label class="gk-checkbox-label">
+            <input type="checkbox" id="gk-remember-device" checked>
+            <span>Ricorda questo dispositivo (7 giorni)</span>
+          </label>
+        </div>
+
+        <div id="gk-error-msg" class="gk-error-banner" style="display:none;">
+          ⚠️ Accesso Negato: Password non valida o non autorizzata.
+        </div>
+
+        <button type="button" class="gk-submit-btn" onclick="verifyTerminalPassword()">
+          <span>Sblocca Terminale Quantitativo</span>
+          <span>→</span>
+        </button>
+
+        <div class="gk-footer-note">
+          Richiesta credenziali: Contattare <b>@cuordivino</b> su Telegram
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOP INSTITUTIONAL TELEMETRY BAR -->
   <div class="top-telemetry-bar">
     <div class="telemetry-left">
@@ -110,6 +158,9 @@
     <div class="header-right-actions">
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
         📜 Paternità & Copyright
+      </button>
+      <button class="btn-lock-terminal" onclick="lockTerminal()" title="Blocca Terminale con Password">
+        <span>🔒</span> Blocca
       </button>
       <div class="engine-status-pill">
         <span class="pulse-indicator"></span>
@@ -979,6 +1030,48 @@
               </button>
             </div>
 
+            <!-- GATEKEEPER PASSWORD SECURITY CARD -->
+            <div style="margin: 20px 0; border-top:1px solid var(--border); padding-top:16px">
+              <h4 style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>🔐</span> Protezione Accesso al Sito con Password
+              </h4>
+              <p style="font-size:11px; color:var(--text-muted); line-height:1.4; margin-bottom:12px;">
+                Il sito è protetto da un Gatekeeper crittografico SHA-256. Puoi modificare la password principale del sito o generare una password temporanea per gli ospiti.
+              </p>
+
+              <div class="input-grid-2col">
+                <div class="form-field">
+                  <label>Password Attuale</label>
+                  <input type="password" class="terminal-input" id="sec-current-pwd" placeholder="es. cuordivino2026">
+                </div>
+                <div class="form-field">
+                  <label>Nuova Password Personale</label>
+                  <input type="password" class="terminal-input" id="sec-new-pwd" placeholder="Nuova password...">
+                </div>
+              </div>
+
+              <div class="form-field" style="margin-top:8px;">
+                <label>Conferma Nuova Password</label>
+                <input type="password" class="terminal-input" id="sec-confirm-pwd" placeholder="Ripeti nuova password...">
+              </div>
+
+              <button class="btn-action-primary" style="width:auto; padding:7px 16px; font-size:11px; margin-top:8px; background:var(--accent); color:#000; font-weight:800; cursor:pointer;" onclick="updateTerminalPassword()">
+                Aggiorna Password Principale
+              </button>
+
+              <div style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px;">
+                <label style="font-size:11px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;">
+                  Chiave di Accesso Ospite / Condivisa (Opzionale):
+                </label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" class="terminal-input" id="sec-guest-pwd" placeholder="es. OSPITE_2026 (lascia vuoto per disabilitare)">
+                  <button class="btn btn-secondary" style="font-size:11px; padding:6px 12px; white-space:nowrap; cursor:pointer;" onclick="setGuestAccessPassword()">
+                    Salva Password Ospite
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <button class="btn-action-primary btn-buy" style="margin-top:12px;" onclick="saveSettings()">
               Salva Tutte le Configurazioni
             </button>
@@ -1070,6 +1163,7 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Logic Scripts -->
+  <script src="js/auth.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/quant_engines.js"></script>
   <script src="js/skills.js"></script>
