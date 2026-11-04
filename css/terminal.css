@@ -2357,3 +2357,31 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     height: 380px !important;
   }
 }
+
+
+/* Momentum Toggle Buttons (Panel 2: RSI / MACD) */
+.mom-toggle-group {
+  display: flex;
+  gap: 4px;
+}
+.mom-toggle-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mom-toggle-btn:hover {
+  color: #fff;
+  border-color: var(--cyan);
+}
+.mom-toggle-btn.active {
+  background: var(--cyan);
+  color: #000;
+  border-color: var(--cyan);
+  font-weight: 800;
+}

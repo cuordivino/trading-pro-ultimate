@@ -134,6 +134,9 @@
       <button class="tab-nav-btn" data-tab="tab-quant" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
         <span>🤖</span> Motori Quant (4)
       </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-rotation" onclick="switchMainTab('tab-rotation', this); if(window.SectorRotation) SectorRotation.renderSectorRotationTab();">
+        <span>🌐</span> Rotazione Settoriale
+      </button>
       <button class="tab-nav-btn" data-tab="tab-chat" onclick="switchMainTab('tab-chat', this)">
         <span>💬</span> Chat Grandi Maestri
       </button>
@@ -307,21 +310,31 @@
                 <div class="dropdown-menu indicators-dropdown-menu right-align">
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
-                      <span class="ind-color-dot" style="background:#fcd535"></span>
-                      <span>EMA 20 (Trend Breve)</span>
+                      <span class="ind-color-dot" style="background:#f59e0b"></span>
+                      <span>VWAP (Volume Weighted Avg Price)</span>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema20', this.checked)">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('vwap', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
-                      <span class="ind-color-dot" style="background:#06b6d4"></span>
-                      <span>EMA 50 (Trend Medio)</span>
+                      <span class="ind-color-dot" style="background:#00f2a1"></span>
+                      <span>EMA 9 (Trend Veloce / Trigger)</span>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema50', this.checked)">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema9', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#38bdf8"></span>
+                      <span>EMA 21 (Trend Medio / Pullback Ribbon)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema21', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
                   </div>
@@ -341,7 +354,7 @@
                       <span>Bande di Bollinger (20, 2)</span>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" onchange="toggleIndicatorKey('boll', this.checked)">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('boll', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
                   </div>
@@ -352,26 +365,6 @@
                     </div>
                     <label class="switch">
                       <input type="checkbox" onchange="toggleIndicatorKey('sar', this.checked)">
-                      <span class="slider-toggle"></span>
-                    </label>
-                  </div>
-                  <div class="ind-toggle-row">
-                    <div class="ind-label-group">
-                      <span class="ind-color-dot" style="background:#a855f7"></span>
-                      <span>Oscillatore RSI (14)</span>
-                    </div>
-                    <label class="switch">
-                      <input type="checkbox" onchange="toggleIndicatorKey('rsi', this.checked)">
-                      <span class="slider-toggle"></span>
-                    </label>
-                  </div>
-                  <div class="ind-toggle-row">
-                    <div class="ind-label-group">
-                      <span class="ind-color-dot" style="background:#38bdf8"></span>
-                      <span>MACD (12, 26, 9)</span>
-                    </div>
-                    <label class="switch">
-                      <input type="checkbox" onchange="toggleIndicatorKey('macd', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
                   </div>
@@ -412,15 +405,28 @@
               </div>
             </div>
 
-            <!-- Candlestick Chart Viewport -->
+            <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger) -->
             <div id="chart-container"></div>
 
-            <!-- Sub-charts -->
-            <div id="chart-rsi-pane" class="chart-sub-pane">
-              <span class="sub-pane-title">RSI (14) - Ipercomprato 70 / Ipervenduto 30</span>
+            <!-- SOTTO IL GRAFICO: PANNELLO 1 (Volumi a barre verticali + Media Mobile dei Volumi) -->
+            <div id="chart-volume-pane" class="chart-sub-pane active" style="height:90px; border-top:1px solid var(--border); position:relative;">
+              <div style="position:absolute; top:4px; left:10px; z-index:10; font-size:10px; font-weight:800; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span>📊 PANNELLO 1: Volumi Istituzionali a Barre Verticali</span>
+                <span style="color:#fcd535;">● Media Mobile Volumi (SMA 20)</span>
+              </div>
             </div>
-            <div id="chart-macd-pane" class="chart-sub-pane">
-              <span class="sub-pane-title">MACD (12, 26, 9) - Istogramma & Signal</span>
+
+            <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD) -->
+            <div id="chart-momentum-pane" class="chart-sub-pane active" style="height:105px; border-top:1px solid var(--border); position:relative;">
+              <div style="position:absolute; top:4px; left:10px; right:10px; z-index:10; display:flex; justify-content:space-between; align-items:center;">
+                <span id="momentum-pane-title" style="font-size:10px; font-weight:800; color:var(--text-muted);">
+                  PANNELLO 2: Oscillatore Momentum RSI (14) — Bande Ipercomprato (70) / Ipervenduto (30)
+                </span>
+                <div class="mom-toggle-group">
+                  <button class="mom-toggle-btn active" data-mom="rsi" onclick="setMomentumMode('rsi')">RSI (14)</button>
+                  <button class="mom-toggle-btn" data-mom="macd" onclick="setMomentumMode('macd')">MACD (12, 26, 9)</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -786,6 +792,15 @@
     <div id="tab-quant" class="view-panel">
       <div id="quant-engines-view-container">
         <!-- Injected via quant_engines.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW ROTATION: ROTAZIONE SETTORIALE & MONEY FLOW (RISK-ON / RISK-OFF)
+         ==================================================================== -->
+    <div id="tab-rotation" class="view-panel">
+      <div id="sector-rotation-view-container">
+        <!-- Injected via sector_rotation.js -->
       </div>
     </div>
 
@@ -1345,6 +1360,7 @@
   <script src="js/chart.js"></script>
   <script src="js/bybit_engine.js"></script>
   <script src="js/quant_engines.js"></script>
+  <script src="js/sector_rotation.js"></script>
   <script src="js/skills.js"></script>
   <script src="js/trading.js"></script>
   <script src="js/journal.js"></script>

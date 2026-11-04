@@ -137,6 +137,10 @@ function switchMainTab(tabId, btnElem) {
   if (tabId === 'tab-quant' && window.QuantEngines) {
     window.QuantEngines.renderQuantEnginesTab();
   }
+
+  if (tabId === 'tab-rotation' && window.SectorRotation) {
+    window.SectorRotation.renderSectorRotationTab();
+  }
 }
 
 // ==========================================
@@ -168,6 +172,10 @@ async function selectAsset(symbol) {
 
   if (window.BybitEngine) {
     window.BybitEngine.init(symbol);
+  }
+
+  if (window.SectorRotation) {
+    window.SectorRotation.renderSectorRotationTab();
   }
 }
 
