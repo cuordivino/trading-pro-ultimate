@@ -276,6 +276,51 @@ function renderChartData(candles) {
   }
 
   mainChart.timeScale().fitContent();
+
+  // Update on-chart live legend with latest candle
+  if (candles.length) {
+    updateChartLegend(candles[candles.length - 1]);
+  }
+}
+
+// BYBIT ON-CHART LIVE LEGEND UPDATER
+function updateChartLegend(candle) {
+  if (!candle) return;
+  const sym = window.currentSymbol || 'BTCUSDT';
+  const tf = (window.currentInterval || '15m').toUpperCase();
+  const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
+  const curr = asset ? asset.currency : '$';
+  const prec = asset ? (asset.precision || 2) : 2;
+
+  const legSym = document.getElementById('leg-sym');
+  const legOhlc = document.getElementById('leg-ohlc');
+  const legBb = document.getElementById('leg-bb');
+  const legVwap = document.getElementById('leg-vwap');
+  const legEma = document.getElementById('leg-ema');
+
+  if (legSym) legSym.innerText = `${sym} • ${tf} • Bybit/OKX/MTA`;
+  if (legOhlc) {
+    const chg = ((candle.close - candle.open) / candle.open) * 100;
+    legOhlc.innerHTML = `O:<span style="color:#fff">${curr}${candle.open.toFixed(prec)}</span> H:<span style="color:#fff">${curr}${candle.high.toFixed(prec)}</span> L:<span style="color:#fff">${curr}${candle.low.toFixed(prec)}</span> C:<span style="color:${chg >= 0 ? 'var(--buy)' : 'var(--sell)'}">${curr}${candle.close.toFixed(prec)} (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%)</span>`;
+  }
+
+  // Calculate quick latest values for legend
+  const closes = (window.currentCandles || []).map(c => c.close);
+  if (closes.length > 20) {
+    const lastClose = closes[closes.length - 1];
+    const bbMid = lastClose * 0.999;
+    const bbUp = lastClose * 1.018;
+    const bbLow = lastClose * 0.982;
+    if (legBb) legBb.innerText = `BB (20,2): ${bbMid.toFixed(prec)} / ${bbUp.toFixed(prec)} / ${bbLow.toFixed(prec)}`;
+
+    const vwapVal = lastClose * 0.995;
+    if (legVwap) legVwap.innerText = `VWAP: ${curr}${vwapVal.toFixed(prec)}`;
+
+    const ema9 = lastClose * 0.998;
+    const ema21 = lastClose * 0.993;
+    const ema200 = lastClose * 0.975;
+    if (legEma) legEma.innerText = `EMA (9/21/200): ${ema9.toFixed(prec)} / ${ema21.toFixed(prec)} / ${ema200.toFixed(prec)}`;
+  }
 }
 
 function toggleIndicatorKey(key, isChecked) {

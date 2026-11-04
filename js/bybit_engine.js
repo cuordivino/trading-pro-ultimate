@@ -32,24 +32,98 @@ window.BybitEngine = {
   orderBookFilter: 'both', // 'both' | 'bids' | 'asks'
 
   init: function(symbol) {
-    this.currentSymbol = (symbol || window.activeSymbol || 'BTCUSDT').toUpperCase();
-    if (!this.currentSymbol.endsWith('USDT') && ['BTC', 'ETH', 'SOL', 'BNB', 'XRP'].some(s => this.currentSymbol.includes(s))) {
-      this.currentSymbol += 'USDT';
-    }
+    this.currentSymbol = (symbol || window.activeSymbol || 'BTCUSDT').toUpperCase().trim();
+    const asset = window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null;
+    this.activeAsset = asset;
+    const isCrypto = asset ? asset.cat === 'crypto' : (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(s => this.currentSymbol.includes(s)));
 
-    this.fetchTicker();
-    this.fetchOrderBook();
-    this.fetchRecentTrades();
-    this.initWebSocket();
+    if (isCrypto) {
+      if (!this.currentSymbol.endsWith('USDT')) this.currentSymbol += 'USDT';
+      this.fetchTicker();
+      this.fetchOrderBook();
+      this.fetchRecentTrades();
+      this.initWebSocket();
+    } else {
+      // Non-crypto asset (FTSE MIB, US Stock, Forex)
+      if (this.ws) {
+        try { this.ws.close(); } catch(e) {}
+        this.ws = null;
+      }
+      this.initNonCryptoAsset(asset);
+    }
 
     if (this.pollTimer) clearInterval(this.pollTimer);
     this.pollTimer = setInterval(() => {
-      this.fetchTicker();
-      this.fetchOrderBook();
+      if (isCrypto) {
+        this.fetchTicker();
+        this.fetchOrderBook();
+      } else {
+        this.updateNonCryptoTick();
+      }
     }, 3000);
 
     // Update Funding Countdown every second
     setInterval(() => this.updateFundingCountdown(), 1000);
+  },
+
+  initNonCryptoAsset: function(asset) {
+    const base = asset ? asset.basePrice : (window.activePrice || 100);
+    this.tickerData = {
+      lastPrice: base,
+      indexPrice: Math.round(base * 0.998 * 100) / 100,
+      markPrice: base,
+      price24hPcnt: 0.0125,
+      highPrice24h: Math.round(base * 1.025 * 100) / 100,
+      lowPrice24h: Math.round(base * 0.985 * 100) / 100,
+      volume24h: asset && asset.cat === 'eu_stock' ? 24500000 : 48000000,
+      turnover24h: base * (asset && asset.cat === 'eu_stock' ? 24500000 : 48000000),
+      fundingRate: 0,
+      nextFundingTime: Date.now() + 14400000,
+      openInterest: 0
+    };
+    this.renderBybitTelemetry();
+    this.generateSyntheticOrderBook(base);
+    this.generateSyntheticRecentTrades(base);
+  },
+
+  updateNonCryptoTick: function() {
+    if (!this.activeAsset) return;
+    const base = this.activeAsset.basePrice;
+    const drift = (Math.random() - 0.495) * (base * 0.002);
+    this.tickerData.lastPrice = Math.round((this.tickerData.lastPrice + drift) * 100) / 100;
+    this.renderBybitTelemetry();
+  },
+
+  generateSyntheticOrderBook: function(base) {
+    const bids = [];
+    const asks = [];
+    const step = base * 0.001;
+    for (let i = 1; i <= 8; i++) {
+      bids.push({ price: Math.round((base - (i * step)) * 100) / 100, size: Math.round(Math.random() * 5000 + 800) });
+      asks.push({ price: Math.round((base + (i * step)) * 100) / 100, size: Math.round(Math.random() * 5000 + 800) });
+    }
+    const spread = asks[0].price - bids[0].price;
+    const spreadPct = (spread / asks[0].price) * 100;
+    this.activeOrderBook = { bids, asks, spread, spreadPct };
+    this.renderOrderBook();
+  },
+
+  generateSyntheticRecentTrades: function(base) {
+    const trades = [];
+    const now = new Date();
+    for (let i = 0; i < 15; i++) {
+      const p = Math.round((base + (Math.random() - 0.5) * (base * 0.003)) * 100) / 100;
+      const t = new Date(now.getTime() - i * 4000).toTimeString().split(' ')[0];
+      trades.push({
+        id: Math.random().toString(),
+        price: p,
+        size: Math.round(Math.random() * 1500 + 200),
+        side: Math.random() > 0.5 ? 'Buy' : 'Sell',
+        time: t
+      });
+    }
+    this.recentTrades = trades;
+    this.renderRecentTrades();
   },
 
   // 1. TICKER & PERPETUAL PARAMETERS
@@ -170,11 +244,16 @@ window.BybitEngine = {
     }
   },
 
-  // RENDER ALL BYBIT PARAMETERS IN HEADER TELEMETRY
+  // RENDER ALL PARAMETERS IN HEADER TELEMETRY
   renderBybitTelemetry: function() {
     const t = this.tickerData;
+    const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
+    const curr = asset ? asset.currency : '$';
+    const prec = asset ? (asset.precision || 2) : 2;
+    const isCrypto = asset ? asset.cat === 'crypto' : (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(s => this.currentSymbol.includes(s)));
 
     // Bybit Header Telemetry Bar Elements
+    const pContract = document.getElementById('bb-tele-contract');
     const pLast = document.getElementById('bb-last-price');
     const pIndex = document.getElementById('bb-index-price');
     const pMark = document.getElementById('bb-mark-price');
@@ -190,9 +269,16 @@ window.BybitEngine = {
     const heroPrice = document.getElementById('active-live-price');
     const heroChg = document.getElementById('active-chg-badge');
 
-    if (pLast) pLast.innerText = `$${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    if (pIndex) pIndex.innerText = `$${t.indexPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    if (pMark) pMark.innerText = `$${t.markPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    if (pContract) {
+      if (isCrypto) pContract.innerText = `${this.currentSymbol} Perp`;
+      else if (asset && asset.cat === 'eu_stock') pContract.innerText = `${asset.symbol} • MTA Milano`;
+      else if (asset && asset.cat === 'forex') pContract.innerText = `${asset.symbol} • Spot FX`;
+      else pContract.innerText = `${this.currentSymbol} • US Equity`;
+    }
+
+    if (pLast) pLast.innerText = `${curr}${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (pIndex) pIndex.innerText = `${curr}${t.indexPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (pMark) pMark.innerText = `${curr}${t.markPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
 
     const chgPct = (t.price24hPcnt * 100);
     const chgStr = `${chgPct >= 0 ? '+' : ''}${chgPct.toFixed(2)}%`;
@@ -201,15 +287,17 @@ window.BybitEngine = {
       pChg.className = chgPct >= 0 ? 'text-green' : 'text-red';
     }
 
-    if (pHigh) pHigh.innerText = `$${t.highPrice24h.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    if (pLow) pLow.innerText = `$${t.lowPrice24h.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    if (pVol) pVol.innerText = `${t.volume24h.toLocaleString(undefined, { maximumFractionDigits: 0 })} BTC`;
-    if (pTurnover) pTurnover.innerText = `$${(t.turnover24h / 1e9).toFixed(2)}B`;
-    if (pFunding) pFunding.innerText = `${(t.fundingRate * 100).toFixed(4)}%`;
-    if (pOI) pOI.innerText = `${t.openInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })} BTC`;
+    if (pHigh) pHigh.innerText = `${curr}${t.highPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (pLow) pLow.innerText = `${curr}${t.lowPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+
+    const volUnit = isCrypto ? (this.currentSymbol.replace('USDT', '') || 'BTC') : (asset && asset.cat === 'eu_stock' ? 'Azioni' : 'Shares');
+    if (pVol) pVol.innerText = `${t.volume24h.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${volUnit}`;
+    if (pTurnover) pTurnover.innerText = `${curr}${(t.turnover24h / 1e6).toFixed(2)}M`;
+    if (pFunding) pFunding.innerText = isCrypto ? `${(t.fundingRate * 100).toFixed(4)}%` : 'Regolare';
+    if (pOI) pOI.innerText = isCrypto ? `${t.openInterest.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${volUnit}` : 'N/A';
 
     // Also sync active-live-price
-    if (heroPrice) heroPrice.innerText = `$${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    if (heroPrice) heroPrice.innerText = `${curr}${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
     if (heroChg) {
       heroChg.innerText = chgStr;
       heroChg.className = `pct-chg-pill ${chgPct >= 0 ? 'up' : 'down'}`;

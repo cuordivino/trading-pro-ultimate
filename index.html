@@ -162,6 +162,9 @@
 
     <!-- RIGHT STATUS ACTIONS -->
     <div class="header-right-actions">
+      <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:#00f2a1; color:#00f2a1; cursor:pointer;" onclick="if(window.ApiManager) ApiManager.openModal()" title="Gestione Connessione API Broker (OKX, Bybit, Kraken, Telegram)">
+        🔑 API Broker
+      </button>
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
         📜 Paternità & Copyright
       </button>
@@ -191,11 +194,13 @@
           <input type="text" class="mega-search-box" placeholder="Cerca ticker (es. BTC, NVDA, ENEL, AAPL, ETH)..." oninput="onMegaSearchInput(this.value)">
           
           <div class="mega-tabs">
-            <button class="mega-tab-pill active" onclick="filterMegaCategory('all', this)">Tutti</button>
-            <button class="mega-tab-pill" onclick="filterMegaCategory('crypto', this)">Crypto</button>
-            <button class="mega-tab-pill" onclick="filterMegaCategory('us_stock', this)">USA Tech</button>
-            <button class="mega-tab-pill" onclick="filterMegaCategory('eu_stock', this)">Borsa Italiana (MTA)</button>
-            <button class="mega-tab-pill" onclick="filterMegaCategory('etf', this)">ETF Macro</button>
+            <button class="mega-tab-pill active" onclick="filterMegaCategory('favorites', this)">⭐ Preferiti</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('all', this)">Tutti</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('crypto', this)">🪙 Crypto (Bybit/OKX/Kraken)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('eu_stock', this)">🇮🇹 FTSE MIB (40/40)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('us_stock', this)">🇺🇸 USA (S&P/NASDAQ)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('forex', this)">💱 Forex & Materie</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('etf', this)">📈 ETF Settoriali</button>
           </div>
 
           <div class="mega-asset-list" id="mega-asset-list-container">
@@ -237,7 +242,7 @@
       <div class="bybit-telemetry-strip">
         <div class="bb-tele-item">
           <span class="k">Contratto</span>
-          <span class="v" style="color:var(--accent); font-size:13px">BTCUSDT Perp</span>
+          <span class="v" style="color:var(--accent); font-size:13px" id="bb-tele-contract">BTCUSDT Perp</span>
         </div>
         <div class="bb-tele-item">
           <span class="k">Ultimo Prezzo</span>
@@ -390,30 +395,45 @@
           </div>
 
           <div class="window-body">
-            <!-- Chart Toolbar with Timeframes -->
+            <!-- Bybit Chart Subtabs (Grafico / Panoramica / Dati / Alimentazione) -->
+            <div class="bybit-subtabs-nav">
+              <button class="bybit-subtab-btn active" onclick="switchBybitSubtab('chart', this)">Grafico</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('overview', this)">Panoramica</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('data', this)">Dati</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('feed', this)">Alimentazione</button>
+            </div>
+
+            <!-- Chart Toolbar with Bybit Timeframes -->
             <div class="chart-toolbar">
               <div class="tf-pill-group">
+                <button class="tf-pill" onclick="changeTimeframe('1s', this)">1s</button>
                 <button class="tf-pill" onclick="changeTimeframe('1m', this)">1m</button>
                 <button class="tf-pill" onclick="changeTimeframe('5m', this)">5m</button>
                 <button class="tf-pill active" onclick="changeTimeframe('15m', this)">15m</button>
+                <button class="tf-pill" onclick="changeTimeframe('30m', this)">30m</button>
                 <button class="tf-pill" onclick="changeTimeframe('1h', this)">1h</button>
                 <button class="tf-pill" onclick="changeTimeframe('4h', this)">4h</button>
-                <button class="tf-pill" onclick="changeTimeframe('1d', this)">1D</button>
+                <button class="tf-pill" onclick="changeTimeframe('1d', this)">1d</button>
+                <button class="tf-pill" onclick="changeTimeframe('1w', this)">1w</button>
+                <button class="tf-pill" onclick="changeTimeframe('1M', this)">1M</button>
               </div>
 
-              <!-- Timeframe Custom Dropdown ("Apertura a tendina") -->
+              <!-- Timeframe Custom Dropdown ("Apertura a tendina Bybit") -->
               <div class="dropdown">
                 <button class="dropdown-trigger" style="font-size:10px; padding:3px 8px;">
-                  <span id="active-tf-trigger">15M</span>
+                  <span id="active-tf-trigger">Altro</span>
                   <span class="chevron">▾</span>
                 </button>
-                <div class="dropdown-menu" style="min-width:110px; padding:4px;">
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('1m')">1 Minuto</div>
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('5m')">5 Minuti</div>
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('15m')">15 Minuti</div>
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('1h')">1 Ora</div>
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('4h')">4 Ore</div>
-                  <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('1d')">1 Giorno</div>
+                <div class="dropdown-menu" style="min-width:140px; padding:6px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:6px;">
+                    <button class="tf-sub-pill" onclick="changeTimeframe('3m')">3m</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('2h')">2h</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('6h')">6h</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('12h')">12h</button>
+                  </div>
+                  <div class="mega-asset-row" style="padding:6px 8px; font-size:11px; border-top:1px solid var(--border);" onclick="promptCustomTimeframe()">
+                    <span>⏱ Lasso personalizzato...</span>
+                  </div>
                 </div>
               </div>
 
@@ -425,6 +445,19 @@
 
             <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
             <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
+              <!-- FLOATING BYBIT ON-CHART LIVE LEGEND -->
+              <div class="bybit-chart-legend" id="bybit-chart-legend">
+                <div class="bybit-legend-line main">
+                  <span class="bybit-leg-sym" id="bybit-leg-sym">BTCUSDT Perpetual</span>
+                  <span class="bybit-leg-tf" id="bybit-leg-tf">15</span>
+                  <span class="bybit-leg-exch">Bybit</span>
+                  <span class="bybit-leg-ohlc" id="bybit-leg-ohlc">O: -- H: -- L: -- C: -- (--%)</span>
+                </div>
+                <div class="bybit-legend-line bb" id="bybit-leg-bb">BB 20 2 0: -- -- --</div>
+                <div class="bybit-legend-line vwap" id="bybit-leg-vwap">VWAP hlc3 Session: --</div>
+                <div class="bybit-legend-line ema" id="bybit-leg-ema">EMA 9 / 21 / 200: -- / -- / --</div>
+              </div>
+
               <div id="chart-container" style="width:100%; height:100%;"></div>
               <div id="chart-vp-overlay"></div>
             </div>
@@ -1385,6 +1418,22 @@
     </div>
   </div>
 
+  <!-- API BROKER MANAGER MODAL (OKX, BYBIT, KRAKEN, TELEGRAM, BINANCE) -->
+  <div class="modal-overlay" id="api-manager-modal" onclick="if(event.target===this) ApiManager.closeModal()">
+    <div class="modal-window-card" style="max-width:680px; max-height:88vh;">
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:20px">🔑</span>
+          <span style="font-weight:900; font-size:15px; color:#00f2a1">CONNESSIONI API BROKER (OKX • BYBIT • KRAKEN • TELEGRAM)</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="ApiManager.closeModal()" style="font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body-scroll" id="api-manager-modal-body" style="padding:16px;">
+        <!-- Injected via ApiManager.renderApiManagerModal() -->
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1414,6 +1463,8 @@
 
   <!-- Application Logic Scripts -->
   <script src="js/auth.js"></script>
+  <script src="js/market_assets.js"></script>
+  <script src="js/api_manager.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/bybit_engine.js"></script>
   <script src="js/quant_engines.js"></script>
@@ -1426,6 +1477,29 @@
   <script src="js/app.js"></script>
 
   <script>
+    // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)
+    function switchBybitSubtab(tabKey, btn) {
+      document.querySelectorAll('.bybit-subtab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      if (tabKey === 'chart') {
+        if (window.mainChart) window.mainChart.timeScale().fitContent();
+      } else if (tabKey === 'overview') {
+        if (window.showToast) window.showToast('Panoramica mercato Bybit attiva', 'info');
+      } else if (tabKey === 'data') {
+        if (window.showToast) window.showToast('Dati profondità e statistiche Bybit attive', 'info');
+      } else if (tabKey === 'feed') {
+        if (window.showToast) window.showToast('Feed Real-time WebSocket attivo', 'success');
+      }
+    }
+
+    // Custom Timeframe Prompt
+    function promptCustomTimeframe() {
+      const custom = prompt('Inserisci lasso di tempo personalizzato (es: 3m, 2h, 6h, 12h, 3d):', '2h');
+      if (custom && window.changeTimeframe) {
+        window.changeTimeframe(custom.trim().toLowerCase());
+      }
+    }
+
     // Bybit Subtab Switcher: Orderbook vs Trades
     function switchBookSubTab(tab) {
       const btnOb = document.getElementById('bb-tab-ob-btn');

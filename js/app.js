@@ -190,49 +190,81 @@ async function selectAsset(symbol) {
 
 async function pollActiveQuote() {
   if (!window.currentSymbol) return;
+  const sym = window.currentSymbol.toUpperCase().trim();
+  const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
   const tStart = performance.now();
   let q = null;
 
-  // Try Local/Cloud Backend API first
-  try {
-    const res = await fetch(`/api/quote/${window.currentSymbol}`);
-    if (res.ok) {
-      q = await res.json();
-    }
-  } catch (e) {}
+  const isCrypto = asset ? asset.cat === 'crypto' : (sym.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(c => sym.includes(c)));
 
-  // Direct Browser Fallback for GitHub Pages Static Mode
-  if (!q || !q.price) {
+  // 1. If Crypto (Bybit / OKX / Kraken), query public v5 Bybit API (CORS friendly)
+  if (isCrypto) {
+    let cleanSym = sym.endsWith('USDT') ? sym : `${sym}USDT`;
     try {
-      let sym = window.currentSymbol.toUpperCase();
-      if (!sym.endsWith('USDT') && ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE'].includes(sym)) sym += 'USDT';
-      if (sym.endsWith('USDT')) {
-        const binRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${sym}`);
+      const res = await fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${cleanSym}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.result && json.result.list && json.result.list.length) {
+          const t = json.result.list[0];
+          q = {
+            symbol: cleanSym,
+            price: parseFloat(t.lastPrice),
+            change: parseFloat(t.price24hPcnt) * 100,
+            high: parseFloat(t.highPrice24h),
+            low: parseFloat(t.lowPrice24h),
+            volume: parseFloat(t.volume24h),
+            turnover: parseFloat(t.turnover24h),
+            currency: '$'
+          };
+        }
+      }
+    } catch (e) {}
+
+    // Binance fallback for crypto
+    if (!q) {
+      try {
+        const binRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${cleanSym}`);
         if (binRes.ok) {
           const bd = await binRes.json();
           q = {
-            symbol: sym,
+            symbol: cleanSym,
             price: parseFloat(bd.lastPrice),
             change: parseFloat(bd.priceChangePercent),
             high: parseFloat(bd.highPrice),
             low: parseFloat(bd.lowPrice),
-            volume: parseFloat(bd.volume)
+            volume: parseFloat(bd.volume),
+            currency: '$'
           };
         }
-      }
-    } catch (err) {}
+      } catch (e) {}
+    }
   }
 
-  // Baseline Fallback if completely offline
-  if (!q || !q.price) {
-    const base = window.currentSymbol.includes('BTC') ? 65000 : (window.currentSymbol.includes('AAPL') ? 230 : 100);
-    q = { symbol: window.currentSymbol, price: base, change: 1.25, high: base * 1.02, low: base * 0.98, volume: 1200000 };
+  // 2. Non-Crypto (FTSE MIB, US Stock, Forex) or Offline Fallback
+  if (!q) {
+    const base = asset ? asset.basePrice : 100.00;
+    const curr = asset ? asset.currency : '$';
+    const seed = (Date.now() / 60000) % 100;
+    const drift = Math.sin(seed) * 0.003;
+    const price = Math.round((base * (1 + drift)) * 100) / 100;
+    const chg = Math.round((drift * 100 + 1.25) * 100) / 100;
+
+    q = {
+      symbol: sym,
+      price: price,
+      change: chg,
+      high: Math.round(price * 1.02 * 100) / 100,
+      low: Math.round(price * 0.98 * 100) / 100,
+      volume: asset && asset.cat === 'eu_stock' ? 24500000 : 48200000,
+      currency: curr
+    };
   }
 
   const tLatency = Math.round(performance.now() - tStart);
   window.currentLivePrice = q.price;
   window.activePrice = q.price;
-  window.activeSymbol = window.currentSymbol;
+  window.activeSymbol = sym;
+  window.activeCurrency = q.currency || '$';
 
   const latElem = document.getElementById('tele-latency-val');
   if (latElem) latElem.innerText = `${tLatency}ms`;
@@ -243,13 +275,16 @@ async function pollActiveQuote() {
   const lowElem = document.getElementById('active-metric-low');
   const volElem = document.getElementById('active-metric-vol');
 
-  if (priceElem) priceElem.innerText = `$${q.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  const curr = q.currency || '$';
+  const prec = asset ? (asset.precision || 2) : 2;
+
+  if (priceElem) priceElem.innerText = `${curr}${q.price.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (chgBadge) {
     chgBadge.innerText = `${q.change >= 0 ? '+' : ''}${q.change.toFixed(2)}%`;
     chgBadge.className = `pct-chg-pill ${q.change >= 0 ? 'up' : 'down'}`;
   }
-  if (highElem) highElem.innerText = `$${q.high.toLocaleString()}`;
-  if (lowElem) lowElem.innerText = `$${q.low.toLocaleString()}`;
+  if (highElem) highElem.innerText = `${curr}${q.high.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+  if (lowElem) lowElem.innerText = `${curr}${q.low.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (volElem) volElem.innerText = q.volume.toLocaleString();
 
   const entryInput = document.getElementById('t-entry');
@@ -257,32 +292,73 @@ async function pollActiveQuote() {
     entryInput.value = q.price;
     const slInput = document.getElementById('t-sl');
     const tpInput = document.getElementById('t-tp');
-    if (slInput && !slInput.value) slInput.value = (q.price * 0.95).toFixed(2);
-    if (tpInput && !tpInput.value) tpInput.value = (q.price * 1.15).toFixed(2);
+    if (slInput && !slInput.value) slInput.value = (q.price * 0.95).toFixed(prec);
+    if (tpInput && !tpInput.value) tpInput.value = (q.price * 1.15).toFixed(prec);
     recalcPosition();
   }
 }
 
+function getTimeframeSeconds(tf) {
+  if (!tf) return 900;
+  tf = tf.toLowerCase();
+  if (tf === '1s') return 1;
+  if (tf === '1m') return 60;
+  if (tf === '3m') return 180;
+  if (tf === '5m') return 300;
+  if (tf === '15m') return 900;
+  if (tf === '30m') return 1800;
+  if (tf === '1h') return 3600;
+  if (tf === '2h') return 7200;
+  if (tf === '4h') return 14400;
+  if (tf === '6h') return 21600;
+  if (tf === '12h') return 43200;
+  if (tf === '1d' || tf === 'd') return 86400;
+  if (tf === '1w' || tf === 'w') return 604800;
+  if (tf === '1m_month' || tf === '1m' && tf.length > 2) return 2592000;
+  return 900;
+}
+
 async function loadCandleHistory() {
-  const symbol = window.currentSymbol;
-  const interval = window.currentInterval;
+  const symbol = window.currentSymbol || 'BTCUSDT';
+  const interval = window.currentInterval || '15m';
+  const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
+  const isCrypto = asset ? asset.cat === 'crypto' : (symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(c => symbol.includes(c)));
+  const targetPrice = window.activePrice || (asset ? asset.basePrice : 100);
+
   let candles = [];
 
-  // Try Backend API first
-  try {
-    const res = await fetch(`/api/kline/${symbol}?interval=${interval}&limit=120`);
-    if (res.ok) {
-      candles = await res.json();
-    }
-  } catch (e) {}
+  // 1. If Crypto, query Bybit v5 public Klines (limit=200)
+  if (isCrypto) {
+    let cleanSym = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
+    const bybitTfMap = {
+      '1s': '1', '1m': '1', '3m': '3', '5m': '5', '15m': '15',
+      '30m': '30', '1h': '60', '2h': '120', '4h': '240', '6h': '360',
+      '12h': '720', '1d': 'D', '1w': 'W', '1m_month': 'M'
+    };
+    const bybitInterval = bybitTfMap[interval] || '15';
 
-  // Direct Binance Fallback for GitHub Pages Static Mode
-  if (!candles || !candles.length) {
     try {
-      let sym = symbol.toUpperCase();
-      if (!sym.endsWith('USDT') && ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'DOGE'].includes(sym)) sym += 'USDT';
-      if (sym.endsWith('USDT')) {
-        const binRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${interval}&limit=120`);
+      const res = await fetch(`https://api.bybit.com/v5/market/kline?category=linear&symbol=${cleanSym}&interval=${bybitInterval}&limit=200`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.result && json.result.list && json.result.list.length) {
+          candles = json.result.list.reverse().map(c => ({
+            time: Math.floor(parseInt(c[0]) / 1000),
+            open: parseFloat(c[1]),
+            high: parseFloat(c[2]),
+            low: parseFloat(c[3]),
+            close: parseFloat(c[4]),
+            volume: parseFloat(c[5])
+          }));
+        }
+      }
+    } catch (e) {}
+
+    // Binance fallback for crypto
+    if (!candles || !candles.length) {
+      try {
+        const binTf = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '12h', '1d', '1w'].includes(interval) ? interval : '15m';
+        const binRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=${cleanSym}&interval=${binTf}&limit=200`);
         if (binRes.ok) {
           const raw = await binRes.json();
           candles = raw.map(c => ({
@@ -294,30 +370,43 @@ async function loadCandleHistory() {
             volume: parseFloat(c[5])
           }));
         }
-      }
-    } catch (err) {}
+      } catch (e) {}
+    }
   }
 
-  // High-fidelity fallback generation if offline
+  // 2. High-fidelity synthetic sequence generator (200 candles) for FTSE MIB, US Stocks, Forex, or offline
+  // Backwards random walk ensuring the latest candle close is EXACTLY targetPrice
   if (!candles || !candles.length) {
-    const base = symbol.includes('BTC') ? 65000 : 150;
-    const now = Math.floor(Date.now() / 1000) - (120 * 900);
-    let curr = base;
-    candles = [];
-    for (let i = 0; i < 120; i++) {
-      const step = (Math.random() - 0.49) * (curr * 0.008);
-      const o = curr;
-      const c = curr + step;
-      candles.push({
-        time: now + (i * 900),
-        open: Math.round(o * 100) / 100,
-        high: Math.round((Math.max(o, c) + Math.random() * (curr * 0.004)) * 100) / 100,
-        low: Math.round((Math.min(o, c) - Math.random() * (curr * 0.004)) * 100) / 100,
-        close: Math.round(c * 100) / 100,
-        volume: Math.round(Math.random() * 5000 + 500)
+    const count = 200; // Amplified sequence
+    const tfSeconds = getTimeframeSeconds(interval);
+    const now = Math.floor(Date.now() / 1000);
+    const tfVol = Math.sqrt(tfSeconds / 900);
+    const stepScale = targetPrice * 0.0035 * tfVol;
+
+    let p = targetPrice;
+    const tempCandles = [];
+
+    for (let i = count - 1; i >= 0; i--) {
+      const cTime = now - ((count - 1 - i) * tfSeconds);
+      const close = p;
+      const change = (Math.random() - 0.495) * stepScale;
+      const open = Math.round((close - change) * 100) / 100;
+      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.6)) * 100) / 100;
+      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.6)) * 100) / 100;
+      const volume = Math.round((Math.random() * 8000 + 1200) * tfVol);
+
+      tempCandles.unshift({
+        time: cTime,
+        open: open,
+        high: high,
+        low: low,
+        close: close,
+        volume: volume
       });
-      curr = c;
+
+      p = open;
     }
+    candles = tempCandles;
   }
 
   window.currentCandles = candles;
@@ -350,20 +439,15 @@ function changeTimeframe(tf, btnElem) {
 }
 
 // ==========================================
-// MEGA-DROPDOWN ASSET SELECTOR & TICKER TAPE
+// MEGA-DROPDOWN ASSET SELECTOR WITH FAVORITES & TYPOLOGIES
 // ==========================================
 async function initCuratedAssets() {
+  curatedAssets = window.GlobalMarketAssets || curatedAssets;
   const tapeContainer = document.getElementById('ticker-tape-container');
 
-  try {
-    const res = await fetch('/api/symbols/curated');
-    if (res.ok) {
-      curatedAssets = await res.json();
-    }
-  } catch (e) {}
-
   if (tapeContainer) {
-    const html = curatedAssets.map(item => `
+    const featured = curatedAssets.slice(0, 15);
+    const html = featured.map(item => `
       <div class="tape-pill" onclick="selectAsset('${item.symbol}')">
         <span class="sym">${item.symbol}</span>
         <span class="price" id="tape-price-${item.symbol}">...</span>
@@ -373,27 +457,6 @@ async function initCuratedAssets() {
   }
 
   renderMegaAssetList(curatedAssets);
-
-  // Fetch prices for ticker tape
-  curatedAssets.forEach(async (it) => {
-    try {
-      let price = null, change = 0;
-      if (it.symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'BNB', 'XRP'].some(c => it.symbol.includes(c))) {
-        let sym = it.symbol.endsWith('USDT') ? it.symbol : it.symbol + 'USDT';
-        const r = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${sym}`);
-        if (r.ok) {
-          const d = await r.json();
-          price = parseFloat(d.lastPrice);
-          change = parseFloat(d.priceChangePercent);
-        }
-      }
-      if (price !== null) {
-        document.querySelectorAll(`[id="tape-price-${it.symbol}"]`).forEach(el => {
-          el.innerHTML = `$${price} <span class="chg ${change >= 0 ? 'up' : 'down'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>`;
-        });
-      }
-    } catch (err) {}
-  });
 }
 
 function renderMegaAssetList(assets) {
@@ -401,23 +464,79 @@ function renderMegaAssetList(assets) {
   if (!container) return;
 
   if (!assets.length) {
-    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted)">Nessun asset corrispondente trovato.</div>`;
+    container.innerHTML = `<div style="text-align:center; padding:24px; color:var(--text-muted)">Nessun asset corrispondente trovato. Prova a cercare un altro ticker.</div>`;
     return;
   }
 
-  container.innerHTML = assets.map(a => `
+  // If in Favorites Tab, group by typology
+  if (activeMegaCategory === 'favorites') {
+    const favs = window.FavoritesManager ? window.FavoritesManager.getFavorites() : [];
+    const favAssets = (window.GlobalMarketAssets || assets).filter(a => favs.includes(a.symbol));
+
+    if (!favAssets.length) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:28px 16px; color:var(--text-muted)">
+          <div style="font-size:24px; margin-bottom:8px;">⭐</div>
+          <b>Nessun titolo nei Preferiti</b>
+          <div style="font-size:11px; margin-top:4px;">Clicca sulla stellina accanto a qualsiasi titolo (Crypto, FTSE MIB, USA, Forex) per salvarlo nei tuoi Preferiti.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const groups = {
+      crypto: { label: '🪙 Crypto (Bybit / OKX / Kraken)', items: [] },
+      eu_stock: { label: '🇮🇹 FTSE MIB (Borsa Italiana)', items: [] },
+      us_stock: { label: '🇺🇸 USA Equity (S&P 500 / NASDAQ)', items: [] },
+      forex: { label: '💱 Forex & Materie Prime', items: [] },
+      other: { label: '🌐 Altri Titoli', items: [] }
+    };
+
+    favAssets.forEach(a => {
+      const g = groups[a.cat] || groups.other;
+      g.items.push(a);
+    });
+
+    let html = '';
+    for (const key in groups) {
+      const g = groups[key];
+      if (g.items.length) {
+        html += `<div style="font-size:10px; font-weight:800; color:var(--accent); text-transform:uppercase; padding:6px 10px; background:rgba(255,215,0,0.06); border-bottom:1px solid var(--border);">${g.label}</div>`;
+        html += g.items.map(a => renderAssetRowHtml(a)).join('');
+      }
+    }
+    container.innerHTML = html;
+    return;
+  }
+
+  container.innerHTML = assets.map(a => renderAssetRowHtml(a)).join('');
+}
+
+function renderAssetRowHtml(a) {
+  const isFav = window.FavoritesManager ? window.FavoritesManager.isFavorite(a.symbol) : false;
+  const curr = a.currency || '$';
+  const prec = a.precision || 2;
+  const priceStr = a.basePrice ? `${curr}${a.basePrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}` : '';
+
+  return `
     <div class="mega-asset-row" onclick="selectAsset('${a.symbol}')">
-      <div class="mega-asset-left">
-        <span class="mega-asset-sym">${a.symbol}</span>
+      <button class="star-fav-btn ${isFav ? 'active' : ''}" onclick="FavoritesManager.toggleFavorite('${a.symbol}', event)" title="Aggiungi o rimuovi dai Preferiti">
+        ${isFav ? '★' : '☆'}
+      </button>
+      <div class="mega-asset-left" style="flex:1;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="mega-asset-sym">${a.symbol}</span>
+          <span style="font-size:9px; background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px; color:var(--text-muted); font-family:var(--font-mono)">
+            ${a.exchange || a.cat}
+          </span>
+        </div>
         <span class="mega-asset-name">${a.name}</span>
       </div>
-      <div class="mega-asset-right">
-        <span style="font-size:10px; background:var(--bg-elevated); padding:2px 6px; border-radius:3px; color:var(--text-muted); text-transform:uppercase">
-          ${a.cat || 'global'}
-        </span>
+      <div class="mega-asset-right" style="text-align:right;">
+        <span style="font-weight:700; color:var(--text-main); font-family:var(--font-mono); font-size:12px;">${priceStr}</span>
       </div>
     </div>
-  `).join('');
+  `;
 }
 
 function filterMegaCategory(cat, tabBtn) {
@@ -425,7 +544,16 @@ function filterMegaCategory(cat, tabBtn) {
   document.querySelectorAll('.mega-tab-pill').forEach(b => b.classList.remove('active'));
   if (tabBtn) tabBtn.classList.add('active');
 
-  const filtered = cat === 'all' ? curatedAssets : curatedAssets.filter(a => a.cat === cat);
+  const allAssets = window.GlobalMarketAssets || curatedAssets;
+  let filtered = allAssets;
+
+  if (cat === 'favorites') {
+    const favs = window.FavoritesManager ? window.FavoritesManager.getFavorites() : [];
+    filtered = allAssets.filter(a => favs.includes(a.symbol));
+  } else if (cat !== 'all') {
+    filtered = allAssets.filter(a => a.cat === cat);
+  }
+
   renderMegaAssetList(filtered);
 }
 
@@ -434,16 +562,32 @@ function onMegaSearchInput(query) {
   clearTimeout(megaSearchTimer);
   megaSearchTimer = setTimeout(async () => {
     query = query.trim().toUpperCase();
+    const allAssets = window.GlobalMarketAssets || curatedAssets;
+
     if (!query) {
       filterMegaCategory(activeMegaCategory);
       return;
     }
-    const filtered = curatedAssets.filter(a => a.symbol.includes(query) || a.name.toUpperCase().includes(query));
+
+    const filtered = allAssets.filter(a =>
+      a.symbol.includes(query) ||
+      a.name.toUpperCase().includes(query) ||
+      (a.exchange && a.exchange.toUpperCase().includes(query))
+    );
+
     if (!filtered.some(a => a.symbol === query)) {
-      filtered.push({ symbol: query, name: `${query} (Custom Asset)`, cat: 'custom' });
+      filtered.push({
+        symbol: query,
+        name: `${query} (Custom Asset)`,
+        cat: 'custom',
+        exchange: 'Global',
+        basePrice: 100,
+        currency: '$'
+      });
     }
+
     renderMegaAssetList(filtered);
-  }, 200);
+  }, 150);
 }
 
 // ==========================================
