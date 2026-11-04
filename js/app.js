@@ -141,6 +141,10 @@ function switchMainTab(tabId, btnElem) {
   if (tabId === 'tab-rotation' && window.SectorRotation) {
     window.SectorRotation.renderSectorRotationTab();
   }
+
+  if (tabId === 'tab-optimal' && window.OptimalEngine) {
+    window.OptimalEngine.renderOptimalUI();
+  }
 }
 
 // ==========================================
@@ -176,6 +180,11 @@ async function selectAsset(symbol) {
 
   if (window.SectorRotation) {
     window.SectorRotation.renderSectorRotationTab();
+  }
+
+  if (window.OptimalEngine) {
+    window.OptimalEngine.recalculateOptimalPosition();
+    window.OptimalEngine.calculateLocalVolumeProfile();
   }
 }
 
@@ -323,6 +332,11 @@ async function loadCandleHistory() {
   }
 
   renderChartData(candles);
+
+  if (window.OptimalEngine) {
+    window.OptimalEngine.calculateLocalVolumeProfile();
+    window.OptimalEngine.recalculateOptimalPosition();
+  }
 }
 
 function changeTimeframe(tf, btnElem) {

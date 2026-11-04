@@ -137,6 +137,9 @@
       <button class="tab-nav-btn ai-glow" data-tab="tab-rotation" onclick="switchMainTab('tab-rotation', this); if(window.SectorRotation) SectorRotation.renderSectorRotationTab();">
         <span>🌐</span> Rotazione Settoriale
       </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-optimal" onclick="switchMainTab('tab-optimal', this); if(window.OptimalEngine) OptimalEngine.renderOptimalUI();">
+        <span>🎯</span> Posizioni Ottimali & Auto-Pilot
+      </button>
       <button class="tab-nav-btn" data-tab="tab-chat" onclick="switchMainTab('tab-chat', this)">
         <span>💬</span> Chat Grandi Maestri
       </button>
@@ -368,6 +371,16 @@
                       <span class="slider-toggle"></span>
                     </label>
                   </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#f59e0b"></span>
+                      <span>Volumi Locali POC/VAH (OpenMarket)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -403,10 +416,18 @@
                   <div class="mega-asset-row" style="padding:4px 8px; font-size:11px" onclick="changeTimeframe('1d')">1 Giorno</div>
                 </div>
               </div>
+
+              <!-- OpenMarket Volume Profile Quick Toggle -->
+              <button id="btn-toggle-vp" class="tf-pill active" style="margin-left:auto; display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
+                <span>📊 Volumi Locali (POC)</span>
+              </button>
             </div>
 
-            <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger) -->
-            <div id="chart-container"></div>
+            <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
+            <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
+              <div id="chart-container" style="width:100%; height:100%;"></div>
+              <div id="chart-vp-overlay"></div>
+            </div>
 
             <!-- SOTTO IL GRAFICO: PANNELLO 1 (Volumi a barre verticali + Media Mobile dei Volumi) -->
             <div id="chart-volume-pane" class="chart-sub-pane active" style="height:90px; border-top:1px solid var(--border); position:relative;">
@@ -484,6 +505,33 @@
           <div class="window-body">
             <div class="order-execution-window">
               
+              <!-- KIYOTAKA & OPENMARKET EXECUTION MODE SELECTOR -->
+              <div class="optimal-mode-selector-bar" style="margin-bottom:12px; background:rgba(18,24,38,0.8); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;">
+                  <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Modalità Operativa</span>
+                  <span class="optimal-mode-badge" id="opt-mode-status-badge" style="font-size:9px; font-weight:800; padding:2px 7px; border-radius:4px; background:rgba(99,102,241,0.15); color:var(--accent); border:1px solid rgba(99,102,241,0.3);">⚡ SEMI-AUTO ATTIVO</span>
+                </div>
+                <div class="optimal-mode-pills" style="display:grid; grid-template-columns:1fr 1.25fr 1.35fr; gap:4px;">
+                  <button type="button" class="opt-mode-btn" id="btn-mode-manual" onclick="OptimalEngine.setExecutionMode('manual')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer;">
+                    Manuale
+                  </button>
+                  <button type="button" class="opt-mode-btn active" id="btn-mode-semi" onclick="OptimalEngine.setExecutionMode('semi_auto')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--accent); background:rgba(99,102,241,0.2); color:#fff; cursor:pointer;">
+                    ⚡ Semi-Auto
+                  </button>
+                  <button type="button" class="opt-mode-btn" id="btn-mode-auto" onclick="OptimalEngine.setExecutionMode('full_auto')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer;">
+                    🤖 Auto-Pilot
+                  </button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                  <span id="opt-mode-desc-text" style="font-size:9px; color:var(--text-muted); line-height:1.2;">
+                    Segnale IA telegram & 1-click execution.
+                  </span>
+                  <button type="button" onclick="OptimalEngine.sendOptimalTelegramSignal(false)" style="font-size:9px; padding:2px 6px; background:rgba(0,136,204,0.15); border:1px solid #0088cc; color:#0088cc; border-radius:3px; cursor:pointer;" title="Invia configurazione ottimale a Telegram">
+                    ✈️ Invia Segnale
+                  </button>
+                </div>
+              </div>
+
               <!-- MARGIN MODE: CROSS / ISOLATED -->
               <div class="bb-margin-toggles">
                 <button class="bb-margin-btn active" data-margin="cross" onclick="BybitEngine.setMarginMode('cross')">Cross Margin</button>
@@ -801,6 +849,15 @@
     <div id="tab-rotation" class="view-panel">
       <div id="sector-rotation-view-container">
         <!-- Injected via sector_rotation.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW OPTIMAL: POSIZIONI OTTIMALI & AUTOPILOT (KIYOTAKA & OPENMARKET)
+         ==================================================================== -->
+    <div id="tab-optimal" class="view-panel">
+      <div id="optimal-engine-view-container">
+        <!-- Injected via optimal_engine.js -->
       </div>
     </div>
 
@@ -1361,6 +1418,7 @@
   <script src="js/bybit_engine.js"></script>
   <script src="js/quant_engines.js"></script>
   <script src="js/sector_rotation.js"></script>
+  <script src="js/optimal_engine.js"></script>
   <script src="js/skills.js"></script>
   <script src="js/trading.js"></script>
   <script src="js/journal.js"></script>
