@@ -3,12 +3,12 @@
  * © by cuordivino — Tutti i diritti riservati
  * 
  * Client-Side SHA-256 Gatekeeper Security for GitHub Pages & Cloud
- * Master default passwords: "cuordivino2026" or "cuordivino"
+ * Master default password: "Deia2026"
  */
 
 const MASTER_PASSWORD_HASHES = [
-  '7484973ae1aecdbc52b84e9c157d9e2885c7341191a6bcd4b5df3b3977ced718', // cuordivino2026
-  '50321debce286d37c6ecb1577e8d752952e8354e9bdd6ad6e8cac6fc640ec056'  // cuordivino
+  '99991b82b02f113d97922078b6ce99eb5ac38dbd0f501d0d915bf90d4b88aa79', // Deia2026
+  '7484973ae1aecdbc52b84e9c157d9e2885c7341191a6bcd4b5df3b3977ced718'  // cuordivino2026
 ];
 
 async function sha256(message) {
