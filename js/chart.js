@@ -102,10 +102,10 @@ function initMainChart() {
       borderColor: '#1e293b',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 6,
-      barSpacing: 7,
-      fixLeftEdge: true,
-      fixRightEdge: true,
+      rightOffset: 12,
+      barSpacing: 8,
+      fixLeftEdge: false,
+      fixRightEdge: false,
       tickMarkFormatter: (time) => formatRomeTime(time, false)
     },
   });
@@ -198,6 +198,11 @@ function initMainChart() {
   // Attach Bidirectional Synchronization across all 3 charts
   attachMultiChartSync();
 
+  // Initialize Theme, Pane Splitter & Workspace Masks
+  if (window.ThemeManager) window.ThemeManager.init();
+  if (window.PaneSplitterManager) window.PaneSplitterManager.init();
+  if (window.WorkspaceMaskManager) window.WorkspaceMaskManager.init();
+
   // Window resize handler
   window.addEventListener('resize', () => {
     resizeAllCharts();
@@ -205,6 +210,40 @@ function initMainChart() {
 
   startRomeClock();
 }
+
+// Global Theme Applicator for All 3 Synchronized LightweightCharts
+window.applyChartThemeToAll = function(t) {
+  if (!t) return;
+  const chartOpts = {
+    layout: {
+      background: { color: t.chartBg },
+      textColor: t.textColor
+    },
+    grid: {
+      vertLines: { color: t.gridColor },
+      horzLines: { color: t.gridColor }
+    },
+    rightPriceScale: {
+      borderColor: t.borderColor
+    },
+    timeScale: {
+      borderColor: t.borderColor
+    }
+  };
+
+  if (mainChart) mainChart.applyOptions(chartOpts);
+  if (volumeChart) volumeChart.applyOptions(chartOpts);
+  if (momentumChart) momentumChart.applyOptions(chartOpts);
+
+  if (candleSeries) {
+    candleSeries.applyOptions({
+      upColor: t.candleUp,
+      wickUpColor: t.candleUp,
+      downColor: t.candleDown,
+      wickDownColor: t.candleDown
+    });
+  }
+};
 
 // ==========================================
 // PANNELLO 1: VOLUMI + MEDIA MOBILE VOLUMI
@@ -229,10 +268,10 @@ function initVolumePane() {
     },
     timeScale: {
       visible: false,
-      rightOffset: 6,
-      barSpacing: 7,
-      fixLeftEdge: true,
-      fixRightEdge: true
+      rightOffset: 12,
+      barSpacing: 8,
+      fixLeftEdge: false,
+      fixRightEdge: false
     },
   });
 
@@ -275,10 +314,10 @@ function initMomentumPane() {
     },
     timeScale: {
       visible: false,
-      rightOffset: 6,
-      barSpacing: 7,
-      fixLeftEdge: true,
-      fixRightEdge: true
+      rightOffset: 12,
+      barSpacing: 8,
+      fixLeftEdge: false,
+      fixRightEdge: false
     },
   });
 

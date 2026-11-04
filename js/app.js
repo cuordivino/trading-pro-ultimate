@@ -242,6 +242,27 @@ async function pollActiveQuote() {
 
   // 2. Non-Crypto (FTSE MIB, US Stock, Forex) or Offline Fallback
   if (!q) {
+    try {
+      const bRes = await fetch(`/api/quote/${encodeURIComponent(sym)}`);
+      if (bRes.ok) {
+        const bd = await bRes.json();
+        if (bd && bd.price && !bd.fallback) {
+          const prec = window.getDynamicPrecision ? window.getDynamicPrecision(bd.price, sym) : (asset ? (asset.precision || 2) : 2);
+          q = {
+            symbol: sym,
+            price: bd.price,
+            change: bd.change || 0,
+            high: bd.high || +(bd.price * 1.018).toFixed(prec),
+            low: bd.low || +(bd.price * 0.982).toFixed(prec),
+            volume: bd.volume || 24500000,
+            currency: bd.currency === 'EUR' ? '€' : (asset ? asset.currency : '$')
+          };
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!q) {
     const base = asset ? asset.basePrice : 100.00;
     const curr = asset ? asset.currency : '$';
     const price = base;
@@ -252,8 +273,8 @@ async function pollActiveQuote() {
       symbol: sym,
       price: price,
       change: chg,
-      high: +(price * 1.02).toFixed(prec),
-      low: +(price * 0.98).toFixed(prec),
+      high: +(price * 1.018).toFixed(prec),
+      low: +(price * 0.982).toFixed(prec),
       volume: asset && asset.cat === 'eu_stock' ? 24500000 : 48200000,
       currency: curr
     };
@@ -264,6 +285,15 @@ async function pollActiveQuote() {
   window.activePrice = q.price;
   window.activeSymbol = sym;
   window.activeCurrency = q.currency || '$';
+
+  // Synchronize telemetry with exact precision across all widgets
+  if (window.BybitEngine) {
+    window.BybitEngine.tickerData.lastPrice = q.price;
+    window.BybitEngine.tickerData.markPrice = q.price;
+    window.BybitEngine.tickerData.indexPrice = q.price;
+    window.BybitEngine.tickerData.price24hPcnt = (q.change / 100);
+    window.BybitEngine.renderBybitTelemetry();
+  }
 
   const latElem = document.getElementById('tele-latency-val');
   if (latElem) latElem.innerText = `${tLatency}ms`;

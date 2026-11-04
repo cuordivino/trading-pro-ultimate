@@ -68,13 +68,16 @@ window.BybitEngine = {
 
   initNonCryptoAsset: function(asset) {
     const base = asset ? asset.basePrice : (window.activePrice || 100);
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
+    const f = Math.pow(10, prec);
+
     this.tickerData = {
       lastPrice: base,
-      indexPrice: Math.round(base * 0.998 * 100) / 100,
+      indexPrice: base,
       markPrice: base,
       price24hPcnt: 0.0125,
-      highPrice24h: Math.round(base * 1.025 * 100) / 100,
-      lowPrice24h: Math.round(base * 0.985 * 100) / 100,
+      highPrice24h: Math.round((base * 1.018) * f) / f,
+      lowPrice24h: Math.round((base * 0.982) * f) / f,
       volume24h: asset && asset.cat === 'eu_stock' ? 24500000 : 48000000,
       turnover24h: base * (asset && asset.cat === 'eu_stock' ? 24500000 : 48000000),
       fundingRate: 0,
@@ -89,37 +92,53 @@ window.BybitEngine = {
   updateNonCryptoTick: function() {
     if (!this.activeAsset) return;
     const base = this.activeAsset.basePrice;
-    const drift = (Math.random() - 0.5) * (base * 0.0006);
-    this.tickerData.lastPrice = Math.round((base + drift) * 100) / 100;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
+    const f = Math.pow(10, prec);
+    const minStep = Math.pow(10, -prec);
+
+    // Subtle micro-tick aligned with dynamic precision (e.g. 0.0001 or 0.01)
+    const tickSteps = (Math.floor(Math.random() * 3) - 1) * minStep;
+    const newPrice = Math.round((base + tickSteps) * f) / f;
+
+    this.tickerData.lastPrice = newPrice;
+    this.tickerData.markPrice = newPrice;
+    this.tickerData.indexPrice = newPrice;
+    window.currentLivePrice = newPrice;
+    window.activePrice = newPrice;
     this.renderBybitTelemetry();
   },
 
   generateSyntheticOrderBook: function(base) {
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
+    const f = Math.pow(10, prec);
+    const minStep = Math.pow(10, -prec);
     const bids = [];
     const asks = [];
-    const step = base * 0.001;
     for (let i = 1; i <= 8; i++) {
-      bids.push({ price: Math.round((base - (i * step)) * 100) / 100, size: Math.round(Math.random() * 5000 + 800) });
-      asks.push({ price: Math.round((base + (i * step)) * 100) / 100, size: Math.round(Math.random() * 5000 + 800) });
+      bids.push({ price: Math.round((base - (i * minStep)) * f) / f, size: Math.round(Math.random() * 5000 + 800) });
+      asks.push({ price: Math.round((base + (i * minStep)) * f) / f, size: Math.round(Math.random() * 5000 + 800) });
     }
-    const spread = asks[0].price - bids[0].price;
-    const spreadPct = (spread / asks[0].price) * 100;
+    const spread = asks.length && bids.length ? Math.round((asks[0].price - bids[0].price) * f) / f : 0;
+    const spreadPct = asks.length && asks[0].price > 0 ? (spread / asks[0].price) * 100 : 0;
     this.activeOrderBook = { bids, asks, spread, spreadPct };
     this.renderOrderBook();
   },
 
   generateSyntheticRecentTrades: function(base) {
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
+    const f = Math.pow(10, prec);
+    const minStep = Math.pow(10, -prec);
     const trades = [];
     const now = new Date();
     for (let i = 0; i < 15; i++) {
-      const p = Math.round((base + (Math.random() - 0.5) * (base * 0.003)) * 100) / 100;
-      const t = new Date(now.getTime() - i * 4000).toTimeString().split(' ')[0];
+      const stepOffset = (Math.floor(Math.random() * 5) - 2) * minStep;
+      const p = Math.round((base + stepOffset) * f) / f;
       trades.push({
-        id: Math.random().toString(),
+        id: 'TR-' + (1000 + i),
         price: p,
-        size: Math.round(Math.random() * 1500 + 200),
+        size: Math.round(Math.random() * 2000 + 100),
         side: Math.random() > 0.5 ? 'Buy' : 'Sell',
-        time: t
+        time: new Date(now.getTime() - i * 4000).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', second: '2-digit' })
       });
     }
     this.recentTrades = trades;

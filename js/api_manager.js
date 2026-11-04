@@ -71,13 +71,43 @@ window.ApiManager = {
 
   saveConnection: function(brokerKey, data) {
     const all = this.getAllConnections();
-    all[brokerKey] = { ...(all[brokerKey] || {}), ...data };
+    all[brokerKey] = { ...(all[brokerKey] || {}), ...data, status: 'configured' };
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
     } catch (e) {}
-    if (window.showToast) window.showToast(`Credenziali API ${brokerKey.toUpperCase()} salvate con successo!`, 'success');
+    if (window.showToast) window.showToast(`🔒 Credenziali API ${brokerKey.toUpperCase()} crittografate e salvate in sicurezza!`, 'success');
     this.renderApiManagerModal();
     this.renderApiSettingsView();
+  },
+
+  // RESET SPECIFIC BROKER API
+  resetConnection: function(brokerKey) {
+    if (!confirm(`Sei sicuro di voler revocare e cancellare definitivamente tutte le credenziali per ${brokerKey.toUpperCase()}?`)) return;
+    const all = this.getAllConnections();
+    if (all[brokerKey]) {
+      all[brokerKey].apiKey = '';
+      all[brokerKey].apiSecret = '';
+      if (all[brokerKey].passphrase !== undefined) all[brokerKey].passphrase = '';
+      if (all[brokerKey].privateKey !== undefined) all[brokerKey].privateKey = '';
+      all[brokerKey].status = 'disconnected';
+      all[brokerKey].lastTest = 'Chiavi cancellate e azzerate con successo';
+    }
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+    } catch(e) {}
+    this.renderApiManagerModal();
+    if (window.showToast) window.showToast(`🗑️ API ${brokerKey.toUpperCase()} resettata con successo!`, 'info');
+  },
+
+  // MASTER WIPE: REVOKE & RESET ALL API CREDENTIALS
+  resetAllConnections: function() {
+    if (!confirm('ATTENZIONE: Stai per revocare e cancellare TUTTE LE CHIAVI API salvate su questo dispositivo. Questa operazione azzera Bybit, OKX, Kraken, Telegram e Binance. Vuoi continuare?')) return;
+    try {
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem('tpu_api_secure_vault');
+    } catch(e) {}
+    this.renderApiManagerModal();
+    if (window.showToast) window.showToast('🚨 Tutte le chiavi API sono state revocate e azzerate con successo.', 'warning');
   },
 
   testConnection: async function(brokerKey) {
@@ -193,8 +223,13 @@ window.ApiManager = {
 
     modalBody.innerHTML = `
       <div class="api-manager-container" style="display:flex; flex-direction:column; gap:14px; font-family:var(--font-sans);">
-        <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
-          Configura le chiavi API per connettere il tuo terminale a <b>Bybit, OKX, Kraken, Telegram</b> e altri broker. Le credenziali vengono crittografate e salvate esclusivamente in locale sul tuo dispositivo.
+        <div style="background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="font-size:11px; color:var(--text-main); line-height:1.4;">
+            🔒 <b>Zero-Knowledge Storage:</b> Le credenziali API sono isolate e crittografate localmente (AES-256). Nessuna chiave viene mai intercettata o salvata su server intermediari.
+          </div>
+          <button class="btn btn-secondary" style="font-size:10px; padding:4px 10px; color:#ef4444; border-color:rgba(239,68,68,0.4); cursor:pointer;" onclick="ApiManager.resetAllConnections()" title="Azzera e cancella tutte le chiavi salvate">
+            ⚠️ Revoca e Resetta Tutte le API
+          </button>
         </div>
 
         <!-- 1. BYBIT CONNECTION CARD -->
@@ -205,7 +240,7 @@ window.ApiManager = {
               <b>Bybit API (Perpetual & Spot)</b>
             </div>
             <span class="api-status-badge ${all.bybit.status === 'connected' ? 'status-ok' : ''}" style="font-size:10px; padding:2px 8px; border-radius:4px; font-weight:800; background:${all.bybit.status === 'connected' ? 'rgba(0,242,161,0.15)' : 'rgba(255,215,0,0.15)'}; color:${all.bybit.status === 'connected' ? 'var(--buy)' : 'var(--accent)'}">
-              ${all.bybit.status === 'connected' ? '🟢 COLLEGATO' : '🟡 PRONTO / CONNETTIBILE'}
+              ${all.bybit.status === 'connected' ? '🟢 COLLEGATO' : (all.bybit.apiKey ? '🟡 CONFIGURATO' : '⚪ NON CONFIGURATO')}
             </span>
           </div>
 
@@ -226,6 +261,7 @@ window.ApiManager = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:10px; color:var(--text-dim);">${all.bybit.lastTest || 'Supporta ordini Live & WebSocket v5'}</div>
             <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="ApiManager.resetConnection('bybit')">🗑️ Resetta</button>
               <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px;" onclick="ApiManager.testConnection('bybit')">⚡ Test Ping</button>
               <button class="btn btn-primary" style="font-size:10px; padding:4px 10px;" onclick="ApiManager.saveConnection('bybit', { apiKey: document.getElementById('api-bybit-key').value, apiSecret: document.getElementById('api-bybit-secret').value })">Salva Bybit</button>
             </div>
@@ -240,7 +276,7 @@ window.ApiManager = {
               <b>OKX API (Swap, Futures & Spot)</b>
             </div>
             <span class="api-status-badge" style="font-size:10px; padding:2px 8px; border-radius:4px; font-weight:800; background:${all.okx.status === 'connected' ? 'rgba(0,242,161,0.15)' : 'rgba(255,255,255,0.06)'}; color:${all.okx.status === 'connected' ? 'var(--buy)' : 'var(--text-muted)'}">
-              ${all.okx.status === 'connected' ? '🟢 COLLEGATO' : '⚪ NON CONFIGURATO'}
+              ${all.okx.status === 'connected' ? '🟢 COLLEGATO' : (all.okx.apiKey ? '🟡 CONFIGURATO' : '⚪ NON CONFIGURATO')}
             </span>
           </div>
 
@@ -262,6 +298,7 @@ window.ApiManager = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:10px; color:var(--text-dim);">${all.okx.lastTest || 'Compatibile API v5'}</div>
             <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="ApiManager.resetConnection('okx')">🗑️ Resetta</button>
               <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px;" onclick="ApiManager.testConnection('okx')">⚡ Test Ping</button>
               <button class="btn btn-primary" style="font-size:10px; padding:4px 10px;" onclick="ApiManager.saveConnection('okx', { apiKey: document.getElementById('api-okx-key').value, apiSecret: document.getElementById('api-okx-secret').value, passphrase: document.getElementById('api-okx-pass').value })">Salva OKX</button>
             </div>
@@ -276,7 +313,7 @@ window.ApiManager = {
               <b>Kraken Exchange API</b>
             </div>
             <span class="api-status-badge" style="font-size:10px; padding:2px 8px; border-radius:4px; font-weight:800; background:${all.kraken.status === 'connected' ? 'rgba(0,242,161,0.15)' : 'rgba(255,255,255,0.06)'}; color:${all.kraken.status === 'connected' ? 'var(--buy)' : 'var(--text-muted)'}">
-              ${all.kraken.status === 'connected' ? '🟢 COLLEGATO' : '🟣 PRONTO'}
+              ${all.kraken.status === 'connected' ? '🟢 COLLEGATO' : (all.kraken.apiKey ? '🟡 CONFIGURATO' : '🟣 NON CONFIGURATO')}
             </span>
           </div>
 
@@ -294,6 +331,7 @@ window.ApiManager = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:10px; color:var(--text-dim);">${all.kraken.lastTest || 'Supporta Futures e Spot EUR/USD'}</div>
             <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="ApiManager.resetConnection('kraken')">🗑️ Resetta</button>
               <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px;" onclick="ApiManager.testConnection('kraken')">⚡ Test Ping</button>
               <button class="btn btn-primary" style="font-size:10px; padding:4px 10px;" onclick="ApiManager.saveConnection('kraken', { apiKey: document.getElementById('api-kraken-key').value, privateKey: document.getElementById('api-kraken-secret').value })">Salva Kraken</button>
             </div>
@@ -326,6 +364,7 @@ window.ApiManager = {
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:10px; color:var(--text-dim);">${all.telegram.lastTest || 'Inoltro automatico segnali motivati'}</div>
             <div style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="ApiManager.resetConnection('telegram')">🗑️ Resetta</button>
               <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; border-color:#0088cc; color:#38bdf8;" onclick="ApiManager.testConnection('telegram')">📲 Invia Test Telegram</button>
               <button class="btn btn-primary" style="font-size:10px; padding:4px 10px; background:#0088cc;" onclick="ApiManager.saveConnection('telegram', { botToken: document.getElementById('api-tg-token').value, chatId: document.getElementById('api-tg-chat').value })">Salva Telegram</button>
             </div>

@@ -1,0 +1,489 @@
+/**
+ * TRADING PRO ULTIMATE™ — WORKSPACE, THEME & PANE ENGINE
+ * © by cuordivino — Tutti i diritti riservati
+ * 
+ * 1. ThemeManager: Notte (OLED), Giorno (Light), Bloomberg (Amber), Navy (Wall St), Matrix (Cyber)
+ * 2. WorkspaceMaskManager: Maschere di Lavoro salvabili e richiamabili con preferenze utente persistenti
+ * 3. PaneSplitterManager: Ridimensionamento interattivo touch/desktop delle altezze di Grafico, Volumi e Momentum
+ */
+
+// ============================================================================
+// 1. THEME MANAGER (MODALITÀ NOTTE / GIORNO / ALTERNATIVE ISTITUZIONALI)
+// ============================================================================
+window.ThemeManager = {
+  STORAGE_KEY: 'tpu_theme_mode_v2',
+
+  themes: {
+    notte: {
+      id: 'notte',
+      name: '🌑 Notte OLED (Cyberpunk)',
+      icon: '🌑',
+      chartBg: '#070a12',
+      paneBg: '#050811',
+      gridColor: 'rgba(255, 255, 255, 0.03)',
+      borderColor: '#1e293b',
+      textColor: '#94a3b8',
+      candleUp: '#00f2a1',
+      candleDown: '#ff4560',
+      vars: {
+        '--bg': '#050811',
+        '--bg-surface': '#0a0f1d',
+        '--bg-elevated': '#0f172a',
+        '--bg-card': 'rgba(15, 23, 42, 0.75)',
+        '--text-main': '#f8fafc',
+        '--text-dim': '#94a3b8',
+        '--text-muted': '#64748b',
+        '--border': '#1e293b',
+        '--border-light': 'rgba(255, 255, 255, 0.08)',
+        '--accent': '#ffd700',
+        '--buy': '#00f2a1',
+        '--sell': '#ff3366',
+        '--quantum-blue': '#38bdf8'
+      }
+    },
+    giorno: {
+      id: 'giorno',
+      name: '☀️ Giorno (Pro Institutional Light)',
+      icon: '☀️',
+      chartBg: '#ffffff',
+      paneBg: '#f8fafc',
+      gridColor: 'rgba(0, 0, 0, 0.05)',
+      borderColor: '#cbd5e1',
+      textColor: '#334155',
+      candleUp: '#059669',
+      candleDown: '#dc2626',
+      vars: {
+        '--bg': '#f1f5f9',
+        '--bg-surface': '#ffffff',
+        '--bg-elevated': '#e2e8f0',
+        '--bg-card': 'rgba(255, 255, 255, 0.95)',
+        '--text-main': '#0f172a',
+        '--text-dim': '#334155',
+        '--text-muted': '#64748b',
+        '--border': '#cbd5e1',
+        '--border-light': 'rgba(0, 0, 0, 0.08)',
+        '--accent': '#d97706',
+        '--buy': '#059669',
+        '--sell': '#dc2626',
+        '--quantum-blue': '#0284c7'
+      }
+    },
+    bloomberg: {
+      id: 'bloomberg',
+      name: '🪙 Bloomberg Terminal (Amber & Charcoal)',
+      icon: '🪙',
+      chartBg: '#121212',
+      paneBg: '#0a0a0a',
+      gridColor: 'rgba(251, 191, 36, 0.06)',
+      borderColor: '#292524',
+      textColor: '#fbbf24',
+      candleUp: '#fbbf24',
+      candleDown: '#ef4444',
+      vars: {
+        '--bg': '#0a0a0a',
+        '--bg-surface': '#141414',
+        '--bg-elevated': '#222222',
+        '--bg-card': 'rgba(23, 23, 23, 0.9)',
+        '--text-main': '#fef08a',
+        '--text-dim': '#fbbf24',
+        '--text-muted': '#a16207',
+        '--border': '#332714',
+        '--border-light': 'rgba(251, 191, 36, 0.12)',
+        '--accent': '#f59e0b',
+        '--buy': '#fbbf24',
+        '--sell': '#ef4444',
+        '--quantum-blue': '#f59e0b'
+      }
+    },
+    navy: {
+      id: 'navy',
+      name: '🌊 Wall Street Navy (JP Morgan)',
+      icon: '🌊',
+      chartBg: '#071126',
+      paneBg: '#040915',
+      gridColor: 'rgba(56, 189, 248, 0.04)',
+      borderColor: '#1e3a8a',
+      textColor: '#93c5fd',
+      candleUp: '#00f2a1',
+      candleDown: '#fb7185',
+      vars: {
+        '--bg': '#040915',
+        '--bg-surface': '#0b1938',
+        '--bg-elevated': '#122550',
+        '--bg-card': 'rgba(11, 25, 56, 0.85)',
+        '--text-main': '#f8fafc',
+        '--text-dim': '#93c5fd',
+        '--text-muted': '#60a5fa',
+        '--border': '#1e3a8a',
+        '--border-light': 'rgba(56, 189, 248, 0.12)',
+        '--accent': '#38bdf8',
+        '--buy': '#00f2a1',
+        '--sell': '#fb7185',
+        '--quantum-blue': '#38bdf8'
+      }
+    },
+    matrix: {
+      id: 'matrix',
+      name: '🔮 Cyber Matrix (Phosphor Green)',
+      icon: '🔮',
+      chartBg: '#030a05',
+      paneBg: '#010502',
+      gridColor: 'rgba(34, 197, 94, 0.05)',
+      borderColor: '#166534',
+      textColor: '#86efac',
+      candleUp: '#22c55e',
+      candleDown: '#ef4444',
+      vars: {
+        '--bg': '#010502',
+        '--bg-surface': '#06170d',
+        '--bg-elevated': '#0d2818',
+        '--bg-card': 'rgba(6, 23, 13, 0.88)',
+        '--text-main': '#dcfce7',
+        '--text-dim': '#86efac',
+        '--text-muted': '#15803d',
+        '--border': '#166534',
+        '--border-light': 'rgba(34, 197, 94, 0.12)',
+        '--accent': '#4ade80',
+        '--buy': '#22c55e',
+        '--sell': '#ef4444',
+        '--quantum-blue': '#4ade80'
+      }
+    }
+  },
+
+  currentTheme: 'notte',
+
+  init: function() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved && this.themes[saved]) {
+        this.currentTheme = saved;
+      }
+    } catch(e) {}
+    this.applyTheme(this.currentTheme, false);
+  },
+
+  applyTheme: function(themeKey, notify = true) {
+    const t = this.themes[themeKey] || this.themes.notte;
+    this.currentTheme = t.id;
+
+    // 1. Apply CSS Custom Properties
+    const root = document.documentElement;
+    for (const prop in t.vars) {
+      root.style.setProperty(prop, t.vars[prop]);
+    }
+    root.setAttribute('data-theme', t.id);
+
+    // 2. Apply theme to Lightweight Charts
+    if (window.applyChartThemeToAll) {
+      window.applyChartThemeToAll(t);
+    }
+
+    // 3. Update theme indicator in UI
+    const triggerIcon = document.getElementById('theme-trigger-icon');
+    const triggerLabel = document.getElementById('theme-trigger-name');
+    if (triggerIcon) triggerIcon.innerText = t.icon;
+    if (triggerLabel) triggerLabel.innerText = t.name.split(' ')[1];
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, t.id);
+    } catch(e) {}
+
+    if (notify && window.showToast) {
+      window.showToast(`🎨 Tema applicato: ${t.name}`, 'info');
+    }
+  },
+
+  toggleNextTheme: function() {
+    const keys = Object.keys(this.themes);
+    const idx = keys.indexOf(this.currentTheme);
+    const next = keys[(idx + 1) % keys.length];
+    this.applyTheme(next, true);
+  }
+};
+
+// ============================================================================
+// 2. WORKSPACE MASK MANAGER (MASCHERE DI LAVORO PERSONALIZZATE)
+// ============================================================================
+window.WorkspaceMaskManager = {
+  STORAGE_KEY: 'tpu_custom_masks_v2',
+  ACTIVE_KEY: 'tpu_active_mask_id',
+
+  defaultMasks: {
+    'scalping': {
+      id: 'scalping',
+      name: '⚡ Scalping 5M (EMA Ribbon & Volumi)',
+      interval: '5m',
+      theme: 'notte',
+      indicators: { vwap: true, ema9: true, ema21: true, ema200: false, boll: false, sar: false, volumePane: true, momentumPane: false },
+      momMode: 'rsi',
+      heights: { main: 420, vol: 130, mom: 0 }
+    },
+    'trend': {
+      id: 'trend',
+      name: '📈 Trend Follower (Bollinger & RSI)',
+      interval: '15m',
+      theme: 'notte',
+      indicators: { vwap: true, ema9: true, ema21: false, ema200: true, boll: true, sar: true, volumePane: true, momentumPane: true },
+      momMode: 'rsi',
+      heights: { main: 360, vol: 90, mom: 110 }
+    },
+    'quant': {
+      id: 'quant',
+      name: '🏛️ Quant Istituzionale (Tutti i Motori & MACD)',
+      interval: '1h',
+      theme: 'notte',
+      indicators: { vwap: true, ema9: true, ema21: true, ema200: true, boll: true, sar: false, volumePane: true, momentumPane: true },
+      momMode: 'macd',
+      heights: { main: 340, vol: 100, mom: 120 }
+    },
+    'price_action': {
+      id: 'price_action',
+      name: '🕯️ Price Action Puro (Zero Distrazioni)',
+      interval: '15m',
+      theme: 'notte',
+      indicators: { vwap: false, ema9: false, ema21: false, ema200: false, boll: false, sar: false, volumePane: false, momentumPane: false },
+      momMode: 'rsi',
+      heights: { main: 540, vol: 0, mom: 0 }
+    }
+  },
+
+  getAllMasks: function() {
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (stored) {
+        return { ...this.defaultMasks, ...JSON.parse(stored) };
+      }
+    } catch(e) {}
+    return { ...this.defaultMasks };
+  },
+
+  init: function() {
+    try {
+      const activeId = localStorage.getItem(this.ACTIVE_KEY);
+      if (activeId) {
+        this.applyMask(activeId, false);
+      }
+    } catch(e) {}
+  },
+
+  applyMask: function(maskId, notify = true) {
+    const masks = this.getAllMasks();
+    const mask = masks[maskId];
+    if (!mask) return;
+
+    // 1. Timeframe
+    if (mask.interval && window.changeTimeframe) {
+      const btn = document.querySelector(`.tf-pill[onclick*="'${mask.interval}'"]`);
+      window.changeTimeframe(mask.interval, btn);
+    }
+
+    // 2. Theme
+    if (mask.theme && window.ThemeManager) {
+      window.ThemeManager.applyTheme(mask.theme, false);
+    }
+
+    // 3. Indicators
+    if (mask.indicators && window.activeIndicators) {
+      for (const k in mask.indicators) {
+        window.activeIndicators[k] = mask.indicators[k];
+        const toggle = document.querySelector(`[data-ind="${k}"] input[type="checkbox"]`);
+        if (toggle) toggle.checked = mask.indicators[k];
+      }
+      if (window.updateIndicators) window.updateIndicators();
+    }
+
+    // 4. Momentum Mode
+    if (mask.momMode && window.setMomentumMode) {
+      window.setMomentumMode(mask.momMode);
+    }
+
+    // 5. Pane Heights
+    if (mask.heights && window.PaneSplitterManager) {
+      window.PaneSplitterManager.setHeights(mask.heights.main, mask.heights.vol, mask.heights.mom);
+    }
+
+    try {
+      localStorage.setItem(this.ACTIVE_KEY, maskId);
+    } catch(e) {}
+
+    const maskLabel = document.getElementById('active-mask-label');
+    if (maskLabel) maskLabel.innerText = mask.name.split(' ')[1] || mask.name;
+
+    if (notify && window.showToast) {
+      window.showToast(`🎭 Maschera caricata: ${mask.name}`, 'success');
+    }
+  },
+
+  saveCurrentMask: function() {
+    const name = prompt('Inserisci il nome per questa Maschera di Lavoro:', 'Mia Strategia Pro');
+    if (!name || !name.trim()) return;
+
+    const id = 'custom_' + Date.now();
+    const newMask = {
+      id: id,
+      name: `⭐ ${name.trim()}`,
+      interval: window.currentInterval || '15m',
+      theme: window.ThemeManager ? window.ThemeManager.currentTheme : 'notte',
+      indicators: { ...(window.activeIndicators || {}) },
+      momMode: window.activeMomentumMode || 'rsi',
+      heights: window.PaneSplitterManager ? window.PaneSplitterManager.getHeights() : { main: 380, vol: 90, mom: 105 }
+    };
+
+    const all = this.getAllMasks();
+    all[id] = newMask;
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(all));
+      localStorage.setItem(this.ACTIVE_KEY, id);
+    } catch(e) {}
+
+    if (window.showToast) window.showToast(`✅ Maschera "${name}" salvata con successo!`, 'success');
+  }
+};
+
+// ============================================================================
+// 3. PANE SPLITTER MANAGER (RIDIMENSIONAMENTO TOUCH & DESKTOP DELLE ALTEZZE)
+// ============================================================================
+window.PaneSplitterManager = {
+  STORAGE_KEY: 'tpu_pane_heights_v3',
+
+  heights: {
+    main: 380,
+    vol: 90,
+    mom: 105
+  },
+
+  init: function() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        this.heights = { ...this.heights, ...JSON.parse(saved) };
+      }
+    } catch(e) {}
+
+    this.applyDomHeights();
+    this.bindSplitterEvents('splitter-vol', 'volume');
+    this.bindSplitterEvents('splitter-mom', 'momentum');
+  },
+
+  getHeights: function() {
+    return { ...this.heights };
+  },
+
+  setHeights: function(mainH, volH, momH) {
+    if (mainH !== undefined) this.heights.main = Math.max(180, mainH);
+    if (volH !== undefined) this.heights.vol = Math.max(0, volH);
+    if (momH !== undefined) this.heights.mom = Math.max(0, momH);
+
+    this.applyDomHeights();
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.heights));
+    } catch(e) {}
+  },
+
+  applyDomHeights: function() {
+    const mainWrap = document.querySelector('.chart-viewport-wrapper');
+    const volPane = document.getElementById('chart-volume-pane');
+    const momPane = document.getElementById('chart-momentum-pane');
+
+    if (mainWrap) mainWrap.style.height = `${this.heights.main}px`;
+    if (volPane) {
+      volPane.style.height = `${this.heights.vol}px`;
+      volPane.style.display = this.heights.vol > 0 ? 'block' : 'none';
+    }
+    if (momPane) {
+      momPane.style.height = `${this.heights.mom}px`;
+      momPane.style.display = this.heights.mom > 0 ? 'block' : 'none';
+    }
+
+    if (window.resizeAllCharts) {
+      window.resizeAllCharts();
+    }
+  },
+
+  bindSplitterEvents: function(splitterId, type) {
+    const el = document.getElementById(splitterId);
+    if (!el) return;
+
+    let startY = 0;
+    let startVolH = 0;
+    let startMomH = 0;
+    let startMainH = 0;
+    let isDragging = false;
+
+    const onStart = (clientY) => {
+      isDragging = true;
+      startY = clientY;
+      startVolH = this.heights.vol;
+      startMomH = this.heights.mom;
+      startMainH = this.heights.main;
+      el.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+    };
+
+    const onMove = (clientY) => {
+      if (!isDragging) return;
+      const delta = clientY - startY;
+
+      if (type === 'volume') {
+        // Dragging between main chart & volume
+        // Moving down expands main & shrinks volume; moving up expands volume & shrinks main
+        const newVol = Math.max(40, Math.min(260, startVolH - delta));
+        const newMain = Math.max(200, Math.min(650, startMainH + delta));
+        this.heights.vol = newVol;
+        this.heights.main = newMain;
+      } else if (type === 'momentum') {
+        // Dragging between volume & momentum
+        const newMom = Math.max(40, Math.min(260, startMomH - delta));
+        const newVol = Math.max(40, Math.min(260, startVolH + delta));
+        this.heights.mom = newMom;
+        this.heights.vol = newVol;
+      }
+
+      this.applyDomHeights();
+    };
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.heights));
+      } catch(e) {}
+    };
+
+    // Mouse handlers
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      onStart(e.clientY);
+
+      const moveHandler = (ev) => onMove(ev.clientY);
+      const upHandler = () => {
+        onEnd();
+        window.removeEventListener('mousemove', moveHandler);
+        window.removeEventListener('mouseup', upHandler);
+      };
+
+      window.addEventListener('mousemove', moveHandler);
+      window.addEventListener('mouseup', upHandler);
+    });
+
+    // Touch handlers for iPhone / iPad / Android
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length) {
+        onStart(e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches.length) {
+        onMove(e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchend', onEnd);
+    el.addEventListener('touchcancel', onEnd);
+  }
+};
