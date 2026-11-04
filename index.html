@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Trading Pro Ultimate™ × cuordivino</title>
   
   <!-- PWA & Mobile Meta Tags -->
@@ -1476,6 +1476,14 @@
         }
       }
     }
+
+    // Initialize Mobile Terminal View on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.innerWidth <= 860) {
+        const firstMBtn = document.querySelector('.m-view-btn');
+        switchMobileTerminalView('chart', firstMBtn);
+      }
+    });
 
     // Copyright Modal Handlers
     function openCopyrightModal() {

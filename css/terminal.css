@@ -2313,48 +2313,321 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 }
 
 @media (max-width: 860px) {
-  .bybit-terminal-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .mobile-view-switcher {
-    display: grid;
-  }
-  .mobile-bottom-nav {
-    display: grid;
+  /* 1. Global Mobile Reset */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
   }
   body {
-    padding-bottom: 65px; /* space for bottom nav */
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
   }
-  .terminal-header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 10px 14px;
-    gap: 8px;
-  }
-  .nav-tabs-container {
-    overflow-x: auto;
-    width: 100%;
-    scrollbar-width: none;
-  }
-  .header-right-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .active-asset-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+
+  /* 2. Top Telemetry Bar (Hidden on Mobile for screen space) */
   .top-telemetry-bar {
-    display: none; /* hidden on small mobile to save vertical space */
+    display: none !important;
   }
-  .bb-book-trades-card {
-    height: 440px;
+
+  /* 3. Terminal Header: Natural document flow, NO overlapping sticky collisions */
+  .terminal-header {
+    height: auto !important;
+    min-height: unset !important;
+    position: relative !important;
+    top: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px 12px 6px 12px !important;
+    gap: 8px !important;
+    background: #080c16 !important;
+    backdrop-filter: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    z-index: 100 !important;
+    box-sizing: border-box !important;
   }
+
+  .brand-box {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 3px !important;
+    width: 100% !important;
+  }
+
+  .brand-title {
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .brand-author-badge {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+  }
+
+  .header-right-actions {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .header-right-actions .btn,
+  .btn-lock-terminal {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+
+  .engine-status-pill {
+    font-size: 9px !important;
+    padding: 3px 8px !important;
+    margin-left: auto !important;
+  }
+
+  /* Main Nav Tabs: Horizontal Scrollable Ribbon with NO vertical overflow */
+  .nav-tabs-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+    padding: 3px !important;
+    gap: 4px !important;
+    background: var(--bg-surface) !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .nav-tabs-container::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tab-nav-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    font-size: 10px !important;
+    padding: 5px 8px !important;
+  }
+
+  /* 4. Active Asset Hero Quote Bar */
+  .active-asset-bar {
+    position: relative !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    background: #0b1120 !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-sizing: border-box !important;
+  }
+
+  .asset-core-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .live-price-box {
+    font-size: 17px !important;
+  }
+
+  .pct-chg-pill {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+
+  .asset-stat-group {
+    display: flex !important;
+    gap: 10px !important;
+    font-size: 9px !important;
+  }
+
+  .asset-stat-group .stat-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 1px !important;
+  }
+
+  /* 5. Bybit Telemetry Strip */
+  .bybit-telemetry-strip {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+    padding: 6px 12px !important;
+    gap: 14px !important;
+    background: #080c16 !important;
+    border-bottom: 1px solid var(--border) !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .bybit-telemetry-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .bb-tele-item .k {
+    font-size: 9px !important;
+  }
+
+  .bb-tele-item .v {
+    font-size: 11px !important;
+  }
+
+  /* 6. Mobile View Switcher */
+  .mobile-view-switcher {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    position: relative !important;
+    top: auto !important;
+    margin: 8px 0 !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    background: #0d1527 !important;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--border) !important;
+    z-index: 10 !important;
+    box-sizing: border-box !important;
+  }
+
+  .m-view-btn {
+    padding: 6px 2px !important;
+    font-size: 10px !important;
+    text-align: center !important;
+  }
+
+  /* 7. Grid & Panels */
+  .main-wrapper {
+    padding: 6px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .bybit-terminal-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  /* Hide Book, Order, Positions by default on mobile so only 1 view is shown */
+  #bb-col-book, #bb-col-order, #bb-col-positions {
+    display: none;
+  }
+
+  .window-card {
+    border-radius: var(--radius-md) !important;
+    box-shadow: none !important;
+    margin-bottom: 8px !important;
+  }
+
+  .window-header {
+    padding: 8px 10px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .window-title {
+    font-size: 11px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  /* 8. Chart Toolbar & Viewport */
+  .chart-toolbar {
+    padding: 6px 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  .tf-pill-group {
+    display: flex !important;
+    gap: 3px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .tf-pill-group::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tf-pill {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  #btn-toggle-vp {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
+    margin-left: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .chart-viewport-wrapper {
+    height: 320px !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
   #chart-container {
-    height: 380px !important;
+    height: 320px !important;
+    width: 100% !important;
+  }
+
+  #chart-volume-pane {
+    height: 75px !important;
+  }
+
+  #chart-momentum-pane {
+    height: 85px !important;
+  }
+
+  /* 9. Local Volume Profile Overlay */
+  #chart-vp-overlay {
+    width: 90px !important;
+    right: 50px !important;
+    top: 25px !important;
+    bottom: 25px !important;
+  }
+
+  .vp-telemetry-badge {
+    display: none !important; /* Hide long horizontal text badge on mobile to avoid overlapping */
+  }
+
+  /* 10. Fixed Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    background: rgba(8, 12, 22, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: 1px solid var(--border) !important;
+    z-index: 9999 !important;
   }
 }
 
