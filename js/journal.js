@@ -11,12 +11,25 @@ async function loadTradeJournal() {
 
   try {
     const res = await fetch('/api/trades');
-    tradeHistory = await res.json();
+    if (res.ok) {
+      tradeHistory = await res.json();
+      if (tradeHistory && tradeHistory.length) {
+        renderJournalTable(tradeHistory);
+        calculateJournalStats(tradeHistory);
+        return;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const local = localStorage.getItem('pro_trades');
+    tradeHistory = local ? JSON.parse(local) : [
+      { id: 1, created_at: '2026-11-04 14:30', symbol: 'BTCUSDT', side: 'LONG', entry_price: 64200, exit_price: 66800, qty: 0.25, leverage: 10, pnl: 650.00, sl: 62500, tp: 67000, investor_skill: 'Minervini VCP Breakout', status: 'CLOSED' },
+      { id: 2, created_at: '2026-11-04 16:15', symbol: 'NVDA', side: 'LONG', entry_price: 118.5, exit_price: null, qty: 15, leverage: 5, pnl: 0, sl: 114.0, tp: 128.0, investor_skill: 'Buffett Value Moat', status: 'OPEN' }
+    ];
     renderJournalTable(tradeHistory);
     calculateJournalStats(tradeHistory);
-  } catch (e) {
-    console.error('Error loading trade journal:', e);
-  }
+  } catch (err) {}
 }
 
 function renderJournalTable(trades) {

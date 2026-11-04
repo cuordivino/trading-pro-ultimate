@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Apex Terminal Pro × InvestorSkills AI</title>
+  <title>Trading Pro Ultimate™ × cuordivino</title>
   
   <!-- PWA & Mobile Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -67,8 +67,11 @@
   <header class="terminal-header">
     <div class="brand-box">
       <div class="brand-title">
-        <span>⚡ TRADING<span class="accent-pro">PRO</span></span>
-        <span class="brand-badge">× INVESTOR SKILLS AI</span>
+        <span>⚡ TRADING<span class="accent-pro">PRO</span> ULTIMATE™</span>
+        <span class="brand-author-badge">© by cuordivino</span>
+      </div>
+      <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)">
+        TUTTI I DIRITTI RISERVATI • QUANT INSTITUTIONAL TERMINAL
       </div>
     </div>
 
@@ -79,6 +82,9 @@
       </button>
       <button class="tab-nav-btn ai-glow" data-tab="tab-consensus" onclick="switchMainTab('tab-consensus', this)">
         <span>🧠</span> Comitato Investitori
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-quant" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
+        <span>🤖</span> Motori Quant (4)
       </button>
       <button class="tab-nav-btn" data-tab="tab-chat" onclick="switchMainTab('tab-chat', this)">
         <span>💬</span> Chat Grandi Maestri
@@ -102,6 +108,9 @@
 
     <!-- RIGHT STATUS ACTIONS -->
     <div class="header-right-actions">
+      <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
+        📜 Paternità & Copyright
+      </button>
       <div class="engine-status-pill">
         <span class="pulse-indicator"></span>
         <span>LIVE ENGINE</span>
@@ -451,6 +460,11 @@
                 Apri Posizione LONG / BUY
               </button>
 
+              <!-- Motivated Telegram Signal Dispatch Button -->
+              <button class="btn-telegram-dispatch" onclick="dispatchActiveOrderToTelegram()" title="Invia segnale motivato con target, SL e motivazione su Telegram">
+                <span>📲</span> Invia Segnale Motivano su Telegram (@cuordivino)
+              </button>
+
               <!-- Quick Consensus Widget -->
               <div class="quick-consensus-panel">
                 <div class="qc-top-row">
@@ -547,6 +561,10 @@
           <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; margin-top:8px;" onclick="applyConsensusToOrder()">
             ✓ Applica Parametri al Trade
           </button>
+          
+          <button class="btn-telegram-dispatch" style="margin-top:6px; width:100%" onclick="dispatchActiveOrderToTelegram()">
+            <span>📲</span> Invia Delibera Comitato su Telegram
+          </button>
         </div>
 
       </div>
@@ -554,6 +572,15 @@
       <!-- COUNCIL MENTOR CARDS GRID WITH ACCORDION DRAWERS -->
       <div class="mentor-cards-grid" id="council-cards-container">
         <!-- Injected via skills.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW QUANT: THE 4 QUANTITATIVE ENGINES (FREQTRADE, HUMMINGBOT, NAUTILUS, OPENBB)
+         ==================================================================== -->
+    <div id="tab-quant" class="view-panel">
+      <div id="quant-engines-view-container">
+        <!-- Injected via quant_engines.js -->
       </div>
     </div>
 
@@ -964,6 +991,24 @@
 
   </main>
 
+  <!-- SLEEK FOOTER BAR -->
+  <footer class="terminal-footer-bar">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+      <span>⚡ <b>TRADING PRO ULTIMATE™</b></span>
+      <span>•</span>
+      <span>Autore: <span class="footer-author-tag" onclick="openCopyrightModal()">cuordivino</span></span>
+      <span>•</span>
+      <span>Tutti i diritti riservati ©</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+      <span style="color:var(--buy); font-weight:700">● 4 Motori Quant Istituzionali</span>
+      <span style="color:var(--cyan); font-weight:700; cursor:pointer;" onclick="dispatchActiveOrderToTelegram()">📲 Telegram Ufficiale (@cuordivino)</span>
+      <button class="btn btn-secondary" style="font-size:10px; padding:2px 8px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
+        📜 Paternità Opera
+      </button>
+    </div>
+  </footer>
+
   <!-- SKILL DETAIL MODAL -->
   <div class="modal-overlay" id="skill-detail-modal" onclick="if(event.target===this) closeSkillModal()">
     <div class="modal-window-card">
@@ -975,11 +1020,58 @@
     </div>
   </div>
 
+  <!-- COPYRIGHT & PATERNITÀ DELL'OPERA MODAL -->
+  <div class="modal-overlay" id="copyright-modal" onclick="if(event.target===this) closeCopyrightModal()">
+    <div class="modal-window-card" style="max-width:620px;">
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:20px">📜</span>
+          <span style="font-weight:900; font-size:15px; color:var(--accent)">PATERNITÀ DELL'OPERA & NOTE DI COPYRIGHT</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="closeCopyrightModal()" style="font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body-scroll" style="line-height:1.6; font-size:12px; color:var(--text-dim)">
+        <div style="background:rgba(252,213,53,0.06); border:1px solid rgba(252,213,53,0.3); border-radius:8px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:900; color:#fff; margin-bottom:4px;">
+            TRADING PRO ULTIMATE™
+          </div>
+          <div style="font-size:12px; color:var(--accent); font-weight:800;">
+            Autore & Sviluppatore: cuordivino
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+            Copyright © Tutti i diritti riservati — All Rights Reserved.
+          </div>
+        </div>
+
+        <p style="margin-bottom:12px;">
+          Questa piattaforma costituisce un'architettura integrata avanzata ideata e sviluppata da <b>cuordivino</b>, unendo l'analisi tecnica e discrezionale ad algoritmi ad alta frequenza e intelligenza artificiale applicata ai mercati finanziari.
+        </p>
+
+        <h4 style="font-size:12px; font-weight:800; color:var(--cyan); margin:14px 0 8px 0; text-transform:uppercase;">
+          Moduli e Motori Quantitativi Integrati:
+        </h4>
+        <ul style="padding-left:18px; margin-bottom:14px; line-height:1.7;">
+          <li><b>Freqtrade:</b> Strategie algoritmiche crypto e machine learning (FreqAI, Supertrend Alpha, TWAP Almgren-Chriss, Custom Trailing PSAR).</li>
+          <li><b>Hummingbot:</b> Pure Market Making ad alta frequenza (PMM), Modello di riserva Avellaneda-Stoikov e simulatore di Order Book Imbalance (OBI).</li>
+          <li><b>NautilusTrader:</b> Architettura event-driven multi-asset (Crypto, Azioni US, Forex EUR/USD, Borsa Italiana Milano) con Smart Order Routing (SOR) e indice di tossicità VPIN.</li>
+          <li><b>OpenBB Platform:</b> Suite di ricerca quantitativa, scorecard fondamentali (Altman Z-Score, Piotroski F-Score) e monitoraggio della curva dei tassi (Treasury Yield Curve 10Y-2Y).</li>
+          <li><b>InvestorSkills AI:</b> Consiglio d'investimento e comitato di saggi basato sulle strategie di 63 grandi maestri (Buffett, Dalio, Minervini, Simons, Burry, Livermore).</li>
+          <li><b>Bot Telegram Ufficiale:</b> Modulo di notifica automatica con segnali motivati, target multi-scaglione e parametri di rischio calcolati in tempo reale.</li>
+        </ul>
+
+        <div style="font-size:10px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:10px; margin-top:14px;">
+          Avvertenza Legale: Le informazioni e i segnali forniti dalla piattaforma hanno valore analitico e didattico. L'utilizzo operativo nei mercati finanziari avviene sotto la piena responsabilità dell'utente.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Logic Scripts -->
   <script src="js/chart.js"></script>
+  <script src="js/quant_engines.js"></script>
   <script src="js/skills.js"></script>
   <script src="js/trading.js"></script>
   <script src="js/journal.js"></script>
@@ -987,6 +1079,14 @@
   <script src="js/app.js"></script>
 
   <script>
+    // Copyright Modal Handlers
+    function openCopyrightModal() {
+      document.getElementById('copyright-modal')?.classList.add('open');
+    }
+    function closeCopyrightModal() {
+      document.getElementById('copyright-modal')?.classList.remove('open');
+    }
+
     // Live Clock Update
     function updateLiveClock() {
       const now = new Date();

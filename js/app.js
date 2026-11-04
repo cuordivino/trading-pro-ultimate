@@ -133,6 +133,10 @@ function switchMainTab(tabId, btnElem) {
   if (tabId === 'tab-consensus') {
     loadCommitteeConsensus(window.currentSymbol);
   }
+
+  if (tabId === 'tab-quant' && window.QuantEngines) {
+    window.QuantEngines.renderQuantEnginesTab();
+  }
 }
 
 // ==========================================
@@ -141,6 +145,7 @@ function switchMainTab(tabId, btnElem) {
 async function selectAsset(symbol) {
   symbol = symbol.toUpperCase().trim();
   window.currentSymbol = symbol;
+  window.activeSymbol = symbol;
   closeAllDropdowns();
 
   const symElem = document.getElementById('active-sym-title');
@@ -156,6 +161,10 @@ async function selectAsset(symbol) {
   await pollActiveQuote();
   await loadCandleHistory();
   loadCommitteeConsensus(symbol);
+
+  if (window.QuantEngines) {
+    window.QuantEngines.renderQuantEnginesTab();
+  }
 }
 
 async function pollActiveQuote() {
@@ -201,6 +210,8 @@ async function pollActiveQuote() {
 
   const tLatency = Math.round(performance.now() - tStart);
   window.currentLivePrice = q.price;
+  window.activePrice = q.price;
+  window.activeSymbol = window.currentSymbol;
 
   const latElem = document.getElementById('tele-latency-val');
   if (latElem) latElem.innerText = `${tLatency}ms`;
@@ -289,6 +300,7 @@ async function loadCandleHistory() {
   }
 
   window.currentCandles = candles;
+  window.activeCandles = candles;
 
   if (candles.length > 14) {
     let trSum = 0;

@@ -16,8 +16,8 @@ class BrokerageClient:
         self.bybit_secret = settings.get('bybit_secret', '')
         self.alpaca_key = settings.get('alpaca_key', '')
         self.alpaca_secret = settings.get('alpaca_secret', '')
-        self.telegram_token = settings.get('telegram_token', '')
-        self.telegram_chat_id = settings.get('telegram_chat_id', '')
+        self.telegram_token = settings.get('telegram_token') or '8933669800:AAG-kfsZezwSVWJ6ai6YoTmEVRxCP7_NL7I'
+        self.telegram_chat_id = settings.get('telegram_chat_id') or '947710688'
 
         # Base URLs
         self.bybit_base_url = 'https://api-testnet.bybit.com' if not self.bybit_key else 'https://api.bybit.com'

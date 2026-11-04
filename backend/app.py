@@ -178,7 +178,19 @@ def handle_trades():
         side = trade_data.get('side')
         entry = trade_data.get('entry_price')
         skill = trade_data.get('investor_skill', 'Discretionary')
-        msg = f"🚀 *NUOVA POSIZIONE APERTA*\n\n*Asset:* {symbol}\n*Direzione:* {side}\n*Entry:* {entry}\n*Strategia / Mentor:* {skill}\n*Data:* {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        msg = (
+            f"⚡ *TRADING PRO ULTIMATE™* (© cuordivino)\n"
+            f"🚀 *NUOVA POSIZIONE APERTA*\n\n"
+            f"• *Asset:* #{symbol}\n"
+            f"• *Direzione:* {side}\n"
+            f"• *Prezzo Entry:* ${entry}\n"
+            f"• *Stop Loss:* ${trade_data.get('stop_loss', 'N/A')}\n"
+            f"• *Take Profit:* ${trade_data.get('take_profit', 'N/A')}\n"
+            f"• *Strategia / Mentor:* {skill}\n"
+            f"• *Rischio:* {trade_data.get('risk_usd', '$0.00')}\n\n"
+            f"🤖 *Motori Quant:* Freqtrade, Hummingbot, Nautilus, OpenBB Online\n"
+            f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        )
         broker.send_telegram_alert(msg)
 
         return jsonify({'id': trade_id, 'status': 'created'})
@@ -248,7 +260,18 @@ def handle_settings():
 def test_telegram():
     settings = get_settings()
     broker = BrokerageClient(settings)
-    ok = broker.send_telegram_alert("🔔 *Trading Pro Ultimate + InvestorSkills AI*: Notifica di test riuscita!")
+    ok = broker.send_telegram_alert("🔔 *Trading Pro Ultimate™ by cuordivino*: Notifica di test riuscita!")
+    return jsonify({'success': ok})
+
+@app.route('/api/telegram/send', methods=['POST'])
+def send_telegram():
+    data = request.json or {}
+    msg = data.get('message', '')
+    if not msg:
+        return jsonify({'error': 'No message provided'}), 400
+    settings = get_settings()
+    broker = BrokerageClient(settings)
+    ok = broker.send_telegram_alert(msg)
     return jsonify({'success': ok})
 
 if __name__ == '__main__':
