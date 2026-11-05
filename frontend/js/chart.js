@@ -427,34 +427,42 @@ function initMomentumPane() {
 function attachMultiChartSync() {
   if (!mainChart || !volumeChart || !momentumChart) return;
 
+  const releaseSync = () => {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => { isSyncingRange = false; });
+    } else {
+      setTimeout(() => { isSyncingRange = false; }, 20);
+    }
+  };
+
   mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
     if (isSyncingRange || !range) return;
     isSyncingRange = true;
     try {
-      if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(range);
-      if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(range);
+      if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
+      if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
-    isSyncingRange = false;
+    releaseSync();
   });
 
   volumeChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
     if (isSyncingRange || !range) return;
     isSyncingRange = true;
     try {
-      if (mainChart) mainChart.timeScale().setVisibleLogicalRange(range);
-      if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(range);
+      if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
+      if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
-    isSyncingRange = false;
+    releaseSync();
   });
 
   momentumChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
     if (isSyncingRange || !range) return;
     isSyncingRange = true;
     try {
-      if (mainChart) mainChart.timeScale().setVisibleLogicalRange(range);
-      if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(range);
+      if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
+      if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
-    isSyncingRange = false;
+    releaseSync();
   });
 }
 
@@ -476,19 +484,23 @@ function setMomentumMode(mode) {
 }
 
 function resizeAllCharts() {
-  const c1 = document.getElementById('chart-container');
-  if (mainChart && c1 && c1.clientWidth > 0 && c1.clientHeight > 0) {
-    mainChart.resize(c1.clientWidth, c1.clientHeight);
-  }
+  try {
+    const c1 = document.getElementById('chart-container');
+    if (mainChart && c1 && c1.clientWidth > 10 && c1.clientHeight > 10) {
+      mainChart.resize(c1.clientWidth, c1.clientHeight);
+    }
 
-  const c2 = document.getElementById('chart-volume-pane');
-  if (volumeChart && c2 && c2.style.display !== 'none' && c2.clientWidth > 0 && c2.clientHeight > 0) {
-    volumeChart.resize(c2.clientWidth, c2.clientHeight);
-  }
+    const c2 = document.getElementById('chart-volume-pane');
+    if (volumeChart && c2 && c2.style.display !== 'none' && c2.clientWidth > 10 && c2.clientHeight > 10) {
+      volumeChart.resize(c2.clientWidth, c2.clientHeight);
+    }
 
-  const c3 = document.getElementById('chart-momentum-pane');
-  if (momentumChart && c3 && c3.style.display !== 'none' && c3.clientWidth > 0 && c3.clientHeight > 0) {
-    momentumChart.resize(c3.clientWidth, c3.clientHeight);
+    const c3 = document.getElementById('chart-momentum-pane');
+    if (momentumChart && c3 && c3.style.display !== 'none' && c3.clientWidth > 10 && c3.clientHeight > 10) {
+      momentumChart.resize(c3.clientWidth, c3.clientHeight);
+    }
+  } catch(e) {
+    console.warn('[resizeAllCharts] Handled safely:', e);
   }
 }
 
@@ -665,7 +677,7 @@ function renderChartData(candles) {
     { id: 'dema', calc: () => calcDEMAData(times, closes, 20, prec), color: '#fbbf24', width: 2 },
     { id: 'tema', calc: () => calcTEMAData(times, closes, 20, prec), color: '#f43f5e', width: 2 },
     { id: 'wma', calc: () => calcWMAData(times, closes, 20, prec), color: '#34d399', width: 1.5 },
-    { id: 'sma', calc: () => calcVolumeSMA(times, closes, 20), color: '#e879f9', width: 1.5 },
+    { id: 'sma', calc: () => calcSMAData(times, closes, 20, prec), color: '#e879f9', width: 1.5 },
     { id: 'avg_price', calc: () => calcAveragePriceData(times, candles, prec), color: '#94a3b8', width: 1 },
     { id: 'median_price', calc: () => calcMedianPriceData(times, candles, prec), color: '#cbd5e1', width: 1 },
     { id: 'typical_price', calc: () => calcTypicalPriceData(times, candles, prec), color: '#f1f5f9', width: 1 },
@@ -952,6 +964,25 @@ function calcVWAPData(candles, prec = 2) {
     result.push({
       time: c.time,
       value: Math.round((cumVolPrice / (cumVol || 1)) * f) / f
+    });
+  }
+  return result;
+}
+
+// Simple Moving Average — Exactly N items matching each bar with full price precision
+function calcSMAData(times, data, period = 20, prec = 2) {
+  if (!data || !data.length) return [];
+  const f = Math.pow(10, prec);
+  const result = [];
+  const N = data.length;
+
+  for (let i = 0; i < N; i++) {
+    const start = Math.max(0, i - period + 1);
+    const slice = data.slice(start, i + 1);
+    const sum = slice.reduce((a, b) => a + b, 0);
+    result.push({
+      time: times[i],
+      value: Math.round((sum / slice.length) * f) / f
     });
   }
   return result;
@@ -1297,16 +1328,20 @@ function setPaneHeightPreset(paneType, targetH) {
 }
 
 // Master Layout & 90-Degree Rotation Handler
+let layoutRotationTimer = null;
 function handleLayoutRotation() {
-  setTimeout(() => {
-    if (window.PaneSplitterManager) window.PaneSplitterManager.applyDomHeights();
-    resizeAllCharts();
-    if (mainChart) mainChart.timeScale().fitContent();
-  }, 100);
-  setTimeout(() => {
-    resizeAllCharts();
-    if (mainChart) mainChart.timeScale().fitContent();
-  }, 350);
+  if (layoutRotationTimer) clearTimeout(layoutRotationTimer);
+  layoutRotationTimer = setTimeout(() => {
+    try {
+      if (window.PaneSplitterManager) window.PaneSplitterManager.applyDomHeights();
+      resizeAllCharts();
+      if (mainChart && typeof mainChart.timeScale === 'function') {
+        mainChart.timeScale().fitContent();
+      }
+    } catch(e) {
+      console.warn('[LayoutRotation] Handled safely:', e);
+    }
+  }, 120);
 }
 window.addEventListener('resize', handleLayoutRotation);
 window.addEventListener('orientationchange', handleLayoutRotation);

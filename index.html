@@ -15,31 +15,34 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   
-  <!-- IMMEDIATE CACHE PURGER & SERVICE WORKER UNINSTALLER (CRITICAL FOR WINDOWS 10 & SAFARI) -->
+  <!-- SAFE APP VERSION & PASSIVE CACHE PURGER (CRASH-FREE FOR SAFARI & WINDOWS 10) -->
   <script>
     (function() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(regs) {
-          for (var i = 0; i < regs.length; i++) {
-            regs[i].unregister().then(function(ok) {
-              console.log('[SW] Unregistered legacy service worker:', ok);
-            });
-          }
-        }).catch(function(e){ console.warn(e); });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (var i = 0; i < names.length; i++) {
-            caches.delete(names[i]);
-          }
-        }).catch(function(e){ console.warn(e); });
-      }
-      var CURR_VERSION = '2.7.5';
-      var savedVer = localStorage.getItem('TPU_APP_VERSION');
-      if (savedVer !== CURR_VERSION) {
-        localStorage.setItem('TPU_APP_VERSION', CURR_VERSION);
-        try { sessionStorage.clear(); } catch(e){}
-      }
+      var CURR_VERSION = '2.7.6';
+      try {
+        var savedVer = localStorage.getItem('TPU_APP_VERSION');
+        if (savedVer !== CURR_VERSION) {
+          localStorage.setItem('TPU_APP_VERSION', CURR_VERSION);
+          try { sessionStorage.clear(); } catch(e){}
+        }
+      } catch(e) {}
+
+      window.addEventListener('load', function() {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (var i = 0; i < regs.length; i++) {
+              regs[i].unregister().catch(function(){});
+            }
+          }).catch(function(){});
+        }
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (var i = 0; i < names.length; i++) {
+              caches.delete(names[i]).catch(function(){});
+            }
+          }).catch(function(){});
+        }
+      });
     })();
   </script>
 
@@ -52,7 +55,7 @@
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   
   <!-- Terminal Stylesheet -->
-  <link rel="stylesheet" href="css/terminal.css?v=2.7.5">
+  <link rel="stylesheet" href="css/terminal.css?v=2.7.6">
 </head>
 <body>
 
@@ -1820,21 +1823,22 @@
   </div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/auth.js?v=2.7.5"></script>
-  <script src="js/market_assets.js?v=2.7.5"></script>
-  <script src="js/workspace_engine.js?v=2.7.5"></script>
-  <script src="js/api_manager.js?v=2.7.5"></script>
-  <script src="js/chart.js?v=2.7.5"></script>
-  <script src="js/bybit_engine.js?v=2.7.5"></script>
-  <script src="js/quant_engines.js?v=2.7.5"></script>
-  <script src="js/sector_rotation.js?v=2.7.5"></script>
-  <script src="js/optimal_engine.js?v=2.7.5"></script>
-  <script src="js/opportunity_scanner.js?v=2.7.5"></script>
-  <script src="js/skills.js?v=2.7.5"></script>
-  <script src="js/trading.js?v=2.7.5"></script>
-  <script src="js/journal.js?v=2.7.5"></script>
-  <script src="js/alerts.js?v=2.7.5"></script>
-  <script src="js/app.js?v=2.7.5"></script>
+  <script src="js/auth.js?v=2.7.6"></script>
+  <script src="js/market_assets.js?v=2.7.6"></script>
+  <script src="js/workspace_engine.js?v=2.7.6"></script>
+  <script src="js/api_manager.js?v=2.7.6"></script>
+  <script src="js/chart.js?v=2.7.6"></script>
+  <script src="js/bybit_engine.js?v=2.7.6"></script>
+  <script src="js/casario_quant_engine.js?v=2.7.6"></script>
+  <script src="js/quant_engines.js?v=2.7.6"></script>
+  <script src="js/sector_rotation.js?v=2.7.6"></script>
+  <script src="js/optimal_engine.js?v=2.7.6"></script>
+  <script src="js/opportunity_scanner.js?v=2.7.6"></script>
+  <script src="js/skills.js?v=2.7.6"></script>
+  <script src="js/trading.js?v=2.7.6"></script>
+  <script src="js/journal.js?v=2.7.6"></script>
+  <script src="js/alerts.js?v=2.7.6"></script>
+  <script src="js/app.js?v=2.7.6"></script>
 
   <script>
     // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)

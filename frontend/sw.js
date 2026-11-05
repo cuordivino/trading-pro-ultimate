@@ -1,5 +1,5 @@
-// TRADING PRO ULTIMATE™ — Service Worker Uninstaller & Cache Buster v2.7.5
-// Cleanly unregisters legacy workers and wipes caches without intercepting network fetch
+// TRADING PRO ULTIMATE™ — Service Worker (Safe Passive v2.7.6)
+// Safe, crash-free lifecycle for iOS WebKit, macOS Safari and Windows 10
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -7,15 +7,9 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(keys.map((key) => caches.delete(key)));
-    })
-    .then(() => self.registration.unregister())
-    .then(() => self.clients.matchAll())
-    .then((clients) => {
-      clients.forEach((client) => {
-        try { client.postMessage({ type: 'CACHE_PURGED_V27' }); } catch(e) {}
-      });
-    })
+    (typeof caches !== 'undefined'
+      ? caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      : Promise.resolve()
+    ).then(() => self.clients.claim())
   );
 });
