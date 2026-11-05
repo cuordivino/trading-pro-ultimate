@@ -17,10 +17,16 @@ window.OptimalEngine = {
   autoPilotTimer: null,
   minConvexScore: 82, // Threshold to trigger trade
 
-  // Local Volume Profile Range: 'session' | '4h' | '24h' | 'visible'
-  volumeProfileRange: 'session',
-  volumeProfileVisible: false,
-  currentVolumeProfile: { poc: 0, vah: 0, val: 0, totalVolume: 0, bins: [] },
+  // Local Volume Profile Range: 'visible' | 'session' | '100' | '24h' | 'all'
+  volumeProfileRange: 'visible',
+  volumeProfileVisible: true,
+  volumeProfileStyle: 'right', // 'right' | 'floating'
+  volumeProfileBins: 36,
+  volumeProfileWidth: 220,
+  volumeProfileVaPct: 0.70,
+  volumeProfileShowValues: false,
+  volumeProfileShowPocRay: true,
+  currentVolumeProfile: { poc: 0, vah: 0, val: 0, minPrice: 0, maxPrice: 0, totalVolume: 0, bins: [] },
 
   // Current Optimal Setup
   optimalSetup: null,
@@ -92,14 +98,34 @@ window.OptimalEngine = {
     this.renderOptimalCards();
   },
 
-  // 2. LOCAL VOLUME PROFILE (OPENMARKET.XYZ STYLE)
+  // 2. LOCAL VOLUME PROFILE (OPENMARKET.XYZ / VRVP STYLE)
   calculateLocalVolumeProfile: function() {
     const candles = window.currentCandles || [];
     if (!candles || candles.length < 5) return;
 
-    // Determine study window (e.g. last 40 candles for session)
-    const studyCount = this.volumeProfileRange === '4h' ? 16 : (this.volumeProfileRange === '24h' ? 96 : 48);
-    const studyCandles = candles.slice(-Math.min(candles.length, studyCount));
+    let studyCandles = [];
+    if (this.volumeProfileRange === 'visible' && window.mainChart && typeof window.mainChart.timeScale === 'function') {
+      try {
+        const timeScale = window.mainChart.timeScale();
+        const vRange = timeScale.getVisibleLogicalRange ? timeScale.getVisibleLogicalRange() : null;
+        if (vRange && candles.length) {
+          const fromIdx = Math.max(0, Math.floor(vRange.from));
+          const toIdx = Math.min(candles.length - 1, Math.ceil(vRange.to));
+          studyCandles = candles.slice(fromIdx, toIdx + 1);
+        }
+      } catch (e) {
+        studyCandles = [];
+      }
+    }
+
+    if (!studyCandles.length) {
+      const studyCount = this.volumeProfileRange === 'session' ? 72 :
+                         this.volumeProfileRange === '100' ? 100 :
+                         this.volumeProfileRange === '24h' ? 288 :
+                         this.volumeProfileRange === 'all' ? candles.length :
+                         Math.min(candles.length, 120);
+      studyCandles = candles.slice(-studyCount);
+    }
 
     let minPrice = Infinity;
     let maxPrice = -Infinity;
@@ -111,26 +137,34 @@ window.OptimalEngine = {
       totalVol += (c.volume || 10);
     });
 
-    if (minPrice >= maxPrice) return;
+    if (minPrice >= maxPrice || !isFinite(minPrice) || !isFinite(maxPrice)) return;
 
-    // Divide price range into 24 bins with dynamic precision
-    const sym = window.currentSymbol || 'BTCUSDT';
+    const sym = window.activeSymbol || window.currentSymbol || 'BTCUSDT';
     const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(minPrice, sym) : (asset ? (asset.precision || 2) : 2);
     const curr = asset ? (asset.currency || '$') : '$';
 
-    const numBins = 24;
+    const numBins = Math.max(12, Math.min(120, this.volumeProfileBins || 36));
     const binSize = (maxPrice - minPrice) / numBins;
     const bins = new Array(numBins).fill(0).map((_, i) => ({
       price: +(minPrice + (i * binSize)).toFixed(prec),
-      vol: 0
+      vol: 0,
+      buyVol: 0,
+      sellVol: 0
     }));
 
     studyCandles.forEach(c => {
       const vol = c.volume || 10;
+      const isUp = (c.close >= c.open);
+      const buyFraction = isUp ? 0.65 : 0.35;
+      const buyV = vol * buyFraction;
+      const sellV = vol * (1 - buyFraction);
+
       const mid = (c.high + c.low + c.close) / 3;
       const idx = Math.min(numBins - 1, Math.max(0, Math.floor((mid - minPrice) / binSize)));
       bins[idx].vol += vol;
+      bins[idx].buyVol += buyV;
+      bins[idx].sellVol += sellV;
     });
 
     // Find POC (Point of Control = bin with max volume)
@@ -143,10 +177,12 @@ window.OptimalEngine = {
       }
     });
 
-    // Compute Value Area (70% of total volume around POC)
-    const targetVaVol = totalVol * 0.70;
+    // Compute Value Area (default 70% of total volume around POC)
+    const vaPct = this.volumeProfileVaPct || 0.70;
+    const targetVaVol = totalVol * vaPct;
     let currentVaVol = maxBinVol;
-    let lowIdx = bins.findIndex(b => b.price === pocPrice);
+    let lowIdx = bins.findIndex(b => Math.abs(b.price - pocPrice) < 0.0000001);
+    if (lowIdx === -1) lowIdx = 0;
     let highIdx = lowIdx;
 
     while (currentVaVol < targetVaVol && (lowIdx > 0 || highIdx < numBins - 1)) {
@@ -170,17 +206,20 @@ window.OptimalEngine = {
       poc: pocPrice,
       vah: vah,
       val: val,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
       totalVolume: Math.round(totalVol),
       bins: bins,
       maxBinVol: maxBinVol,
       precision: prec,
-      currency: curr
+      currency: curr,
+      candleCount: studyCandles.length
     };
 
     this.renderVolumeProfileOverlay();
   },
 
-  // RENDER HORIZONTAL LOCAL VOLUME PROFILE ON CHART (100% MATHEMATICAL VERTICAL ALIGNMENT ON CANVAS)
+  // RENDER HORIZONTAL LOCAL VOLUME PROFILE ON CHART (CLEAN INSTITUTIONAL STYLE - ZERO CLUTTER)
   renderVolumeProfileOverlay: function() {
     const overlay = document.getElementById('chart-vp-overlay');
     if (!overlay) return;
@@ -212,17 +251,17 @@ window.OptimalEngine = {
 
     if (badge) {
       badge.innerHTML = `
-        <span style="color:var(--text-muted)">Volumi Locali (${this.volumeProfileRange.toUpperCase()}):</span>
+        <span style="color:var(--text-muted)">Volumi Locali:</span>
         <span style="color:var(--accent); font-weight:800">POC ${curr}${Number(vp.poc).toFixed(prec)}</span>
         <span style="color:var(--cyan)">VAH ${curr}${Number(vp.vah).toFixed(prec)}</span>
         <span style="color:var(--purple)">VAL ${curr}${Number(vp.val).toFixed(prec)}</span>
-        <span style="color:var(--text-dim)">Vol: ${vp.totalVolume.toLocaleString()}</span>
+        <span style="color:var(--text-dim)">Vol: ${vp.totalVolume.toLocaleString()} (${vp.candleCount || 0} bars)</span>
       `;
     }
 
     if (!canvas) return;
     const rect = overlay.getBoundingClientRect();
-    canvas.width = overlay.clientWidth || rect.width || 160;
+    canvas.width = overlay.clientWidth || rect.width || 300;
     canvas.height = overlay.clientHeight || rect.height || 400;
 
     const ctx = canvas.getContext('2d');
@@ -231,68 +270,156 @@ window.OptimalEngine = {
     const candleSeries = window.mainCandleSeries;
     const numBins = vp.bins.length;
     const maxBinVol = vp.maxBinVol || 1;
-    const maxBarWidth = canvas.width - 52; // room on left for price labels
+    // Institutional right-anchored width: max 170px or 25% of chart
+    const maxProfileWidth = Math.min(170, Math.max(70, canvas.width * 0.25));
 
-    vp.bins.forEach((b, idx) => {
-      let y = null;
+    // Helper to get Y coordinate for any price
+    const getPriceY = (price) => {
       if (candleSeries && typeof candleSeries.priceToCoordinate === 'function') {
-        y = candleSeries.priceToCoordinate(b.price);
+        const coord = candleSeries.priceToCoordinate(price);
+        if (coord !== null && !isNaN(coord)) return coord;
       }
-      if (y === null || isNaN(y)) {
-        const norm = (b.price - vp.minPrice) / (vp.maxPrice - vp.minPrice || 1);
-        y = canvas.height - (norm * canvas.height);
-      }
+      const norm = (price - vp.minPrice) / ((vp.maxPrice - vp.minPrice) || 1);
+      return canvas.height - (norm * canvas.height);
+    };
 
+    // 1. Draw POC Ray across chart (clean golden dashed ray)
+    if (this.volumeProfileShowPocRay && vp.poc) {
+      const pocY = getPriceY(vp.poc);
+      if (pocY >= 0 && pocY <= canvas.height) {
+        ctx.strokeStyle = '#fcd535';
+        ctx.lineWidth = 1.4;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, pocY);
+        ctx.lineTo(canvas.width - maxProfileWidth - 10, pocY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // 2. Draw VAH and VAL subtle reference lines across chart
+    if (vp.vah) {
+      const vahY = getPriceY(vp.vah);
+      if (vahY >= 0 && vahY <= canvas.height) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, vahY);
+        ctx.lineTo(canvas.width - maxProfileWidth - 10, vahY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    if (vp.val) {
+      const valY = getPriceY(vp.val);
+      if (valY >= 0 && valY <= canvas.height) {
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, valY);
+        ctx.lineTo(canvas.width - maxProfileWidth - 10, valY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // 3. Render Volume Histogram Bars (Strictly anchored to RIGHT margin)
+    vp.bins.forEach((b, idx) => {
+      const y = getPriceY(b.price);
       if (y < -20 || y > canvas.height + 20) return;
 
       let barH = 5;
       if (idx < numBins - 1) {
-        let nextY = null;
-        if (candleSeries && typeof candleSeries.priceToCoordinate === 'function') {
-          nextY = candleSeries.priceToCoordinate(vp.bins[idx + 1].price);
-        }
+        const nextY = getPriceY(vp.bins[idx + 1].price);
         if (nextY != null && !isNaN(nextY)) {
-          barH = Math.max(2, Math.min(18, Math.abs(y - nextY) * 0.88));
+          barH = Math.max(2, Math.min(22, Math.abs(y - nextY) * 0.90));
         }
       }
 
       const isPoc = Math.abs(b.price - vp.poc) < 0.0000001;
       const inVa = b.price >= vp.val && b.price <= vp.vah;
-      const barW = Math.max(2, (b.vol / maxBinVol) * maxBarWidth);
+      const barW = Math.max(3, (b.vol / maxBinVol) * maxProfileWidth);
+
+      // Anchored strictly to RIGHT margin: right edge is canvas.width - 2
       const barX = canvas.width - barW - 2;
 
-      // Draw horizontal volume bar
-      ctx.fillStyle = isPoc 
-        ? 'rgba(245, 158, 11, 0.90)' 
-        : (inVa ? 'rgba(56, 189, 248, 0.48)' : 'rgba(100, 116, 139, 0.28)');
+      // Color scheme: POC = Gold, VA = Cyan/Teal, Outside = Muted Slate
+      if (isPoc) {
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.92)';
+        ctx.shadowColor = 'rgba(245, 158, 11, 0.6)';
+        ctx.shadowBlur = 6;
+      } else if (inVa) {
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.42)';
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = 'rgba(100, 116, 139, 0.20)';
+        ctx.shadowBlur = 0;
+      }
       ctx.fillRect(barX, y - barH / 2, barW, barH);
+      ctx.shadowBlur = 0;
 
-      // Price label text pinned right next to bar
-      ctx.fillStyle = isPoc ? '#fcd535' : (inVa ? '#38bdf8' : 'rgba(148, 163, 184, 0.7)');
-      ctx.font = isPoc ? 'bold 9px monospace' : '8px monospace';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(Number(b.price).toFixed(prec), barX - 4, y);
-
-      // If POC: draw golden ray line extending across to the left
+      // Optional border on bars
       if (isPoc) {
         ctx.strokeStyle = '#fcd535';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(barX - 45, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, y - barH / 2, barW, barH);
+      }
 
+      // ONLY for POC: Draw a single crisp institutional badge on the right edge
+      if (isPoc) {
+        const pocVolTxt = b.vol >= 1000 ? (b.vol / 1000).toFixed(1) + 'k' : Math.round(b.vol);
+        const pocLabel = `POC ${curr}${Number(b.price).toFixed(prec)} (${pocVolTxt})`;
+        ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        const txtW = ctx.measureText(pocLabel).width;
+        const badgeW = txtW + 12;
+        const badgeX = canvas.width - badgeW - 4;
+
+        // Badge pill background
+        ctx.fillStyle = '#0b0f19';
+        ctx.strokeStyle = '#fcd535';
+        ctx.lineWidth = 1;
+        ctx.fillRect(badgeX, y - 8, badgeW, 16);
+        ctx.strokeRect(badgeX, y - 8, badgeW, 16);
+
+        // Badge text
         ctx.fillStyle = '#fcd535';
-        ctx.fillRect(2, y - 6, 26, 12);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 8px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('POC', 15, y);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pocLabel, badgeX + badgeW / 2, y);
       }
     });
+
+    // 4. Subtle VAH / VAL labels on the right edge
+    const drawLevelBadge = (price, label, color, bg) => {
+      const y = getPriceY(price);
+      if (y < 10 || y > canvas.height - 10) return;
+      const text = `${label}: ${curr}${Number(price).toFixed(prec)}`;
+      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      const txtW = ctx.measureText(text).width;
+      const bW = txtW + 8;
+      const bX = canvas.width - bW - 4;
+
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 0.8;
+      ctx.fillRect(bX, y - 6, bW, 13);
+      ctx.strokeRect(bX, y - 6, bW, 13);
+
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, bX + bW / 2, y);
+    };
+
+    if (vp.vah && Math.abs(vp.vah - vp.poc) > (vp.maxPrice - vp.minPrice) * 0.05) {
+      drawLevelBadge(vp.vah, 'VAH', '#38bdf8', 'rgba(10, 25, 45, 0.9)');
+    }
+    if (vp.val && Math.abs(vp.val - vp.poc) > (vp.maxPrice - vp.minPrice) * 0.05) {
+      drawLevelBadge(vp.val, 'VAL', '#a855f7', 'rgba(25, 12, 40, 0.9)');
+    }
   },
 
   toggleVolumeProfileVisibility: function() {
@@ -301,15 +428,145 @@ window.OptimalEngine = {
     const btn = document.getElementById('btn-toggle-vp');
     if (btn) btn.classList.toggle('active', this.volumeProfileVisible);
     if (window.showToast) {
-      window.showToast(`Volumi Locali POC/VAH: ${this.volumeProfileVisible ? 'VISIBILI' : 'NASCOSTI'}`, 'info');
+      window.showToast(`Volumi Locali POC/VAH: ${this.volumeProfileVisible ? 'ATTIVI' : 'DISATTIVATI'}`, 'info');
     }
   },
 
   setVolumeProfileRange: function(range) {
     this.volumeProfileRange = range;
-    document.querySelectorAll('.vp-range-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-vprange="${range}"]`)?.classList.add('active');
     this.calculateLocalVolumeProfile();
+    this.renderVpSettingsDropdown();
+  },
+
+  setVolumeProfileStyle: function(style) {
+    this.volumeProfileStyle = style;
+    this.renderVolumeProfileOverlay();
+    this.renderVpSettingsDropdown();
+  },
+
+  setVolumeProfileBins: function(bins) {
+    this.volumeProfileBins = parseInt(bins, 10);
+    this.calculateLocalVolumeProfile();
+    this.renderVpSettingsDropdown();
+  },
+
+  setVolumeProfileWidth: function(w) {
+    this.volumeProfileWidth = parseInt(w, 10);
+    this.renderVolumeProfileOverlay();
+    this.renderVpSettingsDropdown();
+  },
+
+  setVolumeProfileVaPct: function(pct) {
+    this.volumeProfileVaPct = parseFloat(pct);
+    this.calculateLocalVolumeProfile();
+    this.renderVpSettingsDropdown();
+  },
+
+  toggleShowValues: function() {
+    this.volumeProfileShowValues = !this.volumeProfileShowValues;
+    this.renderVolumeProfileOverlay();
+    this.renderVpSettingsDropdown();
+  },
+
+  togglePocRay: function() {
+    this.volumeProfileShowPocRay = !this.volumeProfileShowPocRay;
+    this.renderVolumeProfileOverlay();
+    this.renderVpSettingsDropdown();
+  },
+
+  toggleVpSettingsDropdown: function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const el = document.getElementById('vp-settings-dropdown');
+    if (!el) return;
+    const isOpen = el.classList.contains('open');
+    if (isOpen) {
+      el.classList.remove('open');
+    } else {
+      el.classList.add('open');
+      this.renderVpSettingsDropdown();
+    }
+  },
+
+  renderVpSettingsDropdown: function() {
+    const el = document.getElementById('vp-settings-dropdown');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div style="font-weight:900; font-size:11px; color:#fff; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>⚙ PARAMETRI VOLUMI LOCALI & VRVP</span>
+        <button onclick="document.getElementById('vp-settings-dropdown').classList.remove('open')" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">✕</button>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <div style="font-size:9px; font-weight:800; color:var(--text-dim); margin-bottom:4px;">RANGE DI CALCOLO</div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+          ${[
+            { id: 'visible', label: 'Range Visibile (VRVP)' },
+            { id: 'session', label: 'Sessione (72)' },
+            { id: '100', label: '100 Candele' },
+            { id: '24h', label: '24 Ore (288)' },
+            { id: 'all', label: 'Tutto' }
+          ].map(r => `
+            <button class="btn btn-sm ${this.volumeProfileRange === r.id ? 'btn-primary' : 'btn-secondary'}" style="font-size:9px; padding:3px 6px;" onclick="OptimalEngine.setVolumeProfileRange('${r.id}')">
+              ${r.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <div style="font-size:9px; font-weight:800; color:var(--text-dim); margin-bottom:4px;">STILE & POSIZIONE (FLOATING)</div>
+        <div style="display:flex; gap:4px;">
+          <button class="btn btn-sm ${this.volumeProfileStyle === 'right' ? 'btn-primary' : 'btn-secondary'}" style="font-size:9px; padding:3px 8px; flex:1;" onclick="OptimalEngine.setVolumeProfileStyle('right')">
+            Ancorato a Destra
+          </button>
+          <button class="btn btn-sm ${this.volumeProfileStyle === 'floating' ? 'btn-primary' : 'btn-secondary'}" style="font-size:9px; padding:3px 8px; flex:1;" onclick="OptimalEngine.setVolumeProfileStyle('floating')">
+            Flottante sulle Candele
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        <div>
+          <div style="font-size:9px; font-weight:800; color:var(--text-dim); margin-bottom:3px;">RIGHE (BINS)</div>
+          <select class="terminal-input" style="font-size:10px; padding:3px 6px; width:100%;" onchange="OptimalEngine.setVolumeProfileBins(this.value)">
+            ${[24, 36, 48, 72, 100].map(b => `<option value="${b}" ${this.volumeProfileBins === b ? 'selected' : ''}>${b} Righe</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px; font-weight:800; color:var(--text-dim); margin-bottom:3px;">LARGHEZZA</div>
+          <select class="terminal-input" style="font-size:10px; padding:3px 6px; width:100%;" onchange="OptimalEngine.setVolumeProfileWidth(this.value)">
+            ${[140, 200, 260, 340].map(w => `<option value="${w}" ${this.volumeProfileWidth === w ? 'selected' : ''}>${w}px</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <div style="font-size:9px; font-weight:800; color:var(--text-dim); margin-bottom:3px;">VALUE AREA (VA)</div>
+        <div style="display:flex; gap:4px;">
+          ${[
+            { val: 0.68, label: '68% (1-Sigma)' },
+            { val: 0.70, label: '70% (Standard)' },
+            { val: 0.80, label: '80% (Ampia)' }
+          ].map(va => `
+            <button class="btn btn-sm ${this.volumeProfileVaPct === va.val ? 'btn-primary' : 'btn-secondary'}" style="font-size:9px; padding:3px 6px; flex:1;" onclick="OptimalEngine.setVolumeProfileVaPct(${va.val})">
+              ${va.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);">
+        <label style="font-size:10px; color:#fff; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" ${this.volumeProfileShowValues ? 'checked' : ''} onchange="OptimalEngine.toggleShowValues()">
+          <span>Mostra Valori Numerici di Volume</span>
+        </label>
+        <label style="font-size:10px; color:#fff; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" ${this.volumeProfileShowPocRay ? 'checked' : ''} onchange="OptimalEngine.togglePocRay()">
+          <span>Raggio POC Esteso (Golden Ray)</span>
+        </label>
+      </div>
+    `;
   },
 
   // 3. EXECUTION MODE SWITCHER (MANUALE | SEMI-AUTOMATICO | 100% AUTOMATICO)

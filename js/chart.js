@@ -87,6 +87,137 @@ function formatRomeTime(timestampSec, withSeconds = false) {
   return date.toLocaleTimeString('it-IT', opts);
 }
 
+// Timeframe-Aware Tick Mark Formatter for Lightweight Charts (Clean, regular, no 90m gaps!)
+function formatTimeScaleTick(time, tickMarkType, locale, forcedTf) {
+  if (!time) return '';
+  const currentTf = (forcedTf || window.currentInterval || '15m').toLowerCase();
+
+  let date;
+  if (typeof time === 'object' && time !== null) {
+    date = new Date(Date.UTC(time.year, time.month - 1, time.day));
+  } else {
+    date = new Date(time * 1000);
+  }
+
+  const isSeconds = (currentTf === '1s');
+  const isDaily = ['1d', '1g'].includes(currentTf);
+  const isWeekly = ['1w', '1sett'].includes(currentTf);
+  const isMonthly = ['1m', '1mese', '1month'].includes(currentTf);
+
+  // 1. Seconds timeframe (1s) -> format HH:mm:ss
+  if (isSeconds) {
+    return date.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  // 2. High-timeframe Daily, Weekly, Monthly -> format Date (DD MMM or MMM 'YY) - NEVER "02:00"!
+  if (isDaily || isWeekly || isMonthly) {
+    if (tickMarkType === 0) {
+      return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', year: 'numeric' });
+    }
+    if (tickMarkType === 1 || isMonthly) {
+      return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', month: 'short', year: '2-digit' });
+    }
+    return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: 'short' });
+  }
+
+  // 3. Intraday (1m, 5m, 15m, 30m, 1h, 4h) -> format HH:mm
+  const romeHourStr = date.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' });
+
+  // On day boundaries (midnight 00:00 or DayOfMonth tick mark) show clean date
+  if (tickMarkType === 2 || tickMarkType === 1 || tickMarkType === 0 || romeHourStr === '00:00') {
+    return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: 'short' });
+  }
+
+  return romeHourStr;
+}
+
+// Dynamically optimize timeScale options and bar spacing per timeframe
+function applyTimeframeScaleOptions(tf) {
+  if (!mainChart) return;
+  const t = (tf || window.currentInterval || '15m').toLowerCase();
+  const isSeconds = (t === '1s');
+  const isDaily = ['1d', '1g'].includes(t);
+  const isWeekly = ['1w', '1sett'].includes(t);
+  const isMonthly = ['1m', '1mese', '1month'].includes(t);
+  const isHighTf = isDaily || isWeekly || isMonthly;
+
+  let optimalBarSpacing = 14;
+  let minBarSpacing = 8;
+  let visibleBars = 65;
+
+  if (isSeconds) {
+    optimalBarSpacing = 16;
+    minBarSpacing = 10;
+    visibleBars = 70;
+  } else if (t === '1m') {
+    optimalBarSpacing = 14;
+    minBarSpacing = 8;
+    visibleBars = 65;
+  } else if (t === '5m') {
+    optimalBarSpacing = 14;
+    minBarSpacing = 8;
+    visibleBars = 65;
+  } else if (t === '15m') {
+    optimalBarSpacing = 12;
+    minBarSpacing = 7;
+    visibleBars = 75;
+  } else if (t === '30m') {
+    optimalBarSpacing = 12;
+    minBarSpacing = 6;
+    visibleBars = 70;
+  } else if (t === '1h') {
+    optimalBarSpacing = 11;
+    minBarSpacing = 6;
+    visibleBars = 70;
+  } else if (t === '4h') {
+    optimalBarSpacing = 10;
+    minBarSpacing = 5;
+    visibleBars = 60;
+  } else if (isDaily) {
+    optimalBarSpacing = 11;
+    minBarSpacing = 5;
+    visibleBars = 70;
+  } else if (isWeekly) {
+    optimalBarSpacing = 12;
+    minBarSpacing = 6;
+    visibleBars = 52;
+  } else if (isMonthly) {
+    optimalBarSpacing = 14;
+    minBarSpacing = 7;
+    visibleBars = 36;
+  }
+
+  const opts = {
+    borderColor: '#1e293b',
+    timeVisible: !isHighTf,
+    secondsVisible: isSeconds,
+    barSpacing: optimalBarSpacing,
+    minBarSpacing: minBarSpacing,
+    rightOffset: 12,
+    fixLeftEdge: false,
+    fixRightEdge: false,
+    tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale, t)
+  };
+
+  try {
+    mainChart.timeScale().applyOptions(opts);
+    if (volumeChart) volumeChart.timeScale().applyOptions({ ...opts, visible: false });
+    if (momentumChart) momentumChart.timeScale().applyOptions(opts);
+  } catch(e) {}
+
+  const candles = window.currentCandles || [];
+  if (candles.length > 0) {
+    const to = candles.length + 8;
+    const from = Math.max(0, candles.length - visibleBars);
+    try {
+      mainChart.timeScale().setVisibleLogicalRange({ from, to });
+      if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange({ from, to });
+      if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange({ from, to });
+    } catch(e) {}
+  }
+}
+window.applyTimeframeScaleOptions = applyTimeframeScaleOptions;
+
 function initMainChart() {
   const container = document.getElementById('chart-container');
   if (!container || !window.LightweightCharts) return;
@@ -131,7 +262,7 @@ function initMainChart() {
       barSpacing: 8,
       fixLeftEdge: false,
       fixRightEdge: false,
-      tickMarkFormatter: (time) => formatRomeTime(time, false)
+      tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale)
     },
   });
 
@@ -150,11 +281,15 @@ function initMainChart() {
 
   mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
     if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+      OptimalEngine.calculateLocalVolumeProfile();
       OptimalEngine.renderVolumeProfileOverlay();
     }
     if (window.OrderFlowEngine) {
       OrderFlowEngine.renderFootprintOverlay();
       OrderFlowEngine.renderDenseTimeGrid();
+      if (OrderFlowEngine.forecastConeVisible) {
+        OrderFlowEngine.renderForecastCone();
+      }
     }
     if (volumeChart) {
       try { volumeChart.timeScale().setVisibleLogicalRange(range); } catch(e) {}
@@ -428,7 +563,7 @@ function initMomentumPane() {
       barSpacing: 8,
       fixLeftEdge: false,
       fixRightEdge: false,
-      tickMarkFormatter: (time) => formatRomeTime(time, false)
+      tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale)
     },
   });
 
@@ -604,6 +739,10 @@ function renderChartData(candles) {
     close: c.close
   }));
   candleSeries.setData(formattedCandles);
+  window.currentChartCandles = candles;
+  if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
+    OrderFlowEngine.renderForecastCone();
+  }
 
   const closes = candles.map(c => c.close);
   const times = candles.map(c => c.time);
@@ -955,19 +1094,11 @@ function renderChartData(candles) {
     }
   }
 
-    // Reset autoScale and synchronize all 3 chart timeScales
+    // Reset autoScale and apply timeframe-optimized scale options (eliminates 90m gaps!)
   if (mainChart) {
     try {
       mainChart.priceScale('right').applyOptions({ autoScale: true });
-      mainChart.timeScale().fitContent();
-      if (volumeChart) volumeChart.timeScale().fitContent();
-      if (momentumChart) momentumChart.timeScale().fitContent();
-
-      const curRange = mainChart.timeScale().getVisibleLogicalRange();
-      if (curRange) {
-        if (volumeChart) volumeChart.timeScale().setVisibleLogicalRange(curRange);
-        if (momentumChart) momentumChart.timeScale().setVisibleLogicalRange(curRange);
-      }
+      applyTimeframeScaleOptions(window.currentInterval || '15m');
     } catch(e) {}
   }
 

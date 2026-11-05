@@ -309,8 +309,159 @@ const OrderFlowEngine = {
     if (window.showToast) {
       window.showToast(`Order Flow Footprint: ${this.footprintActive ? 'ATTIVO' : 'DISATTIVATO'}`, 'info');
     }
+  },
+
+  forecastConeVisible: false,
+
+  toggleForecastCone(forced) {
+    if (typeof forced === 'boolean') {
+      this.forecastConeVisible = forced;
+    } else {
+      this.forecastConeVisible = !this.forecastConeVisible;
+    }
+    const btn = document.getElementById('btn-toggle-forecast-cone');
+    const canvas = document.getElementById('forecast-cone-canvas');
+    if (btn) {
+      if (this.forecastConeVisible) {
+        btn.classList.add('active');
+        btn.style.background = 'rgba(56,189,248,0.3)';
+        btn.style.boxShadow = '0 0 10px rgba(56,189,248,0.5)';
+      } else {
+        btn.classList.remove('active');
+        btn.style.background = 'rgba(56,189,248,0.15)';
+        btn.style.boxShadow = 'none';
+      }
+    }
+    if (canvas) {
+      canvas.style.display = this.forecastConeVisible ? 'block' : 'none';
+    }
+    if (this.forecastConeVisible) {
+      this.renderForecastCone();
+    }
+    if (window.showToast) {
+      window.showToast(`Previsione Ventaglio (Forecast Cone): ${this.forecastConeVisible ? 'ATTIVATA' : 'DISATTIVATA'}`, 'info');
+    }
+  },
+
+  renderForecastCone() {
+    const canvas = document.getElementById('forecast-cone-canvas');
+    if (!canvas || !this.forecastConeVisible) return;
+    const chart = window.mainChartInstance;
+    const series = window.mainCandleSeries;
+    const data = window.currentChartCandles;
+    if (!chart || !series || !data || data.length === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    const lastCandle = data[data.length - 1];
+    const lastClose = lastCandle.close !== undefined ? lastCandle.close : lastCandle.c;
+    const startY = series.priceToCoordinate(lastClose);
+    const startX = chart.timeScale().timeToCoordinate(lastCandle.time);
+    if (startY === null || startX === null || isNaN(startY) || isNaN(startX)) return;
+
+    // Target projection range
+    const targetX = Math.min(rect.width - 110, startX + 160);
+
+    const upperTarget = lastClose * 1.085;
+    const medianTarget = lastClose * 1.042;
+    const lowerSupport = lastClose * 0.945;
+
+    const upperY = series.priceToCoordinate(upperTarget) || (startY - 60);
+    const medianY = series.priceToCoordinate(medianTarget) || (startY - 30);
+    const lowerY = series.priceToCoordinate(lowerSupport) || (startY + 50);
+
+    // 1. Shaded Cone Area (Gradient Fill)
+    const coneGrad = ctx.createLinearGradient(startX, startY, targetX, startY);
+    coneGrad.addColorStop(0, 'rgba(56, 189, 248, 0.02)');
+    coneGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.09)');
+    coneGrad.addColorStop(1, 'rgba(56, 189, 248, 0.16)');
+
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.bezierCurveTo(
+      startX + (targetX - startX) * 0.4, startY + (upperY - startY) * 0.2,
+      startX + (targetX - startX) * 0.7, upperY,
+      targetX, upperY
+    );
+    ctx.lineTo(targetX, lowerY);
+    ctx.bezierCurveTo(
+      startX + (targetX - startX) * 0.7, lowerY,
+      startX + (targetX - startX) * 0.4, startY + (lowerY - startY) * 0.2,
+      startX, startY
+    );
+    ctx.closePath();
+    ctx.fillStyle = coneGrad;
+    ctx.fill();
+
+    // 2. Upper Fan Boundary (Dashed Cyan)
+    ctx.beginPath();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.8;
+    ctx.moveTo(startX, startY);
+    ctx.bezierCurveTo(
+      startX + (targetX - startX) * 0.4, startY + (upperY - startY) * 0.2,
+      startX + (targetX - startX) * 0.7, upperY,
+      targetX, upperY
+    );
+    ctx.stroke();
+
+    // 3. Median Consensus Line (Dotted Green)
+    ctx.beginPath();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 1.5;
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(targetX, medianY);
+    ctx.stroke();
+
+    // 4. Lower Support Boundary (Dashed Orange)
+    ctx.beginPath();
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 1.8;
+    ctx.moveTo(startX, startY);
+    ctx.bezierCurveTo(
+      startX + (targetX - startX) * 0.4, startY + (lowerY - startY) * 0.2,
+      startX + (targetX - startX) * 0.7, lowerY,
+      targetX, lowerY
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 5. Target Badges & Labels
+    const renderBadge = (x, y, text, sub, color, bg) => {
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      const w = 100;
+      const h = 24;
+      const r = 4;
+      ctx.beginPath();
+      ctx.roundRect(x + 4, y - 12, w, h, r);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = color;
+      ctx.font = 'bold 9px Inter, monospace';
+      ctx.fillText(text, x + 8, y - 1);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '8px Inter, sans-serif';
+      ctx.fillText(sub, x + 8, y + 8);
+    };
+
+    renderBadge(targetX, upperY, `Target $${upperTarget.toFixed(2)}`, '+8.5% Fan Target', '#38bdf8', 'rgba(12, 16, 28, 0.94)');
+    renderBadge(targetX, medianY, `Consenso $${medianTarget.toFixed(2)}`, '+4.2% Expected', '#10b981', 'rgba(12, 16, 28, 0.94)');
+    renderBadge(targetX, lowerY, `Supporto $${lowerSupport.toFixed(2)}`, '-5.5% Max Risk', '#f97316', 'rgba(12, 16, 28, 0.94)');
   }
 };
 
 window.OrderFlowEngine = OrderFlowEngine;
 window.toggleFootprintOverlay = () => OrderFlowEngine.toggleFootprint();
+window.toggleForecastCone = (f) => OrderFlowEngine.toggleForecastCone(f);

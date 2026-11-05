@@ -544,12 +544,23 @@
                 </div>
               </div>
 
-              <!-- OpenMarket Volume Profile Quick Toggle -->
-              <button id="btn-toggle-vp" class="tf-pill" style="display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
-                <span>📊 Volumi Locali (POC)</span>
-              </button>
+              <!-- OpenMarket Volume Profile Quick Toggle & Settings -->
+              <div style="display:flex; align-items:center; gap:2px; position:relative;">
+                <button id="btn-toggle-vp" class="tf-pill" style="display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
+                  <span>📊 Volumi Locali (POC)</span>
+                </button>
+                <button class="tf-pill" style="padding:4px 7px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:800;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVpSettingsDropdown(event)" title="Impostazioni Volume Profile (Range, Stile Flottante, Bins, Larghezza)">
+                  <span>⚙▾</span>
+                </button>
+                <div id="vp-settings-dropdown" class="vp-dropdown-menu"></div>
+              </div>
+
               <button type="button" class="btn-tune-macro" id="btn-toggle-footprint" style="background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc; font-weight:700;" onclick="toggleFootprintOverlay()" title="Attiva/Disattiva Footprint di Volume (Order Flow Intrabarra Bid x Ask e Imbalance)">
                 <span>👣</span> Footprint Intrabarra
+              </button>
+
+              <button type="button" class="btn-tune-macro" id="btn-toggle-forecast-cone" style="background:rgba(56,189,248,0.15); border-color:#38bdf8; color:#38bdf8; font-weight:700;" onclick="if(window.OrderFlowEngine) OrderFlowEngine.toggleForecastCone()" title="Mostra Previsione &amp; Ventaglio Proiettivo (Forecast Cone)">
+                <span>🎯</span> Mostra previsione
               </button>
 
 
@@ -608,6 +619,7 @@
               <div id="chart-container" style="width:100%; height:100%;"></div>
                             <canvas id="footprint-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:12; display:none;"></canvas>
               <canvas id="dense-timegrid-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:8;"></canvas>
+              <canvas id="forecast-cone-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:11; display:none;"></canvas>
               <div id="chart-vp-overlay">
                 <canvas id="vp-canvas"></canvas>
               </div>
@@ -792,24 +804,33 @@
                   </button>
                 </div>
 
-                <!-- Leverage Presets Pills -->
-                <div class="form-field">
-                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
-                    <span>LEVA FINANZIARIA</span>
-                    <span>1x - 100x</span>
+                <!-- LEVA FINANZIARIA (SETTABILE DI 1 PUNTO IN 1 PUNTO: 1x - 100x) -->
+                <div class="form-field leverage-section">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:0.5px">LEVA FINANZIARIA (STEP 1x)</span>
+                    <span style="font-size:12px; color:var(--accent); font-weight:900; font-family:var(--font-mono)" id="lev-display-val">10x</span>
                   </div>
-                  <div class="presets-row">
+                  <div class="leverage-stepper-control">
+                    <button type="button" class="lev-step-btn" onclick="adjustLeverage(-1)" title="Diminuisci leva (-1)">-1</button>
+                    <div class="lev-input-wrap">
+                      <input type="number" id="leverage-input" min="1" max="100" step="1" value="10" class="terminal-input lev-num-box" oninput="updateLeverage(this.value)">
+                      <span class="lev-x-suffix">x</span>
+                    </div>
+                    <button type="button" class="lev-step-btn" onclick="adjustLeverage(+1)" title="Aumenta leva (+1)">+1</button>
+                    <input type="range" min="1" max="100" step="1" value="10" class="lev-slider" id="leverage-slider" oninput="updateLeverage(this.value)">
+                  </div>
+                  <div class="presets-row" style="margin-top:6px;">
                     <div class="preset-chip lev-chip" data-val="1" onclick="setLeveragePreset(1, this)">1x</div>
+                    <div class="preset-chip lev-chip" data-val="2" onclick="setLeveragePreset(2, this)">2x</div>
                     <div class="preset-chip lev-chip" data-val="5" onclick="setLeveragePreset(5, this)">5x</div>
                     <div class="preset-chip lev-chip active" data-val="10" onclick="setLeveragePreset(10, this)">10x</div>
-                    <div class="preset-chip lev-chip" data-val="25" onclick="setLeveragePreset(25, this)">25x</div>
+                    <div class="preset-chip lev-chip" data-val="20" onclick="setLeveragePreset(20, this)">20x</div>
                     <div class="preset-chip lev-chip" data-val="50" onclick="setLeveragePreset(50, this)">50x</div>
                     <div class="preset-chip lev-chip" data-val="100" onclick="setLeveragePreset(100, this)">100x</div>
                   </div>
-                  <input type="range" min="1" max="100" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
                 </div>
 
-                <!-- Order Price & Trigger (if Limit/Conditional) -->
+                <!-- Order Price & Trigger (if Limit/Conditional/OCO) -->
                 <div class="form-field" id="bb-entry-field-wrap" style="display:none;">
                   <label>Prezzo Ordine ($)</label>
                   <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="BybitEngine.recalcBybitOrderMetrics()">
@@ -820,15 +841,30 @@
                   <input type="number" step="any" class="terminal-input" id="bb-trigger-price" placeholder="Trigger price...">
                 </div>
 
-                <!-- Order Quantity (BTC) & Quick Percentage Chips -->
+                <!-- ORDER SIZING: DUAL MODE (CONTROVALORE $ / QUANTITÀ ASSET) -->
                 <div class="form-field">
-                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
-                    <span>QUANTITÀ ORDINE</span>
-                    <span>Valore Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:0.5px">DIMENSIONE POSIZIONE</span>
+                    <span style="font-size:10px; color:var(--text-dim)">Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
                   </div>
-                  <input type="number" step="any" class="terminal-input" id="bb-order-qty" value="0.100" oninput="BybitEngine.recalcBybitOrderMetrics()">
-                  
-                  <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100%) -->
+
+                  <div class="bb-size-mode-tabs">
+                    <button type="button" class="bb-size-mode-btn active" data-sm="amount" onclick="BybitEngine.setSizingMode('amount')">💵 Per Importo ($)</button>
+                    <button type="button" class="bb-size-mode-btn" data-sm="qty" onclick="BybitEngine.setSizingMode('qty')">🪙 Per Quantità (Asset)</button>
+                  </div>
+
+                  <div id="bb-amt-wrap" style="display:block;">
+                    <div style="position:relative">
+                      <input type="number" step="any" class="terminal-input" id="bb-order-usdt" value="1000" placeholder="1000" oninput="BybitEngine.onOrderAmountInput(this.value)" style="padding-left:22px;">
+                      <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px; font-weight:700">$</span>
+                    </div>
+                  </div>
+
+                  <div id="bb-qty-wrap" style="display:none;">
+                    <input type="number" step="any" class="terminal-input" id="bb-order-qty" value="0.100" placeholder="0.100" oninput="BybitEngine.onOrderQtyInput(this.value)">
+                  </div>
+
+                  <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100% Saldo) -->
                   <div class="bb-pct-chips-row">
                     <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(10)">10%</div>
                     <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(25)">25%</div>
@@ -838,45 +874,77 @@
                   </div>
                 </div>
 
-                <!-- Strategy Mentor & TP/SL -->
-                <div class="input-grid-2col">
-                  <div class="form-field">
-                    <label>Strategia Mentor</label>
-                    <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
-                      <option value="Casario Quant 4Q">Casario Quant (Top-Down Macro)</option>
-                      <option value="Minervini VCP">Minervini VCP</option>
-                      <option value="Buffett Value">Buffett Value</option>
-                      <option value="Dalio All-Weather">Dalio All-Weather</option>
-                      <option value="Simons Quant">Simons Quant</option>
-                      <option value="Burry Contrarian">Burry Contrarian</option>
-                      <option value="Freqtrade ML">Freqtrade ML</option>
-                      <option value="Discretionary" selected>Discrezionale</option>
-                    </select>
+                <!-- Strategy Mentor Tag -->
+                <div class="form-field" style="margin-bottom:6px;">
+                  <label>Strategia Mentor / Rationale</label>
+                  <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
+                    <option value="Casario Quant 4Q">Casario Quant (Top-Down Macro)</option>
+                    <option value="Minervini VCP">Minervini VCP</option>
+                    <option value="Buffett Value">Buffett Value</option>
+                    <option value="Dalio All-Weather">Dalio All-Weather</option>
+                    <option value="Simons Quant">Simons Quant</option>
+                    <option value="Burry Contrarian">Burry Contrarian</option>
+                    <option value="Freqtrade ML">Freqtrade ML</option>
+                    <option value="Discretionary" selected>Discrezionale</option>
+                  </select>
+                </div>
+
+                <!-- STOP LOSS & TAKE PROFIT (WITH QUICK PILLS & LIVE P&L PREVIEWS) -->
+                <div class="tpu-tpsl-container">
+                  <div class="form-field tpsl-field">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                      <label style="margin:0; font-size:10px; font-weight:800; color:var(--sell)">STOP LOSS ($)</label>
+                      <span id="sl-loss-preview" style="font-size:9px; font-weight:800; color:var(--sell); font-family:var(--font-mono)">-$0.00 (-0.0%)</span>
+                    </div>
+                    <div class="input-with-pills">
+                      <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="BybitEngine.onSlTpChanged()">
+                      <div class="quick-sl-pills">
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickSlPct(1)">-1%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickSlPct(2)">-2%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickSlPct(3)">-3%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickSlPoc()">POC</button>
+                      </div>
+                    </div>
                   </div>
-                  <div class="form-field">
-                    <label>Stop Loss ($)</label>
-                    <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="recalcPosition()">
+
+                  <div class="form-field tpsl-field">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                      <label style="margin:0; font-size:10px; font-weight:800; color:var(--buy)">TAKE PROFIT ($)</label>
+                      <span id="tp-gain-preview" style="font-size:9px; font-weight:800; color:var(--buy); font-family:var(--font-mono)">+$0.00 (+0.0%)</span>
+                    </div>
+                    <div class="input-with-pills">
+                      <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="BybitEngine.onSlTpChanged()">
+                      <div class="quick-tp-pills">
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickTpPct(2)">+2%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickTpPct(5)">+5%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickTpPct(10)">+10%</button>
+                        <button type="button" class="quick-tpsl-btn" onclick="BybitEngine.setQuickTpVah()">VAH</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="form-field">
-                  <label>Take Profit ($)</label>
-                  <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
-                </div>
-
-                <!-- Bybit Real-Time Position Sizing & Liquidation Metrics -->
-                <div class="pos-summary">
+                <!-- INSTITUTIONAL ORDER SUMMARY CARD -->
+                <div class="order-summary-box">
                   <div class="pos-row">
-                    <span>Costo / Margine Iniziale:</span>
-                    <span id="bb-cost-val" style="font-weight:800; color:var(--accent)">$0.00</span>
+                    <span>Valore Nominale:</span>
+                    <span id="bb-nominal-val-dup" style="font-weight:800; color:#fff">$0.00</span>
+                  </div>
+                  <div class="pos-row highlight-row">
+                    <span>Margine Richiesto (Leva <b id="bb-summary-lev">10x</b>):</span>
+                    <span id="bb-cost-val" style="font-weight:900; color:var(--accent); font-size:13px">$0.00</span>
                   </div>
                   <div class="pos-row">
-                    <span>Prezzo Liquidazione Stimato:</span>
+                    <span>Prezzo Liquidazione:</span>
                     <span id="bb-liq-val" style="color:var(--sell); font-weight:800; font-family:var(--font-mono)">$0.00</span>
                   </div>
                   <div class="pos-row">
-                    <span>Rapporto R/R:</span>
-                    <span id="pos-res-rr" style="font-weight:800">1 : 2.5</span>
+                    <span>Rapporto Rischio / Rendimento (R:R):</span>
+                    <span id="pos-res-rr" style="font-weight:900; color:var(--accent)">1 : 2.50</span>
+                  </div>
+                  <div class="pos-row">
+                    <span>Commissioni Stimate (0.055%):</span>
+                    <span id="bb-fee-val" style="color:var(--text-dim); font-size:11px">$0.00</span>
                   </div>
                   <div class="pos-row" style="display:none;">
                     <span id="pos-res-units">0.1</span>
@@ -912,7 +980,6 @@
                 <button class="btn-action-primary btn-buy" id="btn-execute-order" onclick="executeTrade()">
                   Apri Posizione BUY / LONG
                 </button>
-
                 <!-- Motivated Telegram Signal Dispatch Button -->
                 <button class="btn-telegram-dispatch" onclick="dispatchActiveOrderToTelegram()" title="Invia segnale motivato con target, SL e motivazione su Telegram">
                   <span>📲</span> Invia Segnale Motivano su Telegram (@cuordivino)
@@ -1302,15 +1369,19 @@
                 </select>
               </div>
               <div class="form-field">
-                <label>Leva Finanziaria</label>
-                <select class="terminal-input" id="calc-leverage" onchange="recalcStandaloneSizer()">
-                  <option value="1">1x (Spot / Nessuna Leva)</option>
-                  <option value="2">2x (Prudenziale)</option>
-                  <option value="5">5x (Moderata)</option>
-                  <option value="10" selected>10x (Standard)</option>
-                  <option value="20">20x (Aggressiva)</option>
-                  <option value="30">30x (Massima)</option>
-                </select>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <label style="margin:0">Leva Finanziaria (1x - 100x)</label>
+                  <span id="calc-lev-display-val" style="color:var(--accent); font-weight:800; font-family:var(--font-mono); font-size:12px;">10x</span>
+                </div>
+                <div class="leverage-stepper-control">
+                  <button type="button" class="lev-step-btn" onclick="adjustStandaloneLeverage(-1)" title="Diminuisci leva (-1)">-1</button>
+                  <div class="lev-input-wrap">
+                    <input type="number" id="calc-leverage" min="1" max="100" step="1" value="10" class="terminal-input lev-num-box" oninput="recalcStandaloneSizer()">
+                    <span class="lev-x-suffix">x</span>
+                  </div>
+                  <button type="button" class="lev-step-btn" onclick="adjustStandaloneLeverage(+1)" title="Aumenta leva (+1)">+1</button>
+                  <input type="range" min="1" max="100" step="1" value="10" class="lev-slider" id="calc-leverage-slider" oninput="syncStandaloneLeverageSlider(this.value)">
+                </div>
               </div>
             </div>
 
@@ -1958,6 +2029,7 @@
   <script src="js/market_assets.js?v=2.7.7"></script>
   <script src="js/workspace_engine.js?v=2.7.7"></script>
   <script src="js/api_manager.js?v=2.7.7"></script>
+  <script src="js/orderflow_engine.js?v=2.7.7"></script>
   <script src="js/chart.js?v=2.7.7"></script>
   <script src="js/bybit_engine.js?v=2.7.7"></script>
   <script src="js/casario_quant_engine.js?v=2.7.7"></script>
@@ -2074,6 +2146,26 @@
     updateLiveClock();
 
     // Standalone Sizer Calculation
+    function adjustStandaloneLeverage(delta) {
+      const el = document.getElementById('calc-leverage');
+      let val = (parseInt(el?.value, 10) || 10) + delta;
+      val = Math.max(1, Math.min(100, val));
+      if (el) el.value = val;
+      const slider = document.getElementById('calc-leverage-slider');
+      if (slider) slider.value = val;
+      const disp = document.getElementById('calc-lev-display-val');
+      if (disp) disp.innerText = `${val}x`;
+      recalcStandaloneSizer();
+    }
+
+    function syncStandaloneLeverageSlider(val) {
+      const el = document.getElementById('calc-leverage');
+      if (el) el.value = val;
+      const disp = document.getElementById('calc-lev-display-val');
+      if (disp) disp.innerText = `${val}x`;
+      recalcStandaloneSizer();
+    }
+
     function recalcStandaloneSizer() {
       const cap = parseFloat(document.getElementById('calc-capitale')?.value) || 25000;
       const riskPct = parseFloat(document.getElementById('calc-risk-pct')?.value) || 1.5;

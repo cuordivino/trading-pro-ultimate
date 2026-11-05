@@ -779,29 +779,56 @@ function setTradeSide(side) {
   recalcPosition();
 }
 
+function adjustLeverage(delta) {
+  let lev = (parseInt(currentLeverage, 10) || 10) + delta;
+  lev = Math.max(1, Math.min(100, lev));
+  updateLeverage(lev);
+}
+
 function setLeveragePreset(val, chipElem) {
-  currentLeverage = parseInt(val, 10);
-  document.querySelectorAll('.lev-chip').forEach(c => c.classList.remove('active'));
-  if (chipElem) chipElem.classList.add('active');
-
-  const slider = document.getElementById('leverage-slider');
-  if (slider) slider.value = currentLeverage;
-  const display = document.getElementById('lev-display-val');
-  if (display) display.innerText = `${currentLeverage}x`;
-
-  recalcPosition();
+  const lev = parseInt(val, 10) || 1;
+  updateLeverage(lev);
 }
 
 function updateLeverage(val) {
-  currentLeverage = parseInt(val, 10);
+  let lev = parseInt(val, 10);
+  if (isNaN(lev) || lev < 1) lev = 1;
+  if (lev > 100) lev = 100;
+  currentLeverage = lev;
+  if (window.BybitEngine) window.BybitEngine.currentLeverage = lev;
+
+  // Sync Bybit panel controls
+  const input = document.getElementById('leverage-input');
+  if (input && parseInt(input.value, 10) !== lev) input.value = lev;
+
+  const slider = document.getElementById('leverage-slider');
+  if (slider && parseInt(slider.value, 10) !== lev) slider.value = lev;
+
   const display = document.getElementById('lev-display-val');
-  if (display) display.innerText = `${currentLeverage}x`;
+  if (display) display.innerText = `${lev}x`;
+
+  const sumLev = document.getElementById('bb-summary-lev');
+  if (sumLev) sumLev.innerText = `${lev}x`;
+
+  // Sync Standalone Sizer controls if present
+  const calcLev = document.getElementById('calc-leverage');
+  if (calcLev && parseInt(calcLev.value, 10) !== lev) calcLev.value = lev;
+
+  const calcSlider = document.getElementById('calc-leverage-slider');
+  if (calcSlider && parseInt(calcSlider.value, 10) !== lev) calcSlider.value = lev;
+
+  const calcDisp = document.getElementById('calc-lev-display-val');
+  if (calcDisp) calcDisp.innerText = `${lev}x`;
 
   document.querySelectorAll('.lev-chip').forEach(c => {
-    c.classList.toggle('active', parseInt(c.dataset.val, 10) === currentLeverage);
+    c.classList.toggle('active', parseInt(c.dataset.val, 10) === lev);
   });
 
+  if (window.BybitEngine && typeof window.BybitEngine.recalcBybitOrderMetrics === 'function') {
+    window.BybitEngine.recalcBybitOrderMetrics();
+  }
   recalcPosition();
+  if (window.recalcStandaloneSizer) window.recalcStandaloneSizer();
 }
 
 function setRiskPreset(val, chipElem) {

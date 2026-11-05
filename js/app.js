@@ -726,6 +726,9 @@ function changeTimeframe(tf, btnElem) {
   const triggerDisplay = document.getElementById('active-tf-trigger');
   if (triggerDisplay) triggerDisplay.innerText = tf.toUpperCase();
   closeAllDropdowns();
+  if (window.applyTimeframeScaleOptions) {
+    window.applyTimeframeScaleOptions(tf);
+  }
   loadCandleHistory();
 }
 

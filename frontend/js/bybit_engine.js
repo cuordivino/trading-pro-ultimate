@@ -461,10 +461,138 @@ window.BybitEngine = {
     this.recalcBybitOrderMetrics();
   },
 
+  // SIZING MODES: 'amount' | 'qty'
+  sizingMode: 'amount',
+  setSizingMode: function(mode) {
+    this.sizingMode = mode;
+    document.querySelectorAll('.bb-size-mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-sm="${mode}"]`)?.classList.add('active');
+
+    const amtWrap = document.getElementById('bb-amt-wrap');
+    const qtyWrap = document.getElementById('bb-qty-wrap');
+    if (mode === 'amount') {
+      if (amtWrap) amtWrap.style.display = 'block';
+      if (qtyWrap) qtyWrap.style.display = 'none';
+    } else {
+      if (amtWrap) amtWrap.style.display = 'none';
+      if (qtyWrap) qtyWrap.style.display = 'block';
+    }
+  },
+
+  onOrderAmountInput: function(val) {
+    const amt = parseFloat(val) || 0;
+    const price = this.tickerData.lastPrice || 80000;
+    const qty = price > 0 ? (amt / price) : 0;
+    const qtyInput = document.getElementById('bb-order-qty');
+    if (qtyInput) qtyInput.value = qty.toFixed(qty < 1 ? 4 : 2);
+    this.recalcBybitOrderMetrics();
+  },
+
+  onOrderQtyInput: function(val) {
+    const qty = parseFloat(val) || 0;
+    const price = this.tickerData.lastPrice || 80000;
+    const amt = qty * price;
+    const amtInput = document.getElementById('bb-order-usdt');
+    if (amtInput) amtInput.value = amt.toFixed(2);
+    this.recalcBybitOrderMetrics();
+  },
+
+  setQuickSlPct: function(pct) {
+    const price = this.tickerData.lastPrice || 80000;
+    const side = window.currentTradeSide || 'LONG';
+    const factor = side === 'LONG' ? (1 - pct / 100) : (1 + pct / 100);
+    const sl = price * factor;
+    const slInput = document.getElementById('t-sl');
+    if (slInput) {
+      slInput.value = sl.toFixed(2);
+      this.onSlTpChanged();
+    }
+  },
+
+  setQuickSlPoc: function() {
+    const poc = window.OptimalEngine?.currentVolumeProfile?.poc;
+    if (poc && poc > 0) {
+      const slInput = document.getElementById('t-sl');
+      if (slInput) {
+        slInput.value = Number(poc).toFixed(2);
+        this.onSlTpChanged();
+      }
+    } else {
+      this.setQuickSlPct(2);
+    }
+  },
+
+  setQuickTpPct: function(pct) {
+    const price = this.tickerData.lastPrice || 80000;
+    const side = window.currentTradeSide || 'LONG';
+    const factor = side === 'LONG' ? (1 + pct / 100) : (1 - pct / 100);
+    const tp = price * factor;
+    const tpInput = document.getElementById('t-tp');
+    if (tpInput) {
+      tpInput.value = tp.toFixed(2);
+      this.onSlTpChanged();
+    }
+  },
+
+  setQuickTpVah: function() {
+    const vah = window.OptimalEngine?.currentVolumeProfile?.vah;
+    if (vah && vah > 0) {
+      const tpInput = document.getElementById('t-tp');
+      if (tpInput) {
+        tpInput.value = Number(vah).toFixed(2);
+        this.onSlTpChanged();
+      }
+    } else {
+      this.setQuickTpPct(5);
+    }
+  },
+
+  onSlTpChanged: function() {
+    const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || 80000) : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice || 80000);
+    const qty = parseFloat(document.getElementById('bb-order-qty')?.value) || 0.1;
+    const sl = parseFloat(document.getElementById('t-sl')?.value) || 0;
+    const tp = parseFloat(document.getElementById('t-tp')?.value) || 0;
+
+    const slPreview = document.getElementById('sl-loss-preview');
+    if (slPreview) {
+      if (sl > 0) {
+        const slDist = Math.abs(price - sl);
+        const loss = qty * slDist;
+        const lossPct = (slDist / price) * 100;
+        slPreview.innerText = `-$${loss.toFixed(2)} (-${lossPct.toFixed(2)}%)`;
+      } else {
+        slPreview.innerText = '-$0.00 (-0.0%)';
+      }
+    }
+
+    const tpPreview = document.getElementById('tp-gain-preview');
+    if (tpPreview) {
+      if (tp > 0) {
+        const tpDist = Math.abs(tp - price);
+        const gain = qty * tpDist;
+        const gainPct = (tpDist / price) * 100;
+        tpPreview.innerText = `+$${gain.toFixed(2)} (+${gainPct.toFixed(2)}%)`;
+      } else {
+        tpPreview.innerText = '+$0.00 (+0.0%)';
+      }
+    }
+
+    const rrElem = document.getElementById('pos-res-rr');
+    if (rrElem) {
+      if (sl > 0 && tp > 0 && Math.abs(price - sl) > 0) {
+        const rr = Math.abs(tp - price) / Math.abs(price - sl);
+        rrElem.innerText = `1 : ${rr.toFixed(2)}`;
+        rrElem.style.color = rr >= 2 ? 'var(--buy)' : (rr >= 1.5 ? 'var(--accent)' : 'var(--sell)');
+      }
+    }
+
+    this.recalcBybitOrderMetrics();
+  },
+
   // PERCENTAGE PILLS (10%, 25%, 50%, 75%, 100%)
   setBalancePercent: function(pct) {
     const cap = parseFloat(localStorage.getItem('capital') || 25000);
-    const lev = this.currentLeverage;
+    const lev = this.currentLeverage || 10;
     const currentPrice = this.tickerData.lastPrice || 80000;
 
     const maxMargin = cap * (pct / 100);
@@ -472,15 +600,17 @@ window.BybitEngine = {
     const qty = (nominal / currentPrice);
 
     const qtyInput = document.getElementById('bb-order-qty');
-    if (qtyInput) {
-      qtyInput.value = qty.toFixed(qty < 1 ? 4 : 2);
-    }
+    if (qtyInput) qtyInput.value = qty.toFixed(qty < 1 ? 4 : 2);
+
+    const amtInput = document.getElementById('bb-order-usdt');
+    if (amtInput) amtInput.value = nominal.toFixed(2);
+
     this.recalcBybitOrderMetrics();
   },
 
   // CALCULATE BYBIT LIQUIDATION PRICE & ORDER COST
   recalcBybitOrderMetrics: function() {
-    const price = this.orderType === 'Market' ? this.tickerData.lastPrice : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice);
+    const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || 80000) : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice || 80000);
     const qty = parseFloat(document.getElementById('bb-order-qty')?.value) || 0.1;
     const lev = this.currentLeverage || 10;
     const side = window.currentTradeSide || 'LONG';
@@ -492,21 +622,25 @@ window.BybitEngine = {
     // Bybit Liquidation Price Formula
     let liqPrice = 0;
     if (side === 'LONG') {
-      // Long Liq: Entry * (1 - (1/Lev) + MMR)
       liqPrice = price * (1 - (1 / lev) + mmr);
     } else {
-      // Short Liq: Entry * (1 + (1/Lev) - MMR)
       liqPrice = price * (1 + (1 / lev) - mmr);
     }
+    const liqDistPct = price > 0 ? Math.abs((liqPrice - price) / price) * 100 : 0;
+    const estFee = nominalValue * 0.00055;
 
     // Update UI elements
     const costElem = document.getElementById('bb-cost-val');
     const liqElem = document.getElementById('bb-liq-val');
     const nominalElem = document.getElementById('bb-nominal-val');
+    const feeElem = document.getElementById('bb-fee-val');
+    const sumLevElem = document.getElementById('bb-summary-lev');
 
     if (costElem) costElem.innerText = `$${initialMargin.toFixed(2)}`;
     if (nominalElem) nominalElem.innerText = `$${nominalValue.toFixed(2)}`;
-    if (liqElem) liqElem.innerText = `$${Math.max(0, liqPrice).toFixed(2)}`;
+    if (liqElem) liqElem.innerText = `$${Math.max(0, liqPrice).toFixed(2)} (-${liqDistPct.toFixed(1)}%)`;
+    if (feeElem) feeElem.innerText = `$${estFee.toFixed(2)}`;
+    if (sumLevElem) sumLev.innerText = `${lev}x`;
 
     // Sync with main position sizing displays
     const posResUnits = document.getElementById('pos-res-units');
@@ -515,6 +649,18 @@ window.BybitEngine = {
     if (posResUnits) posResUnits.innerText = qty.toFixed(qty < 1 ? 4 : 2);
     if (posResMargin) posResMargin.innerText = `$${initialMargin.toFixed(2)}`;
     if (posResLiq) posResLiq.innerText = `$${Math.max(0, liqPrice).toFixed(2)}`;
+
+    // Update Execution Button text with live margin
+    const execBtn = document.getElementById('btn-execute-order');
+    if (execBtn) {
+      if (side === 'LONG') {
+        execBtn.className = 'btn-action-primary btn-buy';
+        execBtn.innerText = `🟢 APRI POSIZIONE BUY / LONG · $${initialMargin.toFixed(2)} Margine`;
+      } else {
+        execBtn.className = 'btn-action-primary btn-sell';
+        execBtn.innerText = `🔴 APRI POSIZIONE SELL / SHORT · $${initialMargin.toFixed(2)} Margine`;
+      }
+    }
   }
 };
 
