@@ -152,6 +152,10 @@ function initMainChart() {
     if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
       OptimalEngine.renderVolumeProfileOverlay();
     }
+    if (window.OrderFlowEngine) {
+      OrderFlowEngine.renderFootprintOverlay();
+      OrderFlowEngine.renderDenseTimeGrid();
+    }
     if (volumeChart) {
       try { volumeChart.timeScale().setVisibleLogicalRange(range); } catch(e) {}
     }
@@ -501,6 +505,11 @@ function attachMultiChartSync() {
     } catch(e) {}
     releaseSync();
   });
+
+  if (window.OrderFlowEngine) {
+    OrderFlowEngine.renderFootprintOverlay();
+    OrderFlowEngine.renderDenseTimeGrid();
+  }
 }
 
 function setMomentumMode(mode) {
@@ -521,6 +530,10 @@ function setMomentumMode(mode) {
 }
 
 function resizeAllCharts() {
+  if (window.OrderFlowEngine) {
+    OrderFlowEngine.renderFootprintOverlay();
+    OrderFlowEngine.renderDenseTimeGrid();
+  }
   try {
     const c1 = document.getElementById('chart-container');
     if (mainChart && c1 && c1.clientWidth > 10 && c1.clientHeight > 10) {
@@ -746,6 +759,20 @@ function renderChartData(candles) {
       if (macdSignalSeries) macdSignalSeries.setData([]);
       if (aroonSeries) aroonSeries.setData([]);
       if (adxSeries) adxSeries.setData(adxData);
+    } else if (activeMomentumMode === 'cvd') {
+      const cvdData = window.OrderFlowEngine ? OrderFlowEngine.calculateCVD(candles) : [];
+      if (rsiSeries) rsiSeries.setData([]);
+      if (macdHistSeries) macdHistSeries.setData(cvdData);
+      if (macdLineSeries) macdLineSeries.setData(cvdData);
+      if (macdSignalSeries) macdSignalSeries.setData([]);
+      if (aroonSeries) aroonSeries.setData([]);
+      if (adxSeries) adxSeries.setData([]);
+      const lastCvd = cvdData.length ? cvdData[cvdData.length - 1]?.value : 0;
+      const liveMomEl = document.getElementById('mom-live-badge');
+      if (liveMomEl) {
+        liveMomEl.innerText = `CVD: ${lastCvd >= 0 ? '+' : ''}${Number(lastCvd).toLocaleString()}`;
+        liveMomEl.style.color = lastCvd >= 0 ? '#00f2a1' : '#ff4560';
+      }
     }
   }
 
@@ -1458,6 +1485,8 @@ if (screen && screen.orientation) {
 // TRADINGVIEW / BYBIT 107 OFFICIAL INDICATORS CATALOG (A TO Z)
 // ==========================================================================
 window.TV_INDICATORS_CATALOG = [
+  { id: "footprint", name: "Footprint di volume (Order Flow Intrabarra)", category: "overlay", pane: "main", tag: "ORDERFLOW" },
+  { id: "cvd", name: "CVD (Cumulative Volume Delta)", category: "volume", pane: "momentum", tag: "ORDERFLOW" },
   { id: "funding_rate", name: "Funding Rate", category: "crypto", pane: "telemetry", tag: "DERIVATIVES" },
   { id: "liq_profile_vr", name: "Liquidation Profile Visible Range", category: "crypto", pane: "overlay", tag: "ORDERBOOK" },
   { id: "liq_volume", name: "Liquidation Volume", category: "crypto", pane: "volume", tag: "DERIVATIVES" },
@@ -2252,6 +2281,23 @@ function startRomeClock() {
 // TRADINGVIEW OFFICIAL INDICATOR SETTINGS ENGINE (INPUTS, STYLE, VISIBILITY)
 // ==========================================================================
 const DEFAULT_INDICATOR_CONFIGS = {
+  footprint: {
+    id: 'footprint',
+    name: 'Footprint di volume (Order Flow)',
+    category: 'overlay',
+    inputs: { imbalanceRatio: 3.0, showNumbers: true, pocHighlight: true },
+    style: { buyColor: '#00f2a1', sellColor: '#ff4560', pocColor: '#fcd535', opacity: 0.85, visible: true },
+    visibility: { all: true }
+  },
+  cvd: {
+    id: 'cvd',
+    name: 'Cumulative Volume Delta (CVD)',
+    category: 'momentum',
+    inputs: { smooth: 1 },
+    style: { upColor: '#00f2a1', downColor: '#ff4560', lineWidth: 2, visible: true },
+    visibility: { all: true }
+  },
+
   vwap: {
     id: 'vwap',
     name: 'VWAP (Volume Weighted Average Price)',

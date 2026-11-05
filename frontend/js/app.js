@@ -113,47 +113,137 @@ function toggleDrawer(id) {
 // ==========================================
 // NAVIGATION & TABS
 // ==========================================
-function switchMainTab(tabId, btnElem) {
-  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
-  if (btnElem) btnElem.classList.add('active');
+// ==========================================================================
+// TOP CHAPTER DROPDOWN NAVIGATION ("APERTURA A TENDINA IN ALTO")
+// ==========================================================================
+const CHAPTER_META = {
+  'tab-terminal': { icon: '📈', title: 'Terminale Pro (Grafico Candele & Ordini)' },
+  'tab-scanner': { icon: '🎯', title: 'Radar Opportunità' },
+  'tab-consensus': { icon: '🧠', title: 'Comitato Investitori' },
+  'tab-casario-quant': { icon: '⚡', title: 'Quant Intelligence & Macro Radar' },
+  'tab-quant': { icon: '🤖', title: 'Motori Quant (4)' },
+  'tab-rotation': { icon: '🌐', title: 'Rotazione Settoriale' },
+  'tab-optimal': { icon: '🎯', title: 'Posizioni Ottimali & Auto-Pilot' },
+  'tab-chat': { icon: '💬', title: 'Chat Grandi Maestri' },
+  'tab-hub': { icon: '📚', title: 'Hub 63 Skills' },
+  'tab-sizer': { icon: '📐', title: 'Position Sizer' },
+  'tab-journal': { icon: '📓', title: 'Diario Trading' },
+  'tab-alerts': { icon: '🔔', title: 'Allarmi' },
+  'tab-settings': { icon: '⚙️', title: 'Impostazioni' }
+};
 
-  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+let currentOpenChapterTab = null;
+
+function switchMainTab(tabId, btnElem) {
+  const drawer = document.getElementById('top-chapter-drawer');
+  const drawerContent = document.getElementById('top-drawer-content');
+  const titleEl = document.getElementById('drawer-active-title');
+  const iconEl = document.getElementById('drawer-active-icon');
+  const quickSelect = document.getElementById('drawer-chapter-quick-select');
+
+  // Terminal view closes the drawer to resume direct chart trading
+  if (tabId === 'tab-terminal') {
+    closeTopChapterDrawer();
+    return;
+  }
+
+  // Toggle on re-click of the same chapter tab button
+  if (drawer && !drawer.classList.contains('closed') && currentOpenChapterTab === tabId && btnElem) {
+    closeTopChapterDrawer();
+    return;
+  }
+
+  // Highlight active button
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  if (btnElem) {
+    btnElem.classList.add('active');
+  } else {
+    document.querySelector(`.tab-nav-btn[data-tab="${tabId}"]`)?.classList.add('active');
+  }
+
+  currentOpenChapterTab = tabId;
+
+  // Open drawer smoothly from the top
+  if (drawer) {
+    drawer.classList.remove('closed');
+  }
+
+  // Update drawer header info
+  const meta = CHAPTER_META[tabId] || { icon: '⚡', title: tabId };
+  if (titleEl) titleEl.innerText = meta.title;
+  if (iconEl) iconEl.innerText = meta.icon;
+  if (quickSelect) quickSelect.value = tabId;
+
+  // Mount active panel inside drawer
   const target = document.getElementById(tabId);
-  if (target) {
+  if (target && drawerContent) {
+    if (target.parentElement !== drawerContent) {
+      drawerContent.appendChild(target);
+    }
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
     target.classList.add('active');
   }
 
-  if (tabId === 'tab-terminal' && window.mainChart) {
-    setTimeout(() => {
-      resizeAllCharts();
-      window.mainChart.timeScale().fitContent();
-    }, 100);
-  }
-
-  if (tabId === 'tab-consensus') {
+  // Trigger chapter renders
+  if (tabId === 'tab-casario-quant' && window.CasarioQuantEngine) {
+    CasarioQuantEngine.renderUI();
+  } else if (tabId === 'tab-scanner' && window.OpportunityScanner) {
+    OpportunityScanner.renderScannerTab();
+  } else if (tabId === 'tab-consensus') {
     loadCommitteeConsensus(window.currentSymbol);
-  }
-
-  if (tabId === 'tab-quant' && window.QuantEngines) {
-    window.QuantEngines.renderQuantEnginesTab();
-  }
-
-  if (tabId === 'tab-rotation' && window.SectorRotation) {
-    window.SectorRotation.renderSectorRotationTab();
-  }
-
-  if (tabId === 'tab-optimal' && window.OptimalEngine) {
-    window.OptimalEngine.renderOptimalUI();
-  }
-
-  if (tabId === 'tab-scanner' && window.OpportunityScanner) {
-    window.OpportunityScanner.renderScannerTab();
+  } else if (tabId === 'tab-quant' && window.QuantEngines) {
+    QuantEngines.renderQuantEnginesTab();
+  } else if (tabId === 'tab-rotation' && window.SectorRotation) {
+    SectorRotation.renderSectorRotationTab();
+  } else if (tabId === 'tab-optimal' && window.OptimalEngine) {
+    OptimalEngine.renderOptimalUI();
   }
 
   document.querySelectorAll('.m-bottom-nav-item').forEach(b => {
     b.classList.toggle('active', b.getAttribute('onclick')?.includes(tabId));
   });
 }
+
+function closeTopChapterDrawer() {
+  const drawer = document.getElementById('top-chapter-drawer');
+  if (drawer) {
+    drawer.classList.add('closed');
+    drawer.classList.remove('fullscreen');
+  }
+  currentOpenChapterTab = null;
+
+  document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-nav-btn[data-tab="tab-terminal"]')?.classList.add('active');
+
+  const term = document.getElementById('tab-terminal');
+  if (term) term.classList.add('active');
+
+  const quickSelect = document.getElementById('drawer-chapter-quick-select');
+  if (quickSelect) quickSelect.value = 'tab-terminal';
+
+  setTimeout(() => {
+    resizeAllCharts();
+    if (window.mainChart) window.mainChart.timeScale().fitContent();
+    if (window.OrderFlowEngine) {
+      OrderFlowEngine.renderFootprintOverlay();
+      OrderFlowEngine.renderDenseTimeGrid();
+    }
+  }, 80);
+}
+
+function toggleDrawerFullscreen() {
+  const drawer = document.getElementById('top-chapter-drawer');
+  if (drawer) {
+    drawer.classList.toggle('fullscreen');
+    const isFull = drawer.classList.contains('fullscreen');
+    const btn = document.getElementById('btn-drawer-expand');
+    if (btn) btn.innerText = isFull ? '🗗' : '⛶';
+  }
+}
+
+window.closeTopChapterDrawer = closeTopChapterDrawer;
+window.toggleDrawerFullscreen = toggleDrawerFullscreen;
+
 
 // ==========================================
 // ASSET SWITCHING & MARKET DATA (HYBRID)

@@ -220,6 +220,46 @@
     </div>
   </header>
 
+  <!-- TOP CHAPTER DROPDOWN DRAWER ("APERTURA A TENDINA IN ALTO") -->
+  <div id="top-chapter-drawer" class="top-chapter-drawer closed">
+    <div class="drawer-header-bar">
+      <div class="drawer-header-left">
+        <span class="drawer-chapter-icon" id="drawer-active-icon">⚡</span>
+        <span class="drawer-chapter-title" id="drawer-active-title">Quant Intelligence & Macro Radar</span>
+        <span class="drawer-live-chip">● TENDINA APERTA</span>
+      </div>
+      <div class="drawer-header-center">
+        <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Capitolo:</span>
+        <select id="drawer-chapter-quick-select" class="drawer-quick-select" onchange="switchMainTab(this.value)">
+          <option value="tab-terminal">📈 Terminale Pro (Grafico Candele & Ordini)</option>
+          <option value="tab-scanner">🎯 Radar Opportunità</option>
+          <option value="tab-consensus">🧠 Comitato Investitori</option>
+          <option value="tab-casario-quant">⚡ Quant Intelligence & Macro Radar</option>
+          <option value="tab-quant">🤖 Motori Quant (4)</option>
+          <option value="tab-rotation">🌐 Rotazione Settoriale</option>
+          <option value="tab-optimal">🎯 Posizioni Ottimali & Auto-Pilot</option>
+          <option value="tab-chat">💬 Chat Grandi Maestri</option>
+          <option value="tab-hub">📚 Hub 63 Skills</option>
+          <option value="tab-sizer">📐 Position Sizer</option>
+          <option value="tab-journal">📓 Diario Trading</option>
+          <option value="tab-alerts">🔔 Allarmi</option>
+          <option value="tab-settings">⚙️ Impostazioni</option>
+        </select>
+      </div>
+      <div class="drawer-header-right">
+        <button type="button" class="btn-drawer-action" onclick="toggleDrawerFullscreen()" id="btn-drawer-expand" title="Espandi a tutto schermo / Riduci">⛶</button>
+        <button type="button" class="btn-drawer-close" onclick="closeTopChapterDrawer()" title="Chiudi tendina e riprendi grafico immediatamente">
+          <span>▲ Chiudi Tendina / Riprendi Grafico</span>
+          <span style="font-size:14px; margin-left:4px;">✕</span>
+        </button>
+      </div>
+    </div>
+    <div id="top-drawer-content" class="top-drawer-content">
+      <!-- Active chapter view mounts here smoothly! -->
+    </div>
+  </div>
+
+
   <!-- ACTIVE ASSET HERO QUOTE BAR WITH MEGA-DROPDOWN ("APERTURA A TENDINA") -->
   <div class="active-asset-bar">
     <div class="asset-core-group">
@@ -508,6 +548,10 @@
               <button id="btn-toggle-vp" class="tf-pill" style="display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
                 <span>📊 Volumi Locali (POC)</span>
               </button>
+              <button type="button" class="btn-tune-macro" id="btn-toggle-footprint" style="background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc; font-weight:700;" onclick="toggleFootprintOverlay()" title="Attiva/Disattiva Footprint di Volume (Order Flow Intrabarra Bid x Ask e Imbalance)">
+                <span>👣</span> Footprint Intrabarra
+              </button>
+
 
               <!-- Theme Quick Switcher -->
               <div class="dropdown" style="position:relative;">
@@ -562,6 +606,8 @@
               </div>
 
               <div id="chart-container" style="width:100%; height:100%;"></div>
+                            <canvas id="footprint-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:12; display:none;"></canvas>
+              <canvas id="dense-timegrid-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:8;"></canvas>
               <div id="chart-vp-overlay">
                 <canvas id="vp-canvas"></canvas>
               </div>
@@ -609,6 +655,7 @@
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; overflow-x:auto;">
                   <span class="subpane-title">⚡ Oscillatore:</span>
                   <select id="momentum-mode-select" class="subpane-select" onchange="setMomentumMode(this.value)">
+                    <option value="cvd">CVD (Cumulative Volume Delta)</option>
                     <option value="rsi" selected>RSI (Relative Strength)</option>
                     <option value="macd">MACD (Convergence/Div)</option>
                     <option value="stoch">Stocastico (%K / %D)</option>
