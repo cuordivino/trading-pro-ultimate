@@ -106,8 +106,8 @@ function initMainChart() {
       timeFormatter: (timestamp) => formatRomeTime(timestamp, true)
     },
     grid: {
-      vertLines: { color: 'rgba(255, 255, 255, 0.03)' },
-      horzLines: { color: 'rgba(255, 255, 255, 0.03)' },
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 },
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -145,6 +145,21 @@ function initMainChart() {
     lastValueVisible: true,
     priceLineVisible: true
   });
+  window.mainCandleSeries = candleSeries;
+  window.mainChartInstance = mainChart;
+
+  mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+    if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+      OptimalEngine.renderVolumeProfileOverlay();
+    }
+    if (volumeChart) {
+      try { volumeChart.timeScale().setVisibleLogicalRange(range); } catch(e) {}
+    }
+    if (momentumChart) {
+      try { momentumChart.timeScale().setVisibleLogicalRange(range); } catch(e) {}
+    }
+  });
+
 
   // Indicators: Clean display, NO overlapping badge clutter on price axis!
   // Values are rendered cleanly in the on-chart live legend bar!
@@ -319,7 +334,8 @@ window.applyChartThemeToAll = function(t) {
 // PANNELLO 1: VOLUMI + MEDIA MOBILE VOLUMI
 // ==========================================
 function initVolumePane() {
-  const container = document.getElementById('chart-volume-pane');
+  const pane = document.getElementById('chart-volume-pane');
+  const container = document.getElementById('chart-volume-canvas') || pane;
   if (!container || !window.LightweightCharts || volumeChart) return;
 
   container.innerHTML = '';
@@ -329,12 +345,20 @@ function initVolumePane() {
       locale: 'it-IT',
       timeFormatter: (t) => formatRomeTime(t, true)
     },
-    grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+    grid: {
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: '#64748b', width: 1, style: 2 },
+      horzLine: { color: '#64748b', width: 1, style: 2 }
+    },
     rightPriceScale: {
       borderColor: '#1e293b',
       autoScale: true,
-      minimumWidth: 72, // Strictly matched with mainChart
-      scaleMargins: { top: 0.15, bottom: 0 }
+      minimumWidth: 72,
+      scaleMargins: { top: 0.28, bottom: 0 }
     },
     timeScale: {
       visible: false,
@@ -365,7 +389,8 @@ function initVolumePane() {
 // PANNELLO 2: MOMENTUM (RSI / MACD)
 // ==========================================
 function initMomentumPane() {
-  const container = document.getElementById('chart-momentum-pane');
+  const pane = document.getElementById('chart-momentum-pane');
+  const container = document.getElementById('chart-momentum-canvas') || pane;
   if (!container || !window.LightweightCharts || momentumChart) return;
 
   container.innerHTML = '';
@@ -375,19 +400,31 @@ function initMomentumPane() {
       locale: 'it-IT',
       timeFormatter: (t) => formatRomeTime(t, true)
     },
-    grid: { vertLines: { color: 'transparent' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
+    grid: {
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: '#64748b', width: 1, style: 2 },
+      horzLine: { color: '#64748b', width: 1, style: 2 }
+    },
     rightPriceScale: {
       borderColor: '#1e293b',
       autoScale: true,
-      minimumWidth: 72, // Strictly matched with mainChart
-      scaleMargins: { top: 0.15, bottom: 0.15 }
+      minimumWidth: 72,
+      scaleMargins: { top: 0.25, bottom: 0.15 }
     },
     timeScale: {
-      visible: false,
+      visible: true,
+      borderColor: '#1e293b',
+      timeVisible: true,
+      secondsVisible: false,
       rightOffset: 12,
       barSpacing: 8,
       fixLeftEdge: false,
-      fixRightEdge: false
+      fixRightEdge: false,
+      tickMarkFormatter: (time) => formatRomeTime(time, false)
     },
   });
 
@@ -648,8 +685,26 @@ function renderChartData(candles) {
     }));
     volumeHistogramSeries.setData(formattedVol);
 
-    const volMA = calcVolumeSMA(times, volumes, 20);
+    let volMA;
+    if (typeof currentVolumeMaType !== 'undefined' && currentVolumeMaType === 'EMA') {
+      const k = 2 / (currentVolumeMaPeriod + 1);
+      let ema = volumes[0] || 0;
+      volMA = times.map((t, i) => {
+        if (i > 0) ema = (volumes[i] * k) + (ema * (1 - k));
+        return { time: t, value: Math.round(ema) };
+      });
+    } else {
+      const p = typeof currentVolumeMaPeriod !== 'undefined' ? currentVolumeMaPeriod : 20;
+      volMA = calcVolumeSMA(times, volumes, p);
+    }
     volumeMaSeries.setData(volMA);
+
+    const lastVol = candles[candles.length - 1]?.volume || 0;
+    const lastMaVal = volMA.length ? volMA[volMA.length - 1]?.value : 0;
+    const liveVolEl = document.getElementById('pane-vol-live');
+    if (liveVolEl) {
+      liveVolEl.innerText = `Vol: ${Number(lastVol).toLocaleString()} | MA: ${Number(Math.round(lastMaVal)).toLocaleString()}`;
+    }
   }
 
   // 10. Sub-chart Panel 2: Momentum (RSI / MACD / Aroon / ADX)
@@ -2675,3 +2730,42 @@ window.switchIndSettingsTab = switchIndSettingsTab;
 window.applyCurrentIndicatorSettings = applyCurrentIndicatorSettings;
 window.resetCurrentIndicatorSettings = resetCurrentIndicatorSettings;
 window.getIndicatorConfig = getIndicatorConfig;
+
+
+// ==========================================================================
+// REAL-TIME DIRECT PARAMETERIZATION CONTROLS (VOLUME MA & MOMENTUM)
+// ==========================================================================
+let currentVolumeMaPeriod = 20;
+let currentVolumeMaType = 'SMA';
+let currentMomentumPeriod = 14;
+let currentMomentumOb = 70;
+let currentMomentumOs = 30;
+
+window.updateVolumeMaParam = function(val) {
+  currentVolumeMaPeriod = Math.max(2, parseInt(val) || 20);
+  const inputEl = document.getElementById('vol-ma-period-input');
+  if (inputEl) inputEl.value = currentVolumeMaPeriod;
+  if (window.rawCandleHistory && window.rawCandleHistory.length) {
+    renderChartIndicators(window.rawCandleHistory);
+  }
+};
+
+window.updateVolumeMaType = function(val) {
+  currentVolumeMaType = val === 'EMA' ? 'EMA' : 'SMA';
+  const selEl = document.getElementById('vol-ma-type-select');
+  if (selEl) selEl.value = currentVolumeMaType;
+  if (window.rawCandleHistory && window.rawCandleHistory.length) {
+    renderChartIndicators(window.rawCandleHistory);
+  }
+};
+
+window.updateMomentumParam = function(param, val) {
+  const num = parseInt(val);
+  if (param === 'period') currentMomentumPeriod = Math.max(2, num || 14);
+  else if (param === 'ob') currentMomentumOb = Math.min(99, Math.max(50, num || 70));
+  else if (param === 'os') currentMomentumOs = Math.max(1, Math.min(50, num || 30));
+
+  if (window.rawCandleHistory && window.rawCandleHistory.length) {
+    renderChartIndicators(window.rawCandleHistory);
+  }
+};

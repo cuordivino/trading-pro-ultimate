@@ -180,7 +180,7 @@ window.OptimalEngine = {
     this.renderVolumeProfileOverlay();
   },
 
-  // RENDER HORIZONTAL LOCAL VOLUME PROFILE ON CHART
+  // RENDER HORIZONTAL LOCAL VOLUME PROFILE ON CHART (100% MATHEMATICAL VERTICAL ALIGNMENT ON CANVAS)
   renderVolumeProfileOverlay: function() {
     const overlay = document.getElementById('chart-vp-overlay');
     if (!overlay) return;
@@ -197,29 +197,102 @@ window.OptimalEngine = {
     const prec = vp.precision !== undefined ? vp.precision : 2;
     const curr = vp.currency || '$';
 
-    overlay.innerHTML = `
-      <div class="vp-telemetry-badge">
+    // Ensure DOM structure has badge + canvas without erasing canvas context repeatedly
+    let badge = document.getElementById('vp-badge');
+    let canvas = document.getElementById('vp-canvas');
+
+    if (!badge || !canvas) {
+      overlay.innerHTML = `
+        <div class="vp-telemetry-badge" id="vp-badge"></div>
+        <canvas id="vp-canvas" style="width:100%; height:100%; display:block; pointer-events:none;"></canvas>
+      `;
+      badge = document.getElementById('vp-badge');
+      canvas = document.getElementById('vp-canvas');
+    }
+
+    if (badge) {
+      badge.innerHTML = `
         <span style="color:var(--text-muted)">Volumi Locali (${this.volumeProfileRange.toUpperCase()}):</span>
         <span style="color:var(--accent); font-weight:800">POC ${curr}${Number(vp.poc).toFixed(prec)}</span>
         <span style="color:var(--cyan)">VAH ${curr}${Number(vp.vah).toFixed(prec)}</span>
         <span style="color:var(--purple)">VAL ${curr}${Number(vp.val).toFixed(prec)}</span>
         <span style="color:var(--text-dim)">Vol: ${vp.totalVolume.toLocaleString()}</span>
-      </div>
-      <div class="vp-bars-container">
-        ${vp.bins.slice().reverse().map(b => {
-          const widthPct = Math.min(100, Math.round((b.vol / (vp.maxBinVol || 1)) * 100));
-          const isPoc = Math.abs(b.price - vp.poc) < (0.0000001);
-          return `
-            <div class="vp-bar-row ${isPoc ? 'is-poc' : ''}">
-              <span class="vp-bar-price">${Number(b.price).toFixed(prec)}</span>
-              <div class="vp-bar-track">
-                <div class="vp-bar-fill ${isPoc ? 'poc-fill' : ''}" style="width:${widthPct}%"></div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+      `;
+    }
+
+    if (!canvas) return;
+    const rect = overlay.getBoundingClientRect();
+    canvas.width = overlay.clientWidth || rect.width || 160;
+    canvas.height = overlay.clientHeight || rect.height || 400;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const candleSeries = window.mainCandleSeries;
+    const numBins = vp.bins.length;
+    const maxBinVol = vp.maxBinVol || 1;
+    const maxBarWidth = canvas.width - 52; // room on left for price labels
+
+    vp.bins.forEach((b, idx) => {
+      let y = null;
+      if (candleSeries && typeof candleSeries.priceToCoordinate === 'function') {
+        y = candleSeries.priceToCoordinate(b.price);
+      }
+      if (y === null || isNaN(y)) {
+        const norm = (b.price - vp.minPrice) / (vp.maxPrice - vp.minPrice || 1);
+        y = canvas.height - (norm * canvas.height);
+      }
+
+      if (y < -20 || y > canvas.height + 20) return;
+
+      let barH = 5;
+      if (idx < numBins - 1) {
+        let nextY = null;
+        if (candleSeries && typeof candleSeries.priceToCoordinate === 'function') {
+          nextY = candleSeries.priceToCoordinate(vp.bins[idx + 1].price);
+        }
+        if (nextY != null && !isNaN(nextY)) {
+          barH = Math.max(2, Math.min(18, Math.abs(y - nextY) * 0.88));
+        }
+      }
+
+      const isPoc = Math.abs(b.price - vp.poc) < 0.0000001;
+      const inVa = b.price >= vp.val && b.price <= vp.vah;
+      const barW = Math.max(2, (b.vol / maxBinVol) * maxBarWidth);
+      const barX = canvas.width - barW - 2;
+
+      // Draw horizontal volume bar
+      ctx.fillStyle = isPoc 
+        ? 'rgba(245, 158, 11, 0.90)' 
+        : (inVa ? 'rgba(56, 189, 248, 0.48)' : 'rgba(100, 116, 139, 0.28)');
+      ctx.fillRect(barX, y - barH / 2, barW, barH);
+
+      // Price label text pinned right next to bar
+      ctx.fillStyle = isPoc ? '#fcd535' : (inVa ? '#38bdf8' : 'rgba(148, 163, 184, 0.7)');
+      ctx.font = isPoc ? 'bold 9px monospace' : '8px monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Number(b.price).toFixed(prec), barX - 4, y);
+
+      // If POC: draw golden ray line extending across to the left
+      if (isPoc) {
+        ctx.strokeStyle = '#fcd535';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(barX - 45, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#fcd535';
+        ctx.fillRect(2, y - 6, 26, 12);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('POC', 15, y);
+      }
+    });
   },
 
   toggleVolumeProfileVisibility: function() {
