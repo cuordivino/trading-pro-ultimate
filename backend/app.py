@@ -25,6 +25,13 @@ CORS(app)
 # ==========================================
 # STATIC FRONTEND ROUTES
 # ==========================================
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
 @app.route('/')
 def index():
     return send_from_directory(FRONTEND_DIR, 'index.html')
