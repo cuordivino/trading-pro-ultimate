@@ -246,7 +246,7 @@ async function pollActiveQuote() {
       const bRes = await fetch(`/api/quote/${encodeURIComponent(sym)}`);
       if (bRes.ok) {
         const bd = await bRes.json();
-        if (bd && bd.price && !bd.fallback) {
+        if (bd && bd.price) {
           const prec = window.getDynamicPrecision ? window.getDynamicPrecision(bd.price, sym) : (asset ? (asset.precision || 2) : 2);
           q = {
             symbol: sym,
@@ -254,12 +254,41 @@ async function pollActiveQuote() {
             change: bd.change || 0,
             high: bd.high || +(bd.price * 1.018).toFixed(prec),
             low: bd.low || +(bd.price * 0.982).toFixed(prec),
-            volume: bd.volume || 24500000,
+            volume: bd.volume || (asset ? asset.volume24h : 24500000),
             currency: bd.currency === 'EUR' ? '€' : (asset ? asset.currency : '$')
           };
         }
       }
     } catch(e) {}
+
+    // Direct Live Yahoo Finance Quote via CORS Proxy for Standalone / GitHub Pages
+    if (!q) {
+      try {
+        const ySym = getYahooFinanceSymbol(sym);
+        const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?range=1d&interval=5m`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yUrl)}`;
+        const yRes = await fetch(proxyUrl);
+        if (yRes.ok) {
+          const yJson = await yRes.json();
+          const meta = yJson.chart?.result?.[0]?.meta;
+          if (meta && meta.regularMarketPrice) {
+            const p = meta.regularMarketPrice;
+            const prev = meta.chartPreviousClose || meta.previousClose || p;
+            const chg = prev > 0 ? ((p - prev) / prev) * 100 : 0;
+            const prec = window.getDynamicPrecision ? window.getDynamicPrecision(p, sym) : (asset ? (asset.precision || 2) : 2);
+            q = {
+              symbol: sym,
+              price: p,
+              change: roundPrec(chg, 2),
+              high: meta.regularMarketDayHigh || +(p * 1.015).toFixed(prec),
+              low: meta.regularMarketDayLow || +(p * 0.985).toFixed(prec),
+              volume: meta.regularMarketVolume || (asset ? asset.volume24h : 2500000),
+              currency: meta.currency === 'EUR' ? '€' : '$'
+            };
+          }
+        }
+      } catch(e) {}
+    }
   }
 
   if (!q) {
@@ -348,22 +377,54 @@ function getTimeframeSeconds(tf) {
   return 900;
 }
 
+// Helper: Map platform symbol to Yahoo Finance symbol for real historical candles
+function getYahooFinanceSymbol(sym) {
+  if (!sym) return '';
+  sym = sym.toUpperCase().trim();
+  if (sym.endsWith('.MI')) return sym; // e.g. TIT.MI, UCG.MI, PST.MI, ENEL.MI
+  if (['GC', 'GOLD', 'XAUUSD'].includes(sym)) return 'GC=F';
+  if (['SI', 'SILVER', 'XAGUSD'].includes(sym)) return 'SI=F';
+  if (['CL', 'CRUDE', 'USOIL'].includes(sym)) return 'CL=F';
+  if (['BRN', 'BRENT', 'UKOIL'].includes(sym)) return 'BZ=F';
+  if (['NG', 'NATGAS'].includes(sym)) return 'NG=F';
+  if (['HG', 'COPPER'].includes(sym)) return 'HG=F';
+  const fxPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY'];
+  if (fxPairs.includes(sym)) return `${sym}=X`;
+  return sym; // e.g. NVDA, AAPL, MSFT, TSLA, SPY, QQQ
+}
+
+// Helper: Map timeframe interval to Yahoo Finance query range & interval
+function getYahooTimeframeParams(interval) {
+  const tf = (interval || '15m').toLowerCase();
+  if (tf === '1m') return { range: '1d', interval: '1m' };
+  if (tf === '2m' || tf === '3m') return { range: '2d', interval: '2m' };
+  if (tf === '5m') return { range: '2d', interval: '5m' };
+  if (tf === '15m') return { range: '5d', interval: '15m' };
+  if (tf === '30m') return { range: '10d', interval: '30m' };
+  if (tf === '1h' || tf === '60m') return { range: '1mo', interval: '60m' };
+  if (tf === '2h' || tf === '4h') return { range: '3mo', interval: '60m' };
+  if (tf === '1d' || tf === 'd') return { range: '1y', interval: '1d' };
+  if (tf === '1w' || tf === 'w') return { range: '2y', interval: '1wk' };
+  if (tf === '1m' || tf === '1mese' || tf === 'm') return { range: '5y', interval: '1mo' };
+  return { range: '5d', interval: '15m' };
+}
+
 async function loadCandleHistory() {
   const symbol = window.currentSymbol || 'BTCUSDT';
   const interval = window.currentInterval || '15m';
   const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
-  const isCrypto = asset ? asset.cat === 'crypto' : (symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(c => symbol.includes(c)));
+  const isCrypto = asset ? asset.cat === 'crypto' : (symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(c => symbol.includes(c)));
   const targetPrice = window.activePrice || (asset ? asset.basePrice : 100);
 
   let candles = [];
 
-  // 1. If Crypto, query Bybit v5 public Klines (limit=200)
+  // 1. If Crypto, query Bybit v5 public Klines (limit=200, 100% REAL!)
   if (isCrypto) {
     let cleanSym = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
     const bybitTfMap = {
       '1s': '1', '1m': '1', '3m': '3', '5m': '5', '15m': '15',
       '30m': '30', '1h': '60', '2h': '120', '4h': '240', '6h': '360',
-      '12h': '720', '1d': 'D', '1w': 'W', '1m_month': 'M'
+      '12h': '720', '1d': 'D', '1w': 'W', '1M': 'M', '1m_month': 'M'
     };
     const bybitInterval = bybitTfMap[interval] || '15';
 
@@ -404,42 +465,112 @@ async function loadCandleHistory() {
     }
   }
 
-  // 2. High-fidelity synthetic sequence generator (200 candles) for FTSE MIB, US Stocks, Forex, or offline
-  // Backwards random walk ensuring the latest candle close is EXACTLY targetPrice with exact precision and Rome timezone seconds
+  // 2. If Non-Crypto (FTSE MIB, US Stocks, Forex, Commodities), query REAL historical candles!
+  if (!isCrypto) {
+    // 2A. First try local backend endpoint if running
+    try {
+      const res = await fetch(`/api/kline/${encodeURIComponent(symbol)}?interval=${encodeURIComponent(interval)}&limit=200`);
+      if (res.ok) {
+        const serverCandles = await res.json();
+        if (Array.isArray(serverCandles) && serverCandles.length >= 5) {
+          candles = serverCandles;
+        }
+      }
+    } catch (e) {}
+
+    // 2B. Direct Yahoo Finance fetch via fast CORS proxy (for GitHub Pages / Standalone web)
+    if (!candles || !candles.length) {
+      try {
+        const ySym = getYahooFinanceSymbol(symbol);
+        const { range, interval: yTf } = getYahooTimeframeParams(interval);
+        const yUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?range=${range}&interval=${yTf}`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yUrl)}`;
+
+        const res = await fetch(proxyUrl);
+        if (res.ok) {
+          const json = await res.json();
+          const result = json.chart?.result?.[0];
+          if (result && result.timestamp) {
+            const ts = result.timestamp;
+            const q = result.indicators?.quote?.[0];
+            if (q) {
+              const o = q.open, h = q.high, l = q.low, c = q.close, v = q.volume;
+              const realCandles = [];
+              const base24hVol = (asset && asset.volume24h) ? asset.volume24h : 2500000;
+              const barsPerDay = Math.max(1, Math.floor(86400 / getTimeframeSeconds(interval)));
+              const barAvgVol = base24hVol / barsPerDay;
+
+              for (let i = 0; i < ts.length; i++) {
+                if (o[i] != null && c[i] != null && h[i] != null && l[i] != null) {
+                  // Coordinate volume with real traded volume or real candle range
+                  let vol = v && v[i] != null && v[i] > 0 ? v[i] : null;
+                  if (!vol) {
+                    const sp = Math.abs(c[i] - o[i]);
+                    const stepEst = c[i] * 0.0015;
+                    vol = Math.round(barAvgVol * (0.5 + 1.5 * (sp / (stepEst + 1e-9))));
+                  }
+                  realCandles.push({
+                    time: ts[i],
+                    open: roundPrec(o[i], asset ? asset.precision : 2),
+                    high: roundPrec(h[i], asset ? asset.precision : 2),
+                    low: roundPrec(l[i], asset ? asset.precision : 2),
+                    close: roundPrec(c[i], asset ? asset.precision : 2),
+                    volume: vol
+                  });
+                }
+              }
+              if (realCandles.length >= 5) {
+                candles = realCandles;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  // 3. Deterministic Seeded Fallback (STABLE & CONSTANT across clicks, NO random morphing!)
   if (!candles || !candles.length) {
-    const count = 180; // Optimal institutional candle sequence
+    const count = 180;
     const tfSeconds = getTimeframeSeconds(interval);
     const now = Math.floor(Date.now() / 1000);
-    const alignedNow = Math.floor(now / tfSeconds) * tfSeconds; // Quantize to exact bar boundary
-    const tfVol = Math.min(2.2, Math.max(0.5, Math.sqrt(tfSeconds / 900)));
-    const stepScale = targetPrice * 0.0016 * tfVol;
+    const alignedNow = Math.floor(now / tfSeconds) * tfSeconds;
+    const tfVol = Math.min(2.0, Math.max(0.5, Math.sqrt(tfSeconds / 900)));
+    const stepScale = targetPrice * 0.0012 * tfVol;
 
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(targetPrice, symbol) : (asset ? (asset.precision || 2) : 2);
     const f = Math.pow(10, prec);
 
+    // Stable seed based on symbol, timeframe and hour (NEVER scrambles on button clicks!)
+    let seed = 0;
+    for (let c = 0; c < symbol.length; c++) seed = (seed * 31 + symbol.charCodeAt(c)) & 0xffffffff;
+    seed = Math.abs(seed + tfSeconds);
+
+    function deterministicRand() {
+      seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+      return (seed >>> 0) / 4294967296;
+    }
+
     let p = targetPrice;
     const tempCandles = [];
-
-    const base24hVol = (asset && asset.volume24h) ? asset.volume24h : (targetPrice > 1000 ? 50000 : 2500000);
+    const base24hVol = (asset && asset.volume24h) ? asset.volume24h : 2500000;
     const barsPerDay = Math.max(1, Math.floor(86400 / tfSeconds));
     const baseBarVol = Math.max(50, base24hVol / barsPerDay);
 
     for (let i = count - 1; i >= 0; i--) {
       const cTime = alignedNow - ((count - 1 - i) * tfSeconds);
       const close = (i === count - 1) ? targetPrice : p;
-      const change = (Math.random() - 0.495) * stepScale;
+      const change = (deterministicRand() - 0.495) * stepScale;
       const open = Math.round((close - change) * f) / f;
       const spread = Math.abs(close - open);
-      const wickH = Math.random() * (stepScale * 0.45);
-      const wickL = Math.random() * (stepScale * 0.45);
+      const wickH = deterministicRand() * (stepScale * 0.4);
+      const wickL = deterministicRand() * (stepScale * 0.4);
       const high = Math.round((Math.max(open, close) + wickH) * f) / f;
       const low = Math.round((Math.min(open, close) - wickL) * f) / f;
 
-      // True Wyckoff Volume-Price Action Coupling (VPA)
       const spreadRatio = spread / (stepScale + 1e-9);
-      const wickRatio = (wickH + wickL) / (stepScale + 1e-9);
-      const vpaMultiplier = 0.45 + (1.6 * spreadRatio) + (0.7 * wickRatio);
-      const volume = Math.round(baseBarVol * vpaMultiplier * (0.85 + Math.random() * 0.3));
+      const vpaMultiplier = 0.5 + (1.5 * spreadRatio);
+      const volume = Math.round(baseBarVol * vpaMultiplier * (0.85 + deterministicRand() * 0.3));
 
       tempCandles.unshift({
         time: cTime,
@@ -453,6 +584,13 @@ async function loadCandleHistory() {
       p = open;
     }
     candles = tempCandles;
+  }
+
+  // Update last live price from latest candle close
+  if (candles.length) {
+    const latestClose = candles[candles.length - 1].close;
+    window.currentLivePrice = latestClose;
+    window.activePrice = latestClose;
   }
 
   window.currentCandles = candles;
@@ -472,6 +610,11 @@ async function loadCandleHistory() {
     window.OptimalEngine.calculateLocalVolumeProfile();
     window.OptimalEngine.recalculateOptimalPosition();
   }
+}
+
+function roundPrec(val, prec) {
+  const f = Math.pow(10, prec || 2);
+  return Math.round(val * f) / f;
 }
 
 function changeTimeframe(tf, btnElem) {

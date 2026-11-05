@@ -7,21 +7,13 @@ from datetime import datetime, timezone, timedelta
 import urllib.request
 import requests
 
-# Enable Windows system certificates if available
-try:
-    import pip_system_certs.wrapt_requests
-except Exception:
-    pass
-
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 }
 
-# Cache for tickers and klines to avoid API throttling
 _cache = {}
-_cache_ttl = 3 # 3 seconds TTL for sub-second responsive market streaming
+_cache_ttl = 3 # 3 seconds
 
-# Load pre-calibrated snapshot as immediate fallback
 SNAPSHOT_PATH = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'js', 'live_market_snapshot.json')
 _snapshot_data = {}
 if os.path.exists(SNAPSHOT_PATH):
@@ -105,29 +97,6 @@ def get_ticker_quote(symbol: str):
         except Exception:
             pass
 
-        try:
-            url = f"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}"
-            r = requests.get(url, headers=HEADERS, timeout=4)
-            if r.status_code == 200:
-                d = r.json()
-                price = float(d.get('lastPrice', 0))
-                quote = {
-                    'symbol': symbol,
-                    'price': price,
-                    'change': round(float(d.get('priceChangePercent', 0)), 2),
-                    'high': float(d.get('highPrice', price)),
-                    'low': float(d.get('lowPrice', price)),
-                    'volume': float(d.get('volume', 0)),
-                    'currency': '$',
-                    'type': 'crypto',
-                    'timestamp': datetime.now(timezone.utc).isoformat(),
-                    'source': 'binance_live'
-                }
-                _cache[cache_key] = {'data': quote, 'ts': now}
-                return quote
-        except Exception:
-            pass
-
     # 2. Italian Stocks (Borsa Italiana MTA) via TradingView Scanner
     if symbol.endswith('.MI') or symbol in ['TIT', 'UCG', 'ISP', 'PST', 'ENEL', 'ENI', 'RACE', 'STMMI', 'G', 'A2A', 'CPR', 'MB', 'BAMI', 'HER']:
         bare = symbol.replace('.MI', '')
@@ -186,7 +155,7 @@ def get_ticker_quote(symbol: str):
             _cache[cache_key] = {'data': quote, 'ts': now}
             return quote
 
-    # 5. Pre-calibrated Live Market Snapshot (Zero-latency fallback)
+    # 5. Snapshot fallback
     snap = _snapshot_data.get(symbol) or _snapshot_data.get(symbol.replace('.MI', ''))
     if snap:
         curr = '€' if symbol.endswith('.MI') else '$'
@@ -205,19 +174,17 @@ def get_ticker_quote(symbol: str):
         _cache[cache_key] = {'data': quote, 'ts': now}
         return quote
 
-    # 6. Fallback default
-    default_base = 80500.0 if 'BTC' in symbol else (200.0 if 'NVDA' in symbol else 10.0)
     return {
         'symbol': symbol,
-        'price': default_base,
-        'change': 1.25,
-        'high': default_base * 1.02,
-        'low': default_base * 0.98,
-        'volume': 15000000,
+        'price': 100.0,
+        'change': 0.0,
+        'high': 101.0,
+        'low': 99.0,
+        'volume': 1000000,
         'currency': '$',
-        'type': 'stock' if not is_crypto(symbol) else 'crypto',
+        'type': 'stock',
         'timestamp': datetime.now(timezone.utc).isoformat(),
-        'source': 'system_baseline'
+        'source': 'default'
     }
 
 def get_klines(symbol: str, interval: str = '15m', limit: int = 180):
@@ -227,27 +194,20 @@ def get_klines(symbol: str, interval: str = '15m', limit: int = 180):
     if cache_key in _cache and (now - _cache[cache_key]['ts']) < _cache_ttl:
         return _cache[cache_key]['data']
 
-    # Map intervals to standard formats
-    binance_tf = interval.lower()
-    if binance_tf in ['15', '15m']: binance_tf = '15m'
-    elif binance_tf in ['5', '5m']: binance_tf = '5m'
-    elif binance_tf in ['1', '1m']: binance_tf = '1m'
-    elif binance_tf in ['60', '1h', '60m']: binance_tf = '1h'
-    elif binance_tf in ['240', '4h']: binance_tf = '4h'
-    elif binance_tf in ['d', '1d', 'day']: binance_tf = '1d'
-
-    candles = []
-
-    # 1. Crypto from Bybit or Binance
+    # 1. Crypto from Bybit Linear
     if is_crypto(symbol):
         bybit_tf = '15'
         if interval in ['1m', '1']: bybit_tf = '1'
+        elif interval in ['3m', '3']: bybit_tf = '3'
         elif interval in ['5m', '5']: bybit_tf = '5'
         elif interval in ['15m', '15']: bybit_tf = '15'
         elif interval in ['30m', '30']: bybit_tf = '30'
         elif interval in ['1h', '60']: bybit_tf = '60'
+        elif interval in ['2h', '120']: bybit_tf = '120'
         elif interval in ['4h', '240']: bybit_tf = '240'
         elif interval in ['1d', 'd', 'D']: bybit_tf = 'D'
+        elif interval in ['1w', 'w', 'W']: bybit_tf = 'W'
+        elif interval in ['1M', 'M']: bybit_tf = 'M'
 
         try:
             url = f"https://api.bybit.com/v5/market/kline?category=linear&symbol={symbol}&interval={bybit_tf}&limit={limit}"
@@ -255,6 +215,7 @@ def get_klines(symbol: str, interval: str = '15m', limit: int = 180):
             if r.status_code == 200:
                 raw = r.json()
                 if raw.get('result', {}).get('list'):
+                    candles = []
                     for c in reversed(raw['result']['list']):
                         candles.append({
                             'time': int(c[0]) // 1000,
@@ -270,12 +231,65 @@ def get_klines(symbol: str, interval: str = '15m', limit: int = 180):
         except Exception:
             pass
 
-    # 2. Get exact current live price to anchor candles
+    # 2. Stocks / Forex / Commodities from Yahoo Finance (REAL HISTORICAL CANDLES!)
+    y_sym = symbol
+    if not is_crypto(symbol):
+        if symbol in ['GC', 'GOLD']: y_sym = 'GC=F'
+        elif symbol in ['SI', 'SILVER']: y_sym = 'SI=F'
+        elif symbol in ['CL', 'CRUDE']: y_sym = 'CL=F'
+        elif symbol in ['NG', 'NATGAS']: y_sym = 'NG=F'
+        elif any(symbol.endswith(p) for p in ['USD', 'EUR', 'GBP', 'JPY', 'CHF']) and len(symbol) == 6:
+            y_sym = f"{symbol}=X"
+
+        y_interval = '15m'
+        y_range = '5d'
+        if interval in ['1m']: y_interval, y_range = '1m', '1d'
+        elif interval in ['2m']: y_interval, y_range = '2m', '1d'
+        elif interval in ['5m']: y_interval, y_range = '5m', '2d'
+        elif interval in ['15m']: y_interval, y_range = '15m', '5d'
+        elif interval in ['30m']: y_interval, y_range = '30m', '10d'
+        elif interval in ['1h', '60m']: y_interval, y_range = '60m', '1mo'
+        elif interval in ['4h']: y_interval, y_range = '60m', '3mo'
+        elif interval in ['1d', 'd']: y_interval, y_range = '1d', '1y'
+        elif interval in ['1w', 'w']: y_interval, y_range = '1wk', '2y'
+        elif interval in ['1M', 'M']: y_interval, y_range = '1mo', '5y'
+
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{y_sym}?range={y_range}&interval={y_interval}"
+            r = requests.get(url, headers=HEADERS, timeout=6)
+            if r.status_code == 200:
+                res = r.json().get('chart', {}).get('result', [])
+                if res:
+                    ts = res[0].get('timestamp', [])
+                    quote = res[0].get('indicators', {}).get('quote', [{}])[0]
+                    opens = quote.get('open', [])
+                    highs = quote.get('high', [])
+                    lows = quote.get('low', [])
+                    closes = quote.get('close', [])
+                    vols = quote.get('volume', [])
+
+                    candles = []
+                    for i in range(len(ts)):
+                        if opens[i] is not None and closes[i] is not None and highs[i] is not None and lows[i] is not None:
+                            candles.append({
+                                'time': int(ts[i]),
+                                'open': round(float(opens[i]), 4),
+                                'high': round(float(highs[i]), 4),
+                                'low': round(float(lows[i]), 4),
+                                'close': round(float(closes[i]), 4),
+                                'volume': round(float(vols[i] or 0), 2)
+                            })
+                    if len(candles) >= 5:
+                        _cache[cache_key] = {'data': candles[-limit:], 'ts': now}
+                        return candles[-limit:]
+        except Exception:
+            pass
+
+    # 3. Deterministic Seeded Fallback (NO random changes on re-click!)
     quote = get_ticker_quote(symbol)
     target_price = quote['price']
     total_24h_vol = quote.get('volume', 25000000)
 
-    # 3. High-Fidelity VPA (Volume-Price Action) Wyckoff Candle Sequence
     tf_seconds = 900
     if interval in ['1s']: tf_seconds = 1
     elif interval in ['1m', '1']: tf_seconds = 60
@@ -285,40 +299,30 @@ def get_klines(symbol: str, interval: str = '15m', limit: int = 180):
     elif interval in ['1h', '60']: tf_seconds = 3600
     elif interval in ['4h', '240']: tf_seconds = 14400
     elif interval in ['1d', 'd']: tf_seconds = 86400
+    elif interval in ['1w', 'w']: tf_seconds = 604800
+    elif interval in ['1M', 'M']: tf_seconds = 2592000
 
     bars_per_day = max(1, 86400 // tf_seconds)
     base_bar_vol = max(100.0, total_24h_vol / bars_per_day)
-
     now_aligned = (int(now) // tf_seconds) * tf_seconds
-    tf_volatility = min(2.5, max(0.4, math.sqrt(tf_seconds / 900)))
-    step_scale = target_price * 0.0016 * tf_volatility
 
-    # Determine precision
-    if target_price < 0.001: prec = 6
-    elif target_price < 1.0: prec = 4
-    elif target_price < 10.0: prec = 3
-    else: prec = 2
+    # Deterministic pseudo-random seed based on symbol and timeframe (STABLE, NOT MOVING ON CLICKS!)
+    random.seed(int(now // 3600) * 3600 + hash(symbol) + tf_seconds)
+    step_scale = target_price * 0.0012
 
     p = target_price
     temp = []
-    random.seed(int(now // 300) + hash(symbol))
-
     for i in range(limit - 1, -1, -1):
         c_time = now_aligned - (i * tf_seconds)
         close = target_price if i == limit - 1 else p
         change = (random.random() - 0.495) * step_scale
-        open_val = round(close - change, prec)
+        open_val = round(close - change, 4)
         spread = abs(close - open_val)
-        wick_h = random.random() * (step_scale * 0.5)
-        wick_l = random.random() * (step_scale * 0.5)
-        high = round(max(open_val, close) + wick_h, prec)
-        low = round(min(open_val, close) - wick_l, prec)
-
-        # Coordinate Volume directly with Price Action (Wyckoff / VPA)
-        spread_ratio = spread / (step_scale + 1e-9)
-        wick_ratio = (wick_h + wick_l) / (step_scale + 1e-9)
-        vpa_multiplier = 0.45 + (1.6 * spread_ratio) + (0.7 * wick_ratio)
-        vol = round(base_bar_vol * vpa_multiplier * (0.85 + random.random() * 0.3), 2)
+        wick_h = random.random() * (step_scale * 0.4)
+        wick_l = random.random() * (step_scale * 0.4)
+        high = round(max(open_val, close) + wick_h, 4)
+        low = round(min(open_val, close) - wick_l, 4)
+        vol = round(base_bar_vol * (0.6 + (spread / (step_scale + 1e-9))), 2)
 
         temp.append({
             'time': c_time,

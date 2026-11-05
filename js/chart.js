@@ -714,19 +714,60 @@ function calcBollingerBands(times, data, period = 20, multiplier = 2, prec = 2) 
   return { upper, middle, lower };
 }
 
-// Parabolic SAR — Exactly N items matching each bar
+// Wilder's Official Parabolic SAR Algorithm (AF=0.02, Max=0.20)
 function calcSARData(times, candles, prec = 2) {
-  if (!candles || !candles.length) return [];
+  if (!candles || candles.length < 2) return [];
   const f = Math.pow(10, prec);
   const sar = [];
-  for (let i = 0; i < candles.length; i++) {
-    const lookback = Math.max(0, i - 4);
-    const isUp = candles[i].close >= candles[lookback].close;
-    const rawVal = isUp ? candles[i].low * 0.995 : candles[i].high * 1.005;
-    sar.push({
-      time: times[i],
-      value: Math.round(rawVal * f) / f
-    });
+  const afStep = 0.02;
+  const afMax = 0.20;
+
+  let isLong = candles[1].close >= candles[0].close;
+  let af = afStep;
+  let ep = isLong ? Math.max(candles[0].high, candles[1].high) : Math.min(candles[0].low, candles[1].low);
+  let curSar = isLong ? Math.min(candles[0].low, candles[1].low) : Math.max(candles[0].high, candles[1].high);
+
+  sar.push({ time: times[0], value: Math.round(curSar * f) / f });
+
+  for (let i = 1; i < candles.length; i++) {
+    const prevC = candles[i - 1];
+    const currC = candles[i];
+
+    curSar = curSar + af * (ep - curSar);
+
+    if (isLong) {
+      if (i >= 2) curSar = Math.min(curSar, candles[i - 1].low, candles[i - 2].low);
+      else curSar = Math.min(curSar, candles[i - 1].low);
+
+      if (currC.low < curSar) {
+        isLong = false;
+        curSar = ep;
+        ep = currC.low;
+        af = afStep;
+      } else {
+        if (currC.high > ep) {
+          ep = currC.high;
+          af = Math.min(af + afStep, afMax);
+        }
+      }
+    } else {
+      if (i >= 2) curSar = Math.max(curSar, candles[i - 1].high, candles[i - 2].high);
+      else curSar = Math.max(curSar, candles[i - 1].high);
+
+      if (currC.high > curSar) {
+        isLong = true;
+        curSar = ep;
+        ep = currC.high;
+        af = afStep;
+      } else {
+        if (currC.low < ep) {
+          ep = currC.low;
+          af = Math.min(af + afStep, afMax);
+        }
+      }
+    }
+
+    sar.push({ time: times[i], value: Math.round(curSar * f) / f });
   }
   return sar;
 }
