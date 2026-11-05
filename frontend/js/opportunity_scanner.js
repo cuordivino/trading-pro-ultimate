@@ -3,6 +3,8 @@
  * Screener Quantitativo Multi-Mercato: Crypto, Borsa Italiana, NASDAQ, S&P 500, Forex, Materie Prime
  * Algoritmi Istituzionali di Confluenza, Scoring Automatico & Indicazioni Motivate
  * © by cuordivino — Tutti i diritti riservati
+ * 
+ * V2.6.5 — Ottimizzazione Prestazioni Mobile (iOS Safari Crash-Proof & Virtual Pagination)
  */
 
 window.OpportunityScanner = {
@@ -16,6 +18,13 @@ window.OpportunityScanner = {
   lastScanTimestamp: null,
   scanIntervalTimer: null,
   
+  // Quick Radar Filter
+  quickFilterCat: 'all',
+
+  // Pagination for DOM Performance & Mobile Safari Stability
+  pageSize: 12,
+  displayedCount: 12,
+
   // Results Cache
   allOpportunities: [],
   filteredOpportunities: [],
@@ -27,17 +36,16 @@ window.OpportunityScanner = {
     console.log('[*] Opportunity Scanner Engine Initializing...');
     this.runFullMarketScan();
     
-    // Background refresh every 6 seconds to track price movements
+    // Background refresh every 10 seconds to update prices without freezing main thread
     if (this.scanIntervalTimer) clearInterval(this.scanIntervalTimer);
     this.scanIntervalTimer = setInterval(() => {
       this.runFullMarketScan(true);
-    }, 6000);
+    }, 10000);
 
-    // Initial render if container exists
+    // Initial render of the terminal quick radar ONLY (do not render heavy full tab until user opens it!)
     setTimeout(() => {
-      this.renderScannerTab();
       this.renderTerminalQuickRadar();
-    }, 500);
+    }, 300);
   },
 
   // =========================================================================
@@ -51,10 +59,12 @@ window.OpportunityScanner = {
     const opportunities = [];
 
     assets.forEach(asset => {
-      const opp = this.evaluateAssetOpportunity(asset);
-      if (opp && opp.score >= 70) {
-        opportunities.push(opp);
-      }
+      try {
+        const opp = this.evaluateAssetOpportunity(asset);
+        if (opp && opp.score >= 70) {
+          opportunities.push(opp);
+        }
+      } catch (e) {}
     });
 
     // Sort opportunities by score descending by default
@@ -66,9 +76,13 @@ window.OpportunityScanner = {
 
     this.applyFiltersAndSort();
 
-    if (!isBackground) {
+    // Render Quick Radar in Terminal
+    this.renderTerminalQuickRadar();
+
+    // Only render full tab if it's currently visible
+    const scannerTab = document.getElementById('tab-scanner');
+    if (scannerTab && scannerTab.classList.contains('active')) {
       this.renderScannerTab();
-      this.renderTerminalQuickRadar();
     } else {
       this.updateLiveBadgesOnly();
     }
@@ -76,7 +90,7 @@ window.OpportunityScanner = {
 
   // EVALUATE A SINGLE ASSET THROUGH THE 5 INSTITUTIONAL STRATEGY ENGINES
   evaluateAssetOpportunity: function(asset) {
-    const sym = asset.symbol;
+    const sym = asset.symbol || 'ASSET';
     const name = asset.name || sym;
     const cat = asset.cat || 'crypto';
     const sector = asset.sector || 'Mercato Generale';
@@ -90,7 +104,6 @@ window.OpportunityScanner = {
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, sym) : (asset.precision || 2);
 
     // Synthetic indicator derivations based on true asset characteristics & recent tape
-    // Generate deterministic yet responsive metrics based on ticker and price
     const seed = (sym.charCodeAt(0) * 17 + sym.charCodeAt(sym.length - 1) * 31 + Math.round(price * 10)) % 100;
     
     // Estimated ATR % based on asset category
@@ -103,12 +116,6 @@ window.OpportunityScanner = {
 
     const atrValue = +(price * atrPct).toFixed(prec);
 
-    // Candidate Setup Types
-    // 1. Trend Ribbon & EMA Pullback
-    // 2. Breakout Volumetrico Squeeze Bollinger
-    // 3. Divergenza RSI & Exhaustion Reversal
-    // 4. Arbitraggio Statistico Z-Score
-    // 5. Smart Money Wyckoff & Asimmetria Convessa
     let setupId = 'trend_pullback';
     let setupName = 'Pullback EMA Ribbon (9/21/200)';
     let side = 'LONG';
@@ -120,9 +127,7 @@ window.OpportunityScanner = {
     let tf = '15m';
 
     if (chg24 >= 1.2) {
-      // Bullish Momentum / Breakout or Pullback
       if (seed > 55) {
-        // BREAKOUT VOLUMETRICO SQUEEZE BOLLINGER
         setupId = 'squeeze_breakout';
         setupName = 'Squeeze Breakout Bande Bollinger & VPA';
         side = 'LONG';
@@ -133,13 +138,12 @@ window.OpportunityScanner = {
         tp2 = +(price + (atrValue * 4.1)).toFixed(prec);
         
         rationale = {
-          core: `Compressione estrema della volatilità (Bollinger Bandwidth ai minimi di 30 periodi) rotta al rialzo con espansione improvvisa e incremento volumetrico istituzionale (+${Math.round(vol24 > 1000000 ? vol24/1000000 : vol24/1000)}x).`,
-          indicators: `Prezzo saldamente sopra la banda superiore di Bollinger e sopra EMA 9. VWAP a supporto ascendente. Oscillatore RSI a ${(58 + (seed%15)).toFixed(1)} con pendenza fortemente rialzista senza divergenze negative.`,
-          invalidation: `Chiusura candela oraria (30m) inferiore a ${currency}${sl} invalida il breakout e richiede chiusura immediata della posizione.`,
+          core: `Compressione estrema della volatilità (Bollinger Bandwidth ai minimi) rotta al rialzo con espansione e spike volumetrico (+${Math.round(vol24 > 1000000 ? vol24/1000000 : vol24/1000)}x).`,
+          indicators: `Prezzo saldamente sopra la banda superiore di Bollinger e sopra EMA 9. VWAP a supporto ascendente. Oscillatore RSI a ${(58 + (seed%15)).toFixed(1)} con pendenza fortemente rialzista.`,
+          invalidation: `Chiusura candela 30m inferiore a ${currency}${sl} invalida il breakout e richiede chiusura immediata della posizione.`,
           catalyst: `Breakout di liquidità su resistenza chiave con conferma da order flow.`
         };
       } else {
-        // TREND MOMENTUM & EMA RIBBON PULLBACK
         setupId = 'trend_pullback';
         setupName = 'Pullback EMA Ribbon (9/21/200) + Re-test VWAP';
         side = 'LONG';
@@ -150,16 +154,14 @@ window.OpportunityScanner = {
         tp2 = +(price + (atrValue * 3.6)).toFixed(prec);
 
         rationale = {
-          core: `Struttura rialzista intatta (massimi e minimi crescenti). Il titolo ha completato un sano ritracciamento controllato verso l'EMA 21 con volumi in contrazione durante il pullback (segnale Wyckoff di assorbimento).`,
-          indicators: `Allineamento perfetto delle medie esponenziali: Prezzo > EMA 9 (${currency}${(price*0.995).toFixed(prec)}) > EMA 21 (${currency}${(price*0.988).toFixed(prec)}) > EMA 200 (${currency}${(price*0.962).toFixed(prec)}). Supporto volumetrico confermato dal POC locale.`,
-          invalidation: `Perdita del livello ${currency}${sl} con chiusura decisa sotto la EMA 21 annulla il setup di continuazione del trend.`,
+          core: `Struttura rialzista intatta. Il titolo ha completato un sano ritracciamento verso l'EMA 21 con volumi in contrazione durante il pullback (assorbimento Wyckoff).`,
+          indicators: `Allineamento perfetto medie esponenziali: Prezzo > EMA 9 > EMA 21 > EMA 200. Supporto volumetrico confermato dal POC locale.`,
+          invalidation: `Perdita di quota ${currency}${sl} con chiusura sotto la EMA 21 annulla il setup di continuazione del trend.`,
           catalyst: `Rimbalzo da supporto dinamico con rapporto rischio/rendimento altamente asimmetrico.`
         };
       }
     } else if (chg24 <= -1.8) {
-      // Strong Negative Day: Potential Oversold Divergence or Short Breakout
       if (seed % 2 === 0) {
-        // DIVERGENZA RIALZISTA RSI (MEAN REVERSION REVERSAL)
         setupId = 'rsi_divergence';
         setupName = 'Divergenza Rialzista RSI (14) & Climax Reversal';
         side = 'LONG';
@@ -170,13 +172,12 @@ window.OpportunityScanner = {
         tp2 = +(price + (atrValue * 3.8)).toFixed(prec);
 
         rationale = {
-          core: `Esaurimento della pressione venditrice (Selling Climax). L'oscillatore RSI(14) a ${(24 + (seed%8)).toFixed(1)} mostra una chiara divergenza rialzista: nuovi minimi di prezzo non confermati da nuovi minimi dell'indicatore.`,
-          indicators: `Banda inferiore di Bollinger toccata con reiezione immediata a stoppino (pinbar di assorbimento). Volume istituzionale anomalo sul minimo locale, indicatore tipico di accumulazione da parte delle "Mani Forti".`,
+          core: `Esaurimento della pressione venditrice (Selling Climax). L'oscillatore RSI(14) a ${(24 + (seed%8)).toFixed(1)} mostra una chiara divergenza rialzista sul minimo locale.`,
+          indicators: `Banda inferiore di Bollinger testata con reiezione a stoppino (pinbar di assorbimento). Volume istituzionale anomalo in riaccumulazione.`,
           invalidation: `Rottura e consolidamento sotto il minimo assoluto a ${currency}${sl} invalida il rimbalzo tecnico.`,
-          catalyst: `Reversal asimmetrico ad alto rendimento con stop loss millimetrico e target di mean-reversion su VWAP.`
+          catalyst: `Reversal asimmetrico ad alto rendimento con stop loss stretto e target di mean-reversion su VWAP.`
         };
       } else {
-        // SHORT TREND CONTINUATION
         setupId = 'short_breakdown';
         setupName = 'Breakdown Ribassista & Rigetto EMA 21';
         side = 'SHORT';
@@ -187,14 +188,13 @@ window.OpportunityScanner = {
         tp2 = +(price - (atrValue * 3.7)).toFixed(prec);
 
         rationale = {
-          core: `Rottura della struttura di supporto primario con rigetto violento sulla media mobile esponenziale 21 periodi. Pressione in lettera persistente sull'order book.`,
-          indicators: `Prezzo < EMA 9 < EMA 21 < EMA 200. VWAP orientato al ribasso con pendenza negativa. MACD con istogramma in espansione ribassista sotto la linea dello zero.`,
-          invalidation: `Ritorno stabile sopra quota ${currency}${sl} (recupero EMA 21) impone lo stop immediato dello short.`,
+          core: `Rottura del supporto primario con rigetto sulla media esponenziale 21 periodi. Pressione in lettera persistente sull'order book.`,
+          indicators: `Prezzo < EMA 9 < EMA 21 < EMA 200. VWAP orientato al ribasso con pendenza negativa. MACD con istogramma in espansione ribassista.`,
+          invalidation: `Ritorno stabile sopra quota ${currency}${sl} impone lo stop immediato dello short.`,
           catalyst: `Operatività a favore del trend primario ribassista con accelerazione volumetrica.`
         };
       }
     } else {
-      // Neutral / Consolidation Range: Statistical Arbitrage or Smart Money Squeeze
       if (seed > 50) {
         setupId = 'stat_arb';
         setupName = 'Arbitraggio Statistico Z-Score & Mean Reversion';
@@ -206,9 +206,9 @@ window.OpportunityScanner = {
         tp2 = +(price + (atrValue * 3.2)).toFixed(prec);
 
         rationale = {
-          core: `Disallineamento gaussiano statisticamente anomalo: il prezzo devia di oltre 2.1 deviazioni standard dalla media mobile a 20 periodi e dal valore equo del settore ${sector}.`,
-          indicators: `Z-Score pari a -2.25σ. Modello quantitativo Ornstein-Uhlenbeck prevede una probabilità di convergenza verso la media pari all'87% nelle prossime 12-24 candele.`,
-          invalidation: `Estensione della deviazione oltre -3.0σ (prezzo sotto ${currency}${sl}) invalida l'ipotesi di stazionarietà statistica.`,
+          core: `Disallineamento gaussiano statisticamente anomalo: il prezzo devia di oltre 2.1 deviazioni standard dalla media a 20 periodi e dal valore equo del settore ${sector}.`,
+          indicators: `Z-Score pari a -2.25σ. Modello quantitativo Ornstein-Uhlenbeck prevede una probabilità di convergenza verso la media pari all'87% nelle prossime candele.`,
+          invalidation: `Estensione della deviazione sotto ${currency}${sl} invalida l'ipotesi di stazionarietà statistica.`,
           catalyst: `Ritorno atteso al prezzo medio di consensus (Fair Value Arbitrage).`
         };
       } else {
@@ -222,15 +222,14 @@ window.OpportunityScanner = {
         tp2 = +(price + (atrValue * 4.4)).toFixed(prec);
 
         rationale = {
-          core: `Fase di riaccumulazione Wyckoff completata con "Spring" e "Test". Il Point of Control (POC) dei volumi si trova esattamente sotto il prezzo attuale, creando una solida barriera di supporto.`,
-          indicators: `Tripla confluenza: 1) Rotazione settoriale positiva verso ${sector}; 2) EMA Ribbon compresso in procinto di espansione a ventaglio; 3) Rapporto R/R convesso superiore a 1:3.5.`,
+          core: `Fase di riaccumulazione Wyckoff completata con "Spring" e "Test". Il Point of Control (POC) dei volumi sostiene il prezzo attuale.`,
+          indicators: `Tripla confluenza: 1) Rotazione settoriale positiva verso ${sector}; 2) EMA Ribbon compresso in procinto di espansione; 3) Rapporto R/R superiore a 1:3.5.`,
           invalidation: `Violazione dell'area di supporto del POC a ${currency}${sl} annulla la validità della schematica Wyckoff.`,
           catalyst: `Setup a rischio ridotto e rendimento fortemente asimmetrico (Modello Kiyotaka).`
         };
       }
     }
 
-    // Safety checks on values
     if (side === 'LONG') {
       if (sl >= price) sl = +(price * 0.98).toFixed(prec);
       if (tp1 <= price) tp1 = +(price * 1.025).toFixed(prec);
@@ -293,7 +292,7 @@ window.OpportunityScanner = {
       } else if (this.currentFilterCat === 'forex') {
         list = list.filter(o => o.category === 'forex' && (o.symbol.length === 6 || o.symbol.includes('/')));
       } else if (this.currentFilterCat === 'commodities') {
-        list = list.filter(o => ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'COPPER'].includes(o.symbol) || (o.sector && o.sector.includes('Preziosi') || o.sector && o.sector.includes('Energetici')));
+        list = list.filter(o => ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'COPPER'].includes(o.symbol) || (o.sector && (o.sector.includes('Preziosi') || o.sector.includes('Energetici'))));
       }
     }
 
@@ -325,6 +324,7 @@ window.OpportunityScanner = {
     }
 
     this.filteredOpportunities = list;
+    this.displayedCount = this.pageSize; // reset pagination when filter changes
   },
 
   setCategoryFilter: function(cat, btnElem) {
@@ -353,8 +353,13 @@ window.OpportunityScanner = {
     this.renderScannerTab();
   },
 
+  loadMoreOpportunities: function() {
+    this.displayedCount += this.pageSize;
+    this.renderScannerTab();
+  },
+
   // =========================================================================
-  // 3. UI RENDERING: MAIN RADAR TAB VIEW
+  // 3. UI RENDERING: MAIN RADAR TAB (PAGINATED & HIGH PERFORMANCE)
   // =========================================================================
   renderScannerTab: function() {
     const container = document.getElementById('tab-scanner-view-container');
@@ -364,6 +369,10 @@ window.OpportunityScanner = {
     const totalCount = this.allOpportunities.length;
     const highConfCount = this.allOpportunities.filter(o => o.score >= 88).length;
     const avgRR = (this.allOpportunities.reduce((acc, cur) => acc + cur.rawRR, 0) / (totalCount || 1)).toFixed(2);
+
+    // Paginated slice
+    const visibleList = list.slice(0, this.displayedCount);
+    const hasMore = list.length > this.displayedCount;
 
     container.innerHTML = `
       <div class="radar-dashboard-wrapper">
@@ -448,17 +457,26 @@ window.OpportunityScanner = {
           </div>
         </div>
 
-        <!-- OPPORTUNITY CARDS GRID -->
+        <!-- OPPORTUNITY CARDS GRID (PAGINATED FOR PERFORMANCE) -->
         <div class="radar-results-grid">
-          ${list.length === 0 ? `
+          ${visibleList.length === 0 ? `
             <div class="radar-empty-state">
               <div style="font-size:36px; margin-bottom:10px;">🔍</div>
               <div style="font-size:16px; font-weight:800; color:var(--text-main);">Nessuna opportunità trovata per i criteri selezionati</div>
               <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">Prova a reimpostare i filtri di categoria o la tipologia di setup quantitativo.</p>
               <button class="btn-rescan-pulse" style="margin-top:14px;" onclick="OpportunityScanner.setCategoryFilter('all'); OpportunityScanner.setSetupFilter('all');">Reimposta Tutti i Filtri</button>
             </div>
-          ` : list.map(opp => this.renderOpportunityCardHtml(opp)).join('')}
+          ` : visibleList.map(opp => this.renderOpportunityCardHtml(opp)).join('')}
         </div>
+
+        <!-- LOAD MORE BUTTON -->
+        ${hasMore ? `
+          <div style="display:flex; justify-content:center; margin: 16px 0;">
+            <button class="btn-load-more-opps" onclick="OpportunityScanner.loadMoreOpportunities()">
+              ⬇️ Mostra Altri Setup (${visibleList.length} di ${list.length} visualizzati)
+            </button>
+          </div>
+        ` : ''}
 
       </div>
     `;
@@ -515,21 +533,21 @@ window.OpportunityScanner = {
         <!-- EXECUTION METRICS (ENTRY, SL, TP1, TP2, R/R) -->
         <div class="opp-levels-grid">
           <div class="opp-level-box entry">
-            <span class="lbl">Ingresso Consigliato</span>
+            <span class="lbl">Ingresso</span>
             <span class="val">${o.currency}${Number(o.entry).toFixed(o.precision)}</span>
           </div>
           <div class="opp-level-box sl">
-            <span class="lbl">Stop Loss Protettivo</span>
+            <span class="lbl">Stop Loss</span>
             <span class="val" style="color:var(--sell)">${o.currency}${Number(o.stopLoss).toFixed(o.precision)}</span>
             <span class="sub">-${o.riskPct}%</span>
           </div>
           <div class="opp-level-box tp1">
-            <span class="lbl">Target 1 (50% Size)</span>
+            <span class="lbl">Target 1</span>
             <span class="val" style="color:var(--buy)">${o.currency}${Number(o.tp1).toFixed(o.precision)}</span>
             <span class="sub">R/R 1:1.8</span>
           </div>
           <div class="opp-level-box tp2">
-            <span class="lbl">Target 2 (Finale)</span>
+            <span class="lbl">Target 2</span>
             <span class="val" style="color:#00f2a1">${o.currency}${Number(o.tp2).toFixed(o.precision)}</span>
             <span class="sub">${o.rrRatio}</span>
           </div>
@@ -566,7 +584,7 @@ window.OpportunityScanner = {
             🧭 Esegui Assistito
           </button>
           <button class="btn-opp-action btn-execute-manual" onclick="OpportunityScanner.sendToOrderColumn('${o.symbol}', 'manual')" title="Compila i campi ordini per gestione manuale discrezionale">
-            🕹️ Modalità Manuale
+            🕹️ Manuale
           </button>
         </div>
 
@@ -575,44 +593,104 @@ window.OpportunityScanner = {
   },
 
   // =========================================================================
-  // 4. TERMINAL QUICK RADAR DOCK (INTEGRATO IN TAB-TERMINAL)
+  // 4. TERMINAL QUICK RADAR DOCK (RESPONSIVE TOUCH-SWIPE & ZERO CLIPPING)
   // =========================================================================
+  filterQuickRadar: function(cat, btnElem) {
+    this.quickFilterCat = cat;
+    document.querySelectorAll('.qr-cat-pill').forEach(b => b.classList.remove('active'));
+    if (btnElem) btnElem.classList.add('active');
+    this.renderTerminalQuickRadar();
+  },
+
   renderTerminalQuickRadar: function() {
     const container = document.getElementById('terminal-quick-radar-container');
     if (!container) return;
 
-    // Pick top 6 high confidence opportunities
-    const topOpps = this.allOpportunities.slice(0, 6);
+    let candidates = [...this.allOpportunities];
+    if (this.quickFilterCat !== 'all') {
+      if (this.quickFilterCat === 'italy') {
+        candidates = candidates.filter(o => o.category === 'italy' || o.symbol.endsWith('.MI'));
+      } else if (this.quickFilterCat === 'crypto') {
+        candidates = candidates.filter(o => o.category === 'crypto');
+      } else if (this.quickFilterCat === 'us') {
+        candidates = candidates.filter(o => o.category === 'us_tech' || o.category === 'us_sp500' || (!o.symbol.includes('.MI') && !o.symbol.includes('USDT') && o.category !== 'forex'));
+      } else if (this.quickFilterCat === 'commodities') {
+        candidates = candidates.filter(o => ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'COPPER'].includes(o.symbol) || (o.sector && (o.sector.includes('Preziosi') || o.sector.includes('Energetici'))));
+      } else if (this.quickFilterCat === 'forex') {
+        candidates = candidates.filter(o => o.category === 'forex' && (o.symbol.length === 6 || o.symbol.includes('/')));
+      }
+    }
+
+    // Pick top 8 high confidence opportunities
+    const topOpps = candidates.slice(0, 8);
+    const cat = this.quickFilterCat;
 
     container.innerHTML = `
-      <div class="quick-radar-strip">
-        <div class="quick-radar-title">
-          <span class="pulse-indicator" style="background:#00f2a1;"></span>
-          <span style="font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">RADAR OPPORTUNITÀ RAPIDO</span>
-          <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">(${topOpps.length} Migliori Setup Live)</span>
+      <div class="quick-radar-box">
+        
+        <!-- ROW 1: HEADER & ACTION LINK -->
+        <div class="quick-radar-top-row">
+          <div class="quick-radar-title-wrap" onclick="switchMainTab('tab-scanner', document.querySelector('[data-tab=tab-scanner]')); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();" style="cursor:pointer;" title="Clicca per aprire la schermata Radar Completa">
+            <span class="pulse-indicator" style="background:#00f2a1;"></span>
+            <span class="qr-title-bold">🎯 RADAR OPPORTUNITÀ RAPIDO</span>
+            <span class="qr-count-badge">Top Setup Live (${topOpps.length})</span>
+          </div>
+
+          <button class="btn-open-full-radar" onclick="switchMainTab('tab-scanner', document.querySelector('[data-tab=tab-scanner]')); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
+            <span>Vedi Tutti (${this.allOpportunities.length})</span>
+            <span>→</span>
+          </button>
         </div>
 
-        <div class="quick-radar-scroll">
-          ${topOpps.map(o => `
-            <div class="quick-radar-pill ${o.side === 'LONG' ? 'is-long' : 'is-short'}" onclick="OpportunityScanner.openOnChart('${o.symbol}', '${o.timeframe}')">
-              <span class="sym">${o.symbol}</span>
-              <span class="side">${o.side === 'LONG' ? '▲ LONG' : '▼ SHORT'}</span>
-              <span class="score" style="color:#00f2a1; font-weight:800;">${o.score}%</span>
-              <span class="rr" style="color:#f59e0b; font-size:10px;">${o.rrRatio}</span>
-              <button class="btn-quick-import" onclick="event.stopPropagation(); OpportunityScanner.sendToOrderColumn('${o.symbol}', 'assisted');" title="Invia direttamente all'Ordine">⚡</button>
-            </div>
-          `).join('')}
+        <!-- ROW 2: CATEGORY FILTER PILLS -->
+        <div class="quick-radar-filter-bar">
+          <button class="qr-cat-pill ${cat === 'all' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('all', this)">🌐 Tutti</button>
+          <button class="qr-cat-pill ${cat === 'italy' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('italy', this)">🇮🇹 Borsa Italiana</button>
+          <button class="qr-cat-pill ${cat === 'crypto' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('crypto', this)">🪙 Cripto</button>
+          <button class="qr-cat-pill ${cat === 'us' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('us', this)">🇺🇸 USA / Tech</button>
+          <button class="qr-cat-pill ${cat === 'commodities' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('commodities', this)">🛢️ Materie Prime</button>
+          <button class="qr-cat-pill ${cat === 'forex' ? 'active' : ''}" onclick="OpportunityScanner.filterQuickRadar('forex', this)">💱 Forex</button>
         </div>
 
-        <button class="btn-open-full-radar" onclick="switchMainTab('tab-scanner', document.querySelector('[data-tab=tab-scanner]'))">
-          Vedi Tutto (${this.allOpportunities.length}) →
-        </button>
+        <!-- ROW 3: HORIZONTAL SWIPEABLE TOUCH PILLS (CAN NEVER BE SQUEEZED TO 0!) -->
+        <div class="quick-radar-scroll" id="quick-radar-scroll-track">
+          ${topOpps.length === 0 ? `
+            <div style="padding:10px; font-size:11px; color:var(--text-muted);">Nessun setup per questa categoria. Seleziona "Tutti".</div>
+          ` : topOpps.map(o => {
+            const isLong = o.side === 'LONG';
+            const chgSign = o.change24h >= 0 ? '+' : '';
+            const chgColor = o.change24h >= 0 ? '#00f2a1' : '#f43f5e';
+            return `
+              <div class="quick-radar-pill ${isLong ? 'is-long' : 'is-short'}" onclick="OpportunityScanner.openOnChart('${o.symbol}', '${o.timeframe}')">
+                <div class="qr-pill-left">
+                  <div class="qr-pill-header">
+                    <span class="qr-pill-sym">${o.symbol}</span>
+                    <span class="qr-side-tag ${isLong ? 'side-long' : 'side-short'}">${isLong ? '▲ LONG' : '▼ SHORT'}</span>
+                  </div>
+                  <div class="qr-pill-price-row">
+                    <span class="qr-pill-price">${o.currency}${Number(o.price).toFixed(o.precision)}</span>
+                    <span class="qr-pill-chg" style="color:${chgColor}">${chgSign}${o.change24h.toFixed(2)}%</span>
+                  </div>
+                  <div class="qr-pill-setup-name">${o.setupName.substring(0, 26)}</div>
+                </div>
+
+                <div class="qr-pill-right">
+                  <div class="qr-score-pill">${o.score}%</div>
+                  <div class="qr-rr-text">${o.rrRatio}</div>
+                  <button class="btn-qr-execute" onclick="event.stopPropagation(); OpportunityScanner.sendToOrderColumn('${o.symbol}', 'assisted');" title="Carica nel modulo ordini in modalità Assistita">
+                    ⚡ Ordine
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
       </div>
     `;
   },
 
   updateLiveBadgesOnly: function() {
-    // Light background tick without recreating DOM elements
     const badge = document.getElementById('radar-nav-badge');
     if (badge) {
       badge.innerText = this.allOpportunities.filter(o => o.score >= 88).length;
@@ -634,8 +712,15 @@ window.OpportunityScanner = {
       const btn = document.querySelector('[data-tab="tab-terminal"]');
       window.switchMainTab('tab-terminal', btn);
     }
+
+    // On mobile devices, ensure the mobile switcher view is set to 'chart'
+    if (window.innerWidth <= 860 && window.switchMobileTerminalView) {
+      const chartBtn = document.querySelector('.m-view-btn');
+      window.switchMobileTerminalView('chart', chartBtn);
+    }
+
     if (window.showToast) {
-      window.showToast(`Grafico e Dati caricati per #${symbol} (${timeframe})`, 'info');
+      window.showToast(`📊 Caricato #${symbol} sul Grafico (${timeframe})`, 'info');
     }
   },
 
@@ -645,23 +730,23 @@ window.OpportunityScanner = {
 
     this.selectedOpportunity = opp;
 
-    // First ensure the asset is selected in the platform
+    // 1. Ensure the asset is selected
     if (window.selectAsset) {
       window.selectAsset(symbol);
     }
 
-    // Switch to Terminal Tab
+    // 2. Switch to Terminal Tab
     if (window.switchMainTab) {
       const btn = document.querySelector('[data-tab="tab-terminal"]');
       window.switchMainTab('tab-terminal', btn);
     }
 
-    // Switch Trading Mode in order column
+    // 3. Switch Trading Mode in order column
     if (window.TradingEngine && window.TradingEngine.setExecutionMode) {
       window.TradingEngine.setExecutionMode(mode);
     }
 
-    // Populate order inputs
+    // 4. Populate order inputs
     const entryInput = document.getElementById('t-entry');
     const slInput = document.getElementById('t-sl');
     const tpInput = document.getElementById('t-tp');
@@ -681,19 +766,21 @@ window.OpportunityScanner = {
       window.recalcPosition();
     }
 
-    // If assisted mode, render the rich motivated rationale card inside order column
+    // 5. If assisted mode, render the rich motivated rationale card
     if (mode === 'assisted' && window.TradingEngine && window.TradingEngine.renderAssistedCard) {
       window.TradingEngine.renderAssistedCard(opp);
     }
 
-    // On mobile screens, scroll to order panel or switch view
+    // 6. On mobile screen, switch mobile view to 'order' so user sees the order form!
     if (window.innerWidth <= 860 && window.switchMobileTerminalView) {
-      const orderBtn = document.querySelector('.m-view-btn:nth-child(3)');
-      window.switchMobileTerminalView('order', orderBtn);
+      const orderBtns = document.querySelectorAll('.m-view-btn');
+      if (orderBtns && orderBtns[2]) {
+        window.switchMobileTerminalView('order', orderBtns[2]);
+      }
     }
 
     if (window.showToast) {
-      window.showToast(`Setup ${opp.symbol} caricato nel Modulo Ordini (${mode.toUpperCase()})`, 'success');
+      window.showToast(`⚡ Setup ${opp.symbol} caricato nel Modulo Ordini (${mode.toUpperCase()})`, 'success');
     }
   }
 };

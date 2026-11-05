@@ -145,6 +145,14 @@ function switchMainTab(tabId, btnElem) {
   if (tabId === 'tab-optimal' && window.OptimalEngine) {
     window.OptimalEngine.renderOptimalUI();
   }
+
+  if (tabId === 'tab-scanner' && window.OpportunityScanner) {
+    window.OpportunityScanner.renderScannerTab();
+  }
+
+  document.querySelectorAll('.m-bottom-nav-item').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick')?.includes(tabId));
+  });
 }
 
 // ==========================================
