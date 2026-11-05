@@ -477,13 +477,19 @@ function setMomentumMode(mode) {
 
 function resizeAllCharts() {
   const c1 = document.getElementById('chart-container');
-  if (mainChart && c1) mainChart.resize(c1.clientWidth, c1.clientHeight);
+  if (mainChart && c1 && c1.clientWidth > 0 && c1.clientHeight > 0) {
+    mainChart.resize(c1.clientWidth, c1.clientHeight);
+  }
 
   const c2 = document.getElementById('chart-volume-pane');
-  if (volumeChart && c2) volumeChart.resize(c2.clientWidth, c2.clientHeight);
+  if (volumeChart && c2 && c2.style.display !== 'none' && c2.clientWidth > 0 && c2.clientHeight > 0) {
+    volumeChart.resize(c2.clientWidth, c2.clientHeight);
+  }
 
   const c3 = document.getElementById('chart-momentum-pane');
-  if (momentumChart && c3) momentumChart.resize(c3.clientWidth, c3.clientHeight);
+  if (momentumChart && c3 && c3.style.display !== 'none' && c3.clientWidth > 0 && c3.clientHeight > 0) {
+    momentumChart.resize(c3.clientWidth, c3.clientHeight);
+  }
 }
 
 // ==========================================
@@ -651,7 +657,186 @@ function renderChartData(candles) {
     }
   }
 
-  // Reset autoScale and synchronize all 3 chart timeScales
+  // ==========================================
+  // DYNAMIC 107 TRADINGVIEW INDICATORS DISPATCHER
+  // ==========================================
+  const dynamicOverlays = [
+    { id: 'hma', calc: () => calcHMAData(times, closes, 20, prec), color: '#38bdf8', width: 2 },
+    { id: 'dema', calc: () => calcDEMAData(times, closes, 20, prec), color: '#fbbf24', width: 2 },
+    { id: 'tema', calc: () => calcTEMAData(times, closes, 20, prec), color: '#f43f5e', width: 2 },
+    { id: 'wma', calc: () => calcWMAData(times, closes, 20, prec), color: '#34d399', width: 1.5 },
+    { id: 'sma', calc: () => calcVolumeSMA(times, closes, 20), color: '#e879f9', width: 1.5 },
+    { id: 'avg_price', calc: () => calcAveragePriceData(times, candles, prec), color: '#94a3b8', width: 1 },
+    { id: 'median_price', calc: () => calcMedianPriceData(times, candles, prec), color: '#cbd5e1', width: 1 },
+    { id: 'typical_price', calc: () => calcTypicalPriceData(times, candles, prec), color: '#f1f5f9', width: 1 },
+    { id: 'zigzag', calc: () => calcZigZagData(times, candles, 0.03, prec), color: '#fb923c', width: 2 }
+  ];
+
+  dynamicOverlays.forEach(ov => {
+    if (activeIndicators[ov.id]) {
+      if (!dynamicOverlaySeries[ov.id] && mainChart) {
+        dynamicOverlaySeries[ov.id] = mainChart.addLineSeries({
+          color: ov.color,
+          lineWidth: ov.width || 1.5,
+          priceLineVisible: false
+        });
+      }
+      if (dynamicOverlaySeries[ov.id]) {
+        dynamicOverlaySeries[ov.id].setData(ov.calc());
+      }
+    } else if (dynamicOverlaySeries[ov.id]) {
+      dynamicOverlaySeries[ov.id].setData([]);
+    }
+  });
+
+  // Keltner Channels
+  if (activeIndicators.keltner) {
+    if (!dynamicOverlaySeries['keltner_u'] && mainChart) {
+      dynamicOverlaySeries['keltner_u'] = mainChart.addLineSeries({ color: 'rgba(56, 189, 248, 0.7)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+      dynamicOverlaySeries['keltner_m'] = mainChart.addLineSeries({ color: 'rgba(56, 189, 248, 0.9)', lineWidth: 1.5, priceLineVisible: false });
+      dynamicOverlaySeries['keltner_l'] = mainChart.addLineSeries({ color: 'rgba(56, 189, 248, 0.7)', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+    }
+    const kc = calcKeltnerChannels(times, candles, 20, 2, prec);
+    dynamicOverlaySeries['keltner_u'].setData(kc.upper);
+    dynamicOverlaySeries['keltner_m'].setData(kc.middle);
+    dynamicOverlaySeries['keltner_l'].setData(kc.lower);
+  } else if (dynamicOverlaySeries['keltner_u']) {
+    dynamicOverlaySeries['keltner_u'].setData([]);
+    dynamicOverlaySeries['keltner_m'].setData([]);
+    dynamicOverlaySeries['keltner_l'].setData([]);
+  }
+
+  // Ichimoku Cloud
+  if (activeIndicators.ichimoku) {
+    if (!dynamicOverlaySeries['ichi_tenkan'] && mainChart) {
+      dynamicOverlaySeries['ichi_tenkan'] = mainChart.addLineSeries({ color: '#ef4444', lineWidth: 1.5, priceLineVisible: false });
+      dynamicOverlaySeries['ichi_kijun'] = mainChart.addLineSeries({ color: '#3b82f6', lineWidth: 1.5, priceLineVisible: false });
+      dynamicOverlaySeries['ichi_spanA'] = mainChart.addLineSeries({ color: 'rgba(34, 197, 94, 0.7)', lineWidth: 1, lineStyle: 1, priceLineVisible: false });
+      dynamicOverlaySeries['ichi_spanB'] = mainChart.addLineSeries({ color: 'rgba(239, 68, 68, 0.7)', lineWidth: 1, lineStyle: 1, priceLineVisible: false });
+    }
+    const ichi = calcIchimokuData(times, candles, prec);
+    dynamicOverlaySeries['ichi_tenkan'].setData(ichi.tenkan);
+    dynamicOverlaySeries['ichi_kijun'].setData(ichi.kijun);
+    dynamicOverlaySeries['ichi_spanA'].setData(ichi.spanA);
+    dynamicOverlaySeries['ichi_spanB'].setData(ichi.spanB);
+  } else if (dynamicOverlaySeries['ichi_tenkan']) {
+    dynamicOverlaySeries['ichi_tenkan'].setData([]);
+    dynamicOverlaySeries['ichi_kijun'].setData([]);
+    dynamicOverlaySeries['ichi_spanA'].setData([]);
+    dynamicOverlaySeries['ichi_spanB'].setData([]);
+  }
+
+  // Envelopes
+  if (activeIndicators.envelopes) {
+    if (!dynamicOverlaySeries['env_u'] && mainChart) {
+      dynamicOverlaySeries['env_u'] = mainChart.addLineSeries({ color: '#f59e0b', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+      dynamicOverlaySeries['env_l'] = mainChart.addLineSeries({ color: '#f59e0b', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+    }
+    const env = calcEnvelopesData(times, closes, 20, 0.025, prec);
+    dynamicOverlaySeries['env_u'].setData(env.upper);
+    dynamicOverlaySeries['env_l'].setData(env.lower);
+  } else if (dynamicOverlaySeries['env_u']) {
+    dynamicOverlaySeries['env_u'].setData([]);
+    dynamicOverlaySeries['env_l'].setData([]);
+  }
+
+  // 52 Week High / Low
+  if (activeIndicators.hi_lo_52w) {
+    if (!dynamicOverlaySeries['hi_52w'] && mainChart) {
+      dynamicOverlaySeries['hi_52w'] = mainChart.addLineSeries({ color: '#10b981', lineWidth: 1.5, lineStyle: 2, priceLineVisible: false });
+      dynamicOverlaySeries['lo_52w'] = mainChart.addLineSeries({ color: '#ef4444', lineWidth: 1.5, lineStyle: 2, priceLineVisible: false });
+    }
+    const hilo = calc52WeekHighLowData(times, candles, prec);
+    dynamicOverlaySeries['hi_52w'].setData(hilo.high);
+    dynamicOverlaySeries['lo_52w'].setData(hilo.low);
+  } else if (dynamicOverlaySeries['hi_52w']) {
+    dynamicOverlaySeries['hi_52w'].setData([]);
+    dynamicOverlaySeries['lo_52w'].setData([]);
+  }
+
+  // Dynamic Momentum Oscillators handling
+  if (momentumChart && activeIndicators.momentumPane !== false) {
+    if (activeIndicators.stoch || activeMomentumMode === 'stoch') {
+      if (!dynamicMomentumSeries['stoch_k']) {
+        dynamicMomentumSeries['stoch_k'] = momentumChart.addLineSeries({ color: '#38bdf8', lineWidth: 2, priceLineVisible: false });
+        dynamicMomentumSeries['stoch_d'] = momentumChart.addLineSeries({ color: '#f59e0b', lineWidth: 1.5, lineStyle: 1, priceLineVisible: false });
+      }
+      const stoch = calcStochasticData(times, candles, 14, 3, 3);
+      dynamicMomentumSeries['stoch_k'].setData(stoch.k);
+      dynamicMomentumSeries['stoch_d'].setData(stoch.d);
+    } else if (dynamicMomentumSeries['stoch_k']) {
+      dynamicMomentumSeries['stoch_k'].setData([]);
+      dynamicMomentumSeries['stoch_d'].setData([]);
+    }
+
+    if (activeIndicators.stoch_rsi || activeMomentumMode === 'stoch_rsi') {
+      if (!dynamicMomentumSeries['stoch_rsi']) {
+        dynamicMomentumSeries['stoch_rsi'] = momentumChart.addLineSeries({ color: '#a855f7', lineWidth: 2, priceLineVisible: false });
+      }
+      dynamicMomentumSeries['stoch_rsi'].setData(calcStochRSIData(times, closes, 14, 14));
+    } else if (dynamicMomentumSeries['stoch_rsi']) {
+      dynamicMomentumSeries['stoch_rsi'].setData([]);
+    }
+
+    if (activeIndicators.awesome_osc || activeMomentumMode === 'awesome_osc') {
+      if (!dynamicMomentumSeries['ao']) {
+        dynamicMomentumSeries['ao'] = momentumChart.addLineSeries({ color: '#00f2a1', lineWidth: 2, priceLineVisible: false });
+      }
+      dynamicMomentumSeries['ao'].setData(calcAwesomeOscillatorData(times, candles));
+    } else if (dynamicMomentumSeries['ao']) {
+      dynamicMomentumSeries['ao'].setData([]);
+    }
+
+    if (activeIndicators.cci || activeMomentumMode === 'cci') {
+      if (!dynamicMomentumSeries['cci']) {
+        dynamicMomentumSeries['cci'] = momentumChart.addLineSeries({ color: '#f97316', lineWidth: 2, priceLineVisible: false });
+      }
+      dynamicMomentumSeries['cci'].setData(calcCCIData(times, candles, 20));
+    } else if (dynamicMomentumSeries['cci']) {
+      dynamicMomentumSeries['cci'].setData([]);
+    }
+
+    if (activeIndicators.williams_r || activeMomentumMode === 'williams_r') {
+      if (!dynamicMomentumSeries['wr']) {
+        dynamicMomentumSeries['wr'] = momentumChart.addLineSeries({ color: '#ec4899', lineWidth: 2, priceLineVisible: false });
+      }
+      dynamicMomentumSeries['wr'].setData(calcWilliamsRData(times, candles, 14));
+    } else if (dynamicMomentumSeries['wr']) {
+      dynamicMomentumSeries['wr'].setData([]);
+    }
+  }
+
+  // Dynamic Volume indicators handling
+  if (volumeChart && activeIndicators.volumePane !== false) {
+    if (activeIndicators.obv) {
+      if (!dynamicVolumeSeries['obv']) {
+        dynamicVolumeSeries['obv'] = volumeChart.addLineSeries({ color: '#38bdf8', lineWidth: 2, priceLineVisible: false });
+      }
+      dynamicVolumeSeries['obv'].setData(calcOBVData(times, candles));
+    } else if (dynamicVolumeSeries['obv']) {
+      dynamicVolumeSeries['obv'].setData([]);
+    }
+
+    if (activeIndicators.cmf) {
+      if (!dynamicVolumeSeries['cmf']) {
+        dynamicVolumeSeries['cmf'] = volumeChart.addLineSeries({ color: '#f59e0b', lineWidth: 1.5, priceLineVisible: false });
+      }
+      dynamicVolumeSeries['cmf'].setData(calcCMFData(times, candles, 20));
+    } else if (dynamicVolumeSeries['cmf']) {
+      dynamicVolumeSeries['cmf'].setData([]);
+    }
+
+    if (activeIndicators.vol_osc) {
+      if (!dynamicVolumeSeries['vol_osc']) {
+        dynamicVolumeSeries['vol_osc'] = volumeChart.addLineSeries({ color: '#a855f7', lineWidth: 1.5, priceLineVisible: false });
+      }
+      dynamicVolumeSeries['vol_osc'].setData(calcVolumeOscillatorData(times, candles, 5, 10));
+    } else if (dynamicVolumeSeries['vol_osc']) {
+      dynamicVolumeSeries['vol_osc'].setData([]);
+    }
+  }
+
+    // Reset autoScale and synchronize all 3 chart timeScales
   if (mainChart) {
     try {
       mainChart.priceScale('right').applyOptions({ autoScale: true });
@@ -1129,25 +1314,693 @@ if (screen && screen.orientation) {
   screen.orientation.addEventListener('change', handleLayoutRotation);
 }
 
-// ==========================================
-// TRADINGVIEW SEARCHABLE INDICATORS MODAL ENGINE
-// ==========================================
+// ==========================================================================
+// TRADINGVIEW / BYBIT 107 OFFICIAL INDICATORS CATALOG (A TO Z)
+// ==========================================================================
+window.TV_INDICATORS_CATALOG = [
+  { id: "funding_rate", name: "Funding Rate", category: "crypto", pane: "telemetry", tag: "DERIVATIVES" },
+  { id: "liq_profile_vr", name: "Liquidation Profile Visible Range", category: "crypto", pane: "overlay", tag: "ORDERBOOK" },
+  { id: "liq_volume", name: "Liquidation Volume", category: "crypto", pane: "volume", tag: "DERIVATIVES" },
+  { id: "open_interest", name: "Open Interest", category: "crypto", pane: "telemetry", tag: "DERIVATIVES" },
+  { id: "hi_lo_52w", name: "52 Week High/Low", category: "overlay", pane: "main", tag: "RANGE" },
+  { id: "accelerator_osc", name: "Accelerator Oscillator", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "accum_dist", name: "Accumulation/Distribution", category: "volume", pane: "volume", tag: "VOLUME" },
+  { id: "accum_swing_idx", name: "Accumulative Swing Index", category: "momentum", pane: "momentum", tag: "SWING" },
+  { id: "advance_decline", name: "Advance/Decline", category: "momentum", pane: "momentum", tag: "BREADTH" },
+  { id: "alma", name: "Arnaud Legoux Moving Average", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "aroon", name: "Aroon", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "adx", name: "Average Directional Index", category: "momentum", pane: "momentum", tag: "TREND" },
+  { id: "avg_price", name: "Average Price", category: "overlay", pane: "main", tag: "PRICE" },
+  { id: "atr", name: "Average True Range", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "awesome_osc", name: "Awesome Oscillator", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "balance_power", name: "Balance of Power", category: "momentum", pane: "momentum", tag: "MOMENTUM" },
+  { id: "boll", name: "Bollinger Bands", category: "overlay", pane: "main", tag: "VOLATILITY" },
+  { id: "boll_pct_b", name: "Bollinger Bands %B", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "boll_width", name: "Bollinger Bands Width", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "cmf", name: "Chaikin Money Flow", category: "volume", pane: "volume", tag: "FLOW" },
+  { id: "chaikin_osc", name: "Chaikin Oscillator", category: "volume", pane: "volume", tag: "FLOW" },
+  { id: "chaikin_vol", name: "Chaikin Volatility", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "chande_stop", name: "Chande Kroll Stop", category: "overlay", pane: "main", tag: "STOP" },
+  { id: "cmo", name: "Chande Momentum Oscillator", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "chop_zone", name: "Chop Zone", category: "momentum", pane: "momentum", tag: "CYCLE" },
+  { id: "choppiness_idx", name: "Choppiness Index", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "cci", name: "Commodity Channel Index", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "connors_rsi", name: "Connors RSI", category: "momentum", pane: "momentum", tag: "MEAN REVERSION" },
+  { id: "coppock", name: "Coppock Curve", category: "momentum", pane: "momentum", tag: "CYCLE" },
+  { id: "corr_log", name: "Correlation - Log", category: "momentum", pane: "momentum", tag: "STATISTICS" },
+  { id: "corr_coeff", name: "Correlation Coefficient", category: "momentum", pane: "momentum", tag: "STATISTICS" },
+  { id: "dpo", name: "Detrended Price Oscillator", category: "momentum", pane: "momentum", tag: "CYCLE" },
+  { id: "dmi", name: "Directional Movement", category: "momentum", pane: "momentum", tag: "TREND" },
+  { id: "donchian", name: "Donchian Channels", category: "overlay", pane: "main", tag: "BREAKOUT" },
+  { id: "dema", name: "Double EMA", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "ease_movement", name: "Ease Of Movement", category: "volume", pane: "volume", tag: "FLOW" },
+  { id: "elder_force", name: "Elder's Force Index", category: "volume", pane: "volume", tag: "MOMENTUM" },
+  { id: "ema_cross", name: "EMA Cross", category: "overlay", pane: "main", tag: "SIGNAL" },
+  { id: "envelopes", name: "Envelopes", category: "overlay", pane: "main", tag: "BANDS" },
+  { id: "fisher", name: "Fisher Transform", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "gmma", name: "Guppy Multiple Moving Average", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "hist_vol", name: "Historical Volatility", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "hma", name: "Hull Moving Average", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "ichimoku", name: "Ichimoku Cloud", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "keltner", name: "Keltner Channels", category: "overlay", pane: "main", tag: "VOLATILITY" },
+  { id: "klinger", name: "Klinger Oscillator", category: "volume", pane: "volume", tag: "OSCILLATOR" },
+  { id: "kst", name: "Know Sure Thing", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "lsma", name: "Least Squares Moving Average", category: "overlay", pane: "main", tag: "REGRESSION" },
+  { id: "linreg_curve", name: "Linear Regression Curve", category: "overlay", pane: "main", tag: "REGRESSION" },
+  { id: "linreg_slope", name: "Linear Regression Slope", category: "momentum", pane: "momentum", tag: "SLOPE" },
+  { id: "ma_cross", name: "MA Cross", category: "overlay", pane: "main", tag: "SIGNAL" },
+  { id: "ma_ema_cross", name: "MA with EMA Cross", category: "overlay", pane: "main", tag: "SIGNAL" },
+  { id: "macd", name: "MACD", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "majority_rule", name: "Majority Rule", category: "momentum", pane: "momentum", tag: "CONSENSUS" },
+  { id: "mass_index", name: "Mass Index", category: "momentum", pane: "momentum", tag: "REVERSAL" },
+  { id: "mcginley", name: "McGinley Dynamic", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "median_price", name: "Median Price", category: "overlay", pane: "main", tag: "PRICE" },
+  { id: "momentum", name: "Momentum", category: "momentum", pane: "momentum", tag: "VELOCITY" },
+  { id: "mfi", name: "Money Flow Index", category: "volume", pane: "volume", tag: "VOLUME" },
+  { id: "sma", name: "Moving Average", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "kama", name: "Moving Average Adaptive", category: "overlay", pane: "main", tag: "ADAPTIVE" },
+  { id: "ma_channel", name: "Moving Average Channel", category: "overlay", pane: "main", tag: "CHANNEL" },
+  { id: "ma_double", name: "Moving Average Double", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "ema", name: "Moving Average Exponential", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "ma_hamming", name: "Moving Average Hamming", category: "overlay", pane: "main", tag: "FILTER" },
+  { id: "ma_multiple", name: "Moving Average Multiple", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "ma_triple", name: "Moving Average Triple", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "wma", name: "Moving Average Weighted", category: "overlay", pane: "main", tag: "WEIGHTED" },
+  { id: "net_volume", name: "Net Volume", category: "volume", pane: "volume", tag: "DELTA" },
+  { id: "obv", name: "On Balance Volume", category: "volume", pane: "volume", tag: "ACCUMULATION" },
+  { id: "sar", name: "Parabolic SAR", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "pivot_points", name: "Pivot Points Standard", category: "overlay", pane: "main", tag: "SUPPORT/RESISTANCE" },
+  { id: "price_channel", name: "Price Channel", category: "overlay", pane: "main", tag: "RANGE" },
+  { id: "ppo", name: "Price Oscillator", category: "momentum", pane: "momentum", tag: "PERCENT" },
+  { id: "pvt", name: "Price Volume Trend", category: "volume", pane: "volume", tag: "VOLUME" },
+  { id: "rci", name: "Rank Correlation Index", category: "momentum", pane: "momentum", tag: "RANK" },
+  { id: "roc", name: "Rate Of Change", category: "momentum", pane: "momentum", tag: "VELOCITY" },
+  { id: "ratio", name: "Ratio", category: "momentum", pane: "momentum", tag: "RATIO" },
+  { id: "rsi", name: "Relative Strength Index", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "rvi", name: "Relative Vigor Index", category: "momentum", pane: "momentum", tag: "ENERGY" },
+  { id: "rvol", name: "Relative Volatility Index", category: "momentum", pane: "momentum", tag: "VOLATILITY" },
+  { id: "smi_ergodic", name: "SMI Ergodic Indicator/Oscillator", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "smma", name: "Smoothed Moving Average", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "spread", name: "Spread", category: "momentum", pane: "momentum", tag: "SPREAD" },
+  { id: "std_dev", name: "Standard Deviation", category: "momentum", pane: "momentum", tag: "STATISTICS" },
+  { id: "std_error", name: "Standard Error", category: "momentum", pane: "momentum", tag: "STATISTICS" },
+  { id: "std_error_bands", name: "Standard Error Bands", category: "overlay", pane: "main", tag: "STATISTICS" },
+  { id: "stoch", name: "Stochastic", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "stoch_rsi", name: "Stochastic RSI", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "supertrend", name: "SuperTrend", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "tsi", name: "Trend Strength Index", category: "momentum", pane: "momentum", tag: "TREND" },
+  { id: "tema", name: "Triple EMA", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "trix", name: "TRIX", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "true_strength_idx", name: "True Strength Index", category: "momentum", pane: "momentum", tag: "MOMENTUM" },
+  { id: "typical_price", name: "Typical Price", category: "overlay", pane: "main", tag: "PRICE" },
+  { id: "ultimate_osc", name: "Ultimate Oscillator", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "volume", name: "Volume", category: "volume", pane: "volume", tag: "HISTOGRAM" },
+  { id: "vol_osc", name: "Volume Oscillator", category: "volume", pane: "volume", tag: "OSCILLATOR" },
+  { id: "vol_profile_fr", name: "Volume Profile Fixed Range", category: "volume", pane: "volume", tag: "PROFILE" },
+  { id: "vol_profile_vr", name: "Volume Profile Visible Range", category: "volume", pane: "volume", tag: "PROFILE" },
+  { id: "vortex", name: "Vortex Indicator", category: "momentum", pane: "momentum", tag: "TREND" },
+  { id: "vwap", name: "VWAP", category: "overlay", pane: "main", tag: "BENCHMARK" },
+  { id: "vwma", name: "VWMA", category: "overlay", pane: "main", tag: "VOLUME WEIGHTED" },
+  { id: "williams_r", name: "Williams %R", category: "momentum", pane: "momentum", tag: "OSCILLATOR" },
+  { id: "williams_alligator", name: "Williams Alligator", category: "overlay", pane: "main", tag: "TREND" },
+  { id: "williams_fractal", name: "Williams Fractal", category: "overlay", pane: "main", tag: "PATTERNS" },
+  { id: "zigzag", name: "Zig Zag", category: "overlay", pane: "main", tag: "SWING" }
+];
+
+// Favorites state persisted
+let favoriteIndicators = [];
+try {
+  favoriteIndicators = JSON.parse(localStorage.getItem('tpu_fav_indicators_v27') || '[]');
+} catch(e) { favoriteIndicators = []; }
+
+// Dynamic LightweightCharts Series Registry
+const dynamicOverlaySeries = {};
+const dynamicMomentumSeries = {};
+const dynamicVolumeSeries = {};
+
+// ==========================================================================
+// ADVANCED MATHEMATICAL INDICATOR CALCULATORS
+// ==========================================================================
+
+// Weighted Moving Average (WMA)
+function calcWMAData(times, data, period = 20, prec = 2) {
+  if (!data || data.length < period) return [];
+  const f = Math.pow(10, prec);
+  const result = [];
+  const denom = (period * (period + 1)) / 2;
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) continue;
+    let sum = 0;
+    for (let k = 0; k < period; k++) {
+      sum += data[i - k] * (period - k);
+    }
+    result.push({ time: times[i], value: Math.round((sum / denom) * f) / f });
+  }
+  return result;
+}
+
+// Hull Moving Average (HMA)
+function calcHMAData(times, data, period = 20, prec = 2) {
+  if (!data || data.length < period + 5) return [];
+  const f = Math.pow(10, prec);
+  const halfPeriod = Math.max(2, Math.floor(period / 2));
+  const sqrtPeriod = Math.max(2, Math.floor(Math.sqrt(period)));
+
+  // WMA half and full
+  const wmaHalf = calcWMAData(times, data, halfPeriod, 6);
+  const wmaFull = calcWMAData(times, data, period, 6);
+  if (!wmaHalf.length || !wmaFull.length) return [];
+
+  const rawDiff = [];
+  const diffTimes = [];
+  const halfMap = new Map(wmaHalf.map(x => [x.time, x.value]));
+  for (let item of wmaFull) {
+    const hVal = halfMap.get(item.time);
+    if (hVal !== undefined) {
+      diffTimes.push(item.time);
+      rawDiff.push(2 * hVal - item.value);
+    }
+  }
+
+  const finalHMA = calcWMAData(diffTimes, rawDiff, sqrtPeriod, prec);
+  return finalHMA;
+}
+
+// Double Exponential Moving Average (DEMA)
+function calcDEMAData(times, data, period = 20, prec = 2) {
+  if (!data || data.length < period) return [];
+  const f = Math.pow(10, prec);
+  const ema1 = calcEMAData(times, data, period, 6);
+  if (!ema1.length) return [];
+  const ema1Vals = ema1.map(x => x.value);
+  const ema2 = calcEMAData(times.slice(times.length - ema1Vals.length), ema1Vals, period, 6);
+  const ema2Map = new Map(ema2.map(x => [x.time, x.value]));
+  const result = [];
+  for (let item of ema1) {
+    const e2 = ema2Map.get(item.time);
+    if (e2 !== undefined) {
+      result.push({ time: item.time, value: Math.round((2 * item.value - e2) * f) / f });
+    }
+  }
+  return result;
+}
+
+// Triple Exponential Moving Average (TEMA)
+function calcTEMAData(times, data, period = 20, prec = 2) {
+  if (!data || data.length < period) return [];
+  const f = Math.pow(10, prec);
+  const e1 = calcEMAData(times, data, period, 6);
+  if (!e1.length) return [];
+  const e2 = calcEMAData(e1.map(x => x.time), e1.map(x => x.value), period, 6);
+  if (!e2.length) return [];
+  const e3 = calcEMAData(e2.map(x => x.time), e2.map(x => x.value), period, 6);
+  const e1Map = new Map(e1.map(x => [x.time, x.value]));
+  const e2Map = new Map(e2.map(x => [x.time, x.value]));
+  const result = [];
+  for (let item of e3) {
+    const v1 = e1Map.get(item.time);
+    const v2 = e2Map.get(item.time);
+    if (v1 !== undefined && v2 !== undefined) {
+      const temaVal = 3 * v1 - 3 * v2 + item.value;
+      result.push({ time: item.time, value: Math.round(temaVal * f) / f });
+    }
+  }
+  return result;
+}
+
+// Keltner Channels (20 EMA +/- 2 * ATR)
+function calcKeltnerChannels(times, candles, period = 20, mult = 2, prec = 2) {
+  if (!candles || candles.length < period) return { upper: [], middle: [], lower: [] };
+  const f = Math.pow(10, prec);
+  const closes = candles.map(c => c.close);
+  const ema = calcEMAData(times, closes, period, prec);
+  const emaMap = new Map(ema.map(x => [x.time, x.value]));
+  const upper = [], middle = [], lower = [];
+
+  for (let i = 0; i < candles.length; i++) {
+    const t = times[i];
+    const midVal = emaMap.get(t);
+    if (midVal === undefined) continue;
+
+    let trSum = 0;
+    const startK = Math.max(0, i - 10 + 1);
+    for (let k = startK; k <= i; k++) {
+      const prevClose = k > 0 ? candles[k - 1].close : candles[k].open;
+      const tr = Math.max(candles[k].high - candles[k].low, Math.abs(candles[k].high - prevClose), Math.abs(candles[k].low - prevClose));
+      trSum += tr;
+    }
+    const atr = trSum / Math.max(1, i - startK + 1);
+    upper.push({ time: t, value: Math.round((midVal + mult * atr) * f) / f });
+    middle.push({ time: t, value: midVal });
+    lower.push({ time: t, value: Math.round((midVal - mult * atr) * f) / f });
+  }
+  return { upper, middle, lower };
+}
+
+// Ichimoku Cloud (Tenkan 9, Kijun 26, Senkou Span B 52)
+function calcIchimokuData(times, candles, prec = 2) {
+  if (!candles || candles.length < 26) return { tenkan: [], kijun: [], spanA: [], spanB: [] };
+  const f = Math.pow(10, prec);
+  const tenkan = [], kijun = [], spanA = [], spanB = [];
+
+  function getMidpoint(idx, length) {
+    if (idx < length - 1) return null;
+    let hh = -Infinity, ll = Infinity;
+    for (let k = idx - length + 1; k <= idx; k++) {
+      if (candles[k].high > hh) hh = candles[k].high;
+      if (candles[k].low < ll) ll = candles[k].low;
+    }
+    return Math.round(((hh + ll) / 2) * f) / f;
+  }
+
+  for (let i = 0; i < candles.length; i++) {
+    const t = times[i];
+    const tVal = getMidpoint(i, 9);
+    const kVal = getMidpoint(i, 26);
+    const bVal = getMidpoint(i, 52);
+
+    if (tVal !== null) tenkan.push({ time: t, value: tVal });
+    if (kVal !== null) kijun.push({ time: t, value: kVal });
+    if (tVal !== null && kVal !== null) {
+      spanA.push({ time: t, value: Math.round(((tVal + kVal) / 2) * f) / f });
+    }
+    if (bVal !== null) spanB.push({ time: t, value: bVal });
+  }
+  return { tenkan, kijun, spanA, spanB };
+}
+
+// Moving Average Envelopes (20 SMA +/- 2.5%)
+function calcEnvelopesData(times, closes, period = 20, pct = 0.025, prec = 2) {
+  if (!closes || closes.length < period) return { upper: [], middle: [], lower: [] };
+  const f = Math.pow(10, prec);
+  const upper = [], middle = [], lower = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < period - 1) continue;
+    let sum = 0;
+    for (let k = 0; k < period; k++) sum += closes[i - k];
+    const mid = sum / period;
+    middle.push({ time: times[i], value: Math.round(mid * f) / f });
+    upper.push({ time: times[i], value: Math.round((mid * (1 + pct)) * f) / f });
+    lower.push({ time: times[i], value: Math.round((mid * (1 - pct)) * f) / f });
+  }
+  return { upper, middle, lower };
+}
+
+// Pivot Points Standard (Floor Trader Pivots)
+function calcPivotPointsStandard(times, candles, prec = 2) {
+  if (!candles || candles.length < 2) return { p: [], r1: [], s1: [], r2: [], s2: [] };
+  const f = Math.pow(10, prec);
+  const p = [], r1 = [], s1 = [], r2 = [], s2 = [];
+  for (let i = 1; i < candles.length; i++) {
+    const prev = candles[i - 1];
+    const pivot = (prev.high + prev.low + prev.close) / 3;
+    const diff = prev.high - prev.low;
+    const t = times[i];
+    p.push({ time: t, value: Math.round(pivot * f) / f });
+    r1.push({ time: t, value: Math.round((2 * pivot - prev.low) * f) / f });
+    s1.push({ time: t, value: Math.round((2 * pivot - prev.high) * f) / f });
+    r2.push({ time: t, value: Math.round((pivot + diff) * f) / f });
+    s2.push({ time: t, value: Math.round((pivot - diff) * f) / f });
+  }
+  return { p, r1, s1, r2, s2 };
+}
+
+// Zig Zag (5% deviation peak & trough swings)
+function calcZigZagData(times, candles, devPct = 0.03, prec = 2) {
+  if (!candles || candles.length < 5) return [];
+  const f = Math.pow(10, prec);
+  const pivots = [];
+  let lastPivotType = 0; // 1 for peak, -1 for trough
+  let lastPivotIdx = 0;
+  let lastPivotPrice = candles[0].close;
+
+  pivots.push({ time: times[0], value: Math.round(lastPivotPrice * f) / f });
+
+  for (let i = 1; i < candles.length; i++) {
+    const price = candles[i].close;
+    const change = (price - lastPivotPrice) / lastPivotPrice;
+
+    if (lastPivotType === 0) {
+      if (change >= devPct) {
+        lastPivotType = 1; lastPivotIdx = i; lastPivotPrice = price;
+        pivots.push({ time: times[i], value: Math.round(price * f) / f });
+      } else if (change <= -devPct) {
+        lastPivotType = -1; lastPivotIdx = i; lastPivotPrice = price;
+        pivots.push({ time: times[i], value: Math.round(price * f) / f });
+      }
+    } else if (lastPivotType === 1) {
+      if (price > lastPivotPrice) {
+        lastPivotIdx = i; lastPivotPrice = price;
+        pivots[pivots.length - 1] = { time: times[i], value: Math.round(price * f) / f };
+      } else if (change <= -devPct) {
+        lastPivotType = -1; lastPivotIdx = i; lastPivotPrice = price;
+        pivots.push({ time: times[i], value: Math.round(price * f) / f });
+      }
+    } else if (lastPivotType === -1) {
+      if (price < lastPivotPrice) {
+        lastPivotIdx = i; lastPivotPrice = price;
+        pivots[pivots.length - 1] = { time: times[i], value: Math.round(price * f) / f };
+      } else if (change >= devPct) {
+        lastPivotType = 1; lastPivotIdx = i; lastPivotPrice = price;
+        pivots.push({ time: times[i], value: Math.round(price * f) / f });
+      }
+    }
+  }
+  return pivots;
+}
+
+// Stochastic Oscillator (%K 14, %D 3)
+function calcStochasticData(times, candles, period = 14, smoothK = 3, smoothD = 3) {
+  if (!candles || candles.length < period) return { k: [], d: [] };
+  const rawK = [];
+  for (let i = 0; i < candles.length; i++) {
+    if (i < period - 1) continue;
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - period + 1; j <= i; j++) {
+      if (candles[j].high > hh) hh = candles[j].high;
+      if (candles[j].low < ll) ll = candles[j].low;
+    }
+    const denom = hh - ll;
+    const kVal = denom === 0 ? 50 : ((candles[i].close - ll) / denom) * 100;
+    rawK.push({ time: times[i], value: Math.max(0, Math.min(100, kVal)) });
+  }
+
+  // Smooth K and D
+  const kLine = [];
+  for (let i = 0; i < rawK.length; i++) {
+    if (i < smoothK - 1) continue;
+    let sum = 0;
+    for (let s = 0; s < smoothK; s++) sum += rawK[i - s].value;
+    kLine.push({ time: rawK[i].time, value: +(sum / smoothK).toFixed(1) });
+  }
+
+  const dLine = [];
+  for (let i = 0; i < kLine.length; i++) {
+    if (i < smoothD - 1) continue;
+    let sum = 0;
+    for (let s = 0; s < smoothD; s++) sum += kLine[i - s].value;
+    dLine.push({ time: kLine[i].time, value: +(sum / smoothD).toFixed(1) });
+  }
+  return { k: kLine, d: dLine };
+}
+
+// Stochastic RSI (Stoch of RSI 14)
+function calcStochRSIData(times, closes, rsiPeriod = 14, stochPeriod = 14) {
+  const rsi = calcRSIData(times, closes, rsiPeriod);
+  if (!rsi || rsi.length < stochPeriod) return [];
+  const result = [];
+  for (let i = 0; i < rsi.length; i++) {
+    if (i < stochPeriod - 1) continue;
+    let minR = Infinity, maxR = -Infinity;
+    for (let j = i - stochPeriod + 1; j <= i; j++) {
+      if (rsi[j].value < minR) minR = rsi[j].value;
+      if (rsi[j].value > maxR) maxR = rsi[j].value;
+    }
+    const denom = maxR - minR;
+    const stochVal = denom === 0 ? 50 : ((rsi[i].value - minR) / denom) * 100;
+    result.push({ time: rsi[i].time, value: +Math.max(0, Math.min(100, stochVal)).toFixed(1) });
+  }
+  return result;
+}
+
+// Awesome Oscillator (AO: SMA 5 median - SMA 34 median)
+function calcAwesomeOscillatorData(times, candles) {
+  if (!candles || candles.length < 34) return [];
+  const medians = candles.map(c => (c.high + c.low) / 2);
+  const result = [];
+  for (let i = 33; i < candles.length; i++) {
+    let sum5 = 0;
+    for (let k = 0; k < 5; k++) sum5 += medians[i - k];
+    let sum34 = 0;
+    for (let k = 0; k < 34; k++) sum34 += medians[i - k];
+    const ao = (sum5 / 5) - (sum34 / 34);
+    result.push({ time: times[i], value: +ao.toFixed(2) });
+  }
+  return result;
+}
+
+// Commodity Channel Index (CCI 20)
+function calcCCIData(times, candles, period = 20) {
+  if (!candles || candles.length < period) return [];
+  const tp = candles.map(c => (c.high + c.low + c.close) / 3);
+  const result = [];
+  for (let i = period - 1; i < candles.length; i++) {
+    let sum = 0;
+    for (let k = 0; k < period; k++) sum += tp[i - k];
+    const mean = sum / period;
+    let mdSum = 0;
+    for (let k = 0; k < period; k++) mdSum += Math.abs(tp[i - k] - mean);
+    const meanDev = mdSum / period;
+    const cci = meanDev === 0 ? 0 : (tp[i] - mean) / (0.015 * meanDev);
+    result.push({ time: times[i], value: +cci.toFixed(1) });
+  }
+  return result;
+}
+
+// Williams %R (14)
+function calcWilliamsRData(times, candles, period = 14) {
+  if (!candles || candles.length < period) return [];
+  const result = [];
+  for (let i = period - 1; i < candles.length; i++) {
+    let hh = -Infinity, ll = Infinity;
+    for (let k = i - period + 1; k <= i; k++) {
+      if (candles[k].high > hh) hh = candles[k].high;
+      if (candles[k].low < ll) ll = candles[k].low;
+    }
+    const denom = hh - ll;
+    const wr = denom === 0 ? -50 : ((hh - candles[i].close) / denom) * -100;
+    result.push({ time: times[i], value: +wr.toFixed(1) });
+  }
+  return result;
+}
+
+// On Balance Volume (OBV)
+function calcOBVData(times, candles) {
+  if (!candles || !candles.length) return [];
+  const result = [];
+  let cumObv = 0;
+  result.push({ time: times[0], value: 0 });
+  for (let i = 1; i < candles.length; i++) {
+    const vol = candles[i].volume || 10;
+    if (candles[i].close > candles[i - 1].close) cumObv += vol;
+    else if (candles[i].close < candles[i - 1].close) cumObv -= vol;
+    result.push({ time: times[i], value: Math.round(cumObv) });
+  }
+  return result;
+}
+
+// Chaikin Money Flow (CMF 20)
+function calcCMFData(times, candles, period = 20) {
+  if (!candles || candles.length < period) return [];
+  const result = [];
+  for (let i = period - 1; i < candles.length; i++) {
+    let mfvSum = 0, volSum = 0;
+    for (let k = i - period + 1; k <= i; k++) {
+      const c = candles[k];
+      const range = c.high - c.low;
+      const vol = c.volume || 10;
+      const clv = range === 0 ? 0 : ((c.close - c.low) - (c.high - c.close)) / range;
+      mfvSum += clv * vol;
+      volSum += vol;
+    }
+    const cmf = volSum === 0 ? 0 : mfvSum / volSum;
+    result.push({ time: times[i], value: +cmf.toFixed(3) });
+  }
+  return result;
+}
+
+// Net Volume
+function calcNetVolumeData(times, candles) {
+  if (!candles || !candles.length) return [];
+  return candles.map(c => ({
+    time: c.time,
+    value: c.close >= c.open ? (c.volume || 10) : -(c.volume || 10)
+  }));
+}
+
+// Volume Oscillator
+function calcVolumeOscillatorData(times, candles, sPeriod = 5, lPeriod = 10) {
+  if (!candles || candles.length < lPeriod) return [];
+  const vols = candles.map(c => c.volume || 10);
+  const emaShort = calcEMAData(times, vols, sPeriod, 2);
+  const emaLong = calcEMAData(times, vols, lPeriod, 2);
+  const longMap = new Map(emaLong.map(x => [x.time, x.value]));
+  const result = [];
+  for (let item of emaShort) {
+    const lVal = longMap.get(item.time);
+    if (lVal && lVal > 0) {
+      const osc = ((item.value - lVal) / lVal) * 100;
+      result.push({ time: item.time, value: +osc.toFixed(1) });
+    }
+  }
+  return result;
+}
+
+// Guppy Multiple Moving Average (GMMA)
+function calcGMMAData(times, closes, prec = 2) {
+  const shortPeriods = [3, 5, 8, 10, 12, 15];
+  const longPeriods = [30, 35, 40, 45, 50, 60];
+  const gmma = { short: [], long: [] };
+  shortPeriods.forEach(p => gmma.short.push(calcEMAData(times, closes, p, prec)));
+  longPeriods.forEach(p => gmma.long.push(calcEMAData(times, closes, p, prec)));
+  return gmma;
+}
+
+// Typical Price, Median Price, Average Price
+function calcTypicalPriceData(times, candles, prec = 2) {
+  const f = Math.pow(10, prec);
+  return candles.map(c => ({ time: c.time, value: Math.round(((c.high + c.low + c.close) / 3) * f) / f }));
+}
+function calcMedianPriceData(times, candles, prec = 2) {
+  const f = Math.pow(10, prec);
+  return candles.map(c => ({ time: c.time, value: Math.round(((c.high + c.low) / 2) * f) / f }));
+}
+function calcAveragePriceData(times, candles, prec = 2) {
+  const f = Math.pow(10, prec);
+  return candles.map(c => ({ time: c.time, value: Math.round(((c.open + c.high + c.low + c.close) / 4) * f) / f }));
+}
+
+// 52 Week High / Low Range
+function calc52WeekHighLowData(times, candles, prec = 2) {
+  if (!candles || !candles.length) return { high: [], low: [] };
+  const f = Math.pow(10, prec);
+  let maxH = -Infinity, minL = Infinity;
+  candles.forEach(c => {
+    if (c.high > maxH) maxH = c.high;
+    if (c.low < minL) minL = c.low;
+  });
+  const highVal = Math.round(maxH * f) / f;
+  const lowVal = Math.round(minL * f) / f;
+  return {
+    high: times.map(t => ({ time: t, value: highVal })),
+    low: times.map(t => ({ time: t, value: lowVal }))
+  };
+}
+
+// ==========================================================================
+// TRADINGVIEW SEARCHABLE INDICATORS MODAL ENGINE & FAVORITES
+// ==========================================================================
+
+function renderTradingViewIndicatorsModalList() {
+  const container = document.getElementById('tv-ind-items-container');
+  if (!container) return;
+
+  const q = (document.getElementById('tv-ind-search-input')?.value || '').toLowerCase().trim();
+  const activeTab = document.querySelector('.tv-ind-tab-pill.active')?.getAttribute('data-tab') || 'all';
+
+  let html = '';
+  let visibleCount = 0;
+
+  TV_INDICATORS_CATALOG.forEach(item => {
+    const isFav = favoriteIndicators.includes(item.id);
+    const isActive = !!activeIndicators[item.id];
+
+    // Filter by search query
+    if (q && !item.name.toLowerCase().includes(q) && !item.id.toLowerCase().includes(q) && !item.tag.toLowerCase().includes(q)) {
+      return;
+    }
+
+    // Filter by active category tab
+    if (activeTab === 'fav' && !isFav) return;
+    if (activeTab === 'overlay' && item.category !== 'overlay') return;
+    if (activeTab === 'momentum' && item.category !== 'momentum') return;
+    if (activeTab === 'volume' && item.category !== 'volume') return;
+    if (activeTab === 'crypto' && item.category !== 'crypto') return;
+
+    visibleCount++;
+    html += `
+      <div class="tv-ind-row ${isActive ? 'active' : ''}" data-id="${item.id}" data-category="${item.category}" onclick="toggleIndicatorKey('${item.id}', !activeIndicators['${item.id}'])">
+        <div class="tv-ind-row-left">
+          <button class="tv-ind-star-btn ${isFav ? 'favorited' : ''}" onclick="event.stopPropagation(); toggleIndicatorFavorite('${item.id}', this)" title="${isFav ? 'Rimuovi dai Preferiti' : 'Aggiungi ai Preferiti'}">
+            ${isFav ? '★' : '☆'}
+          </button>
+          <div class="tv-ind-name-box">
+            <span class="tv-ind-name">${item.name}</span>
+            <span class="tv-ind-badge ${item.category}">${item.tag}</span>
+          </div>
+        </div>
+        <div class="tv-ind-row-right">
+          <label class="switch" onclick="event.stopPropagation()">
+            <input type="checkbox" data-ind-key="${item.id}" ${isActive ? 'checked' : ''} onchange="toggleIndicatorKey('${item.id}', this.checked)">
+            <span class="slider-toggle"></span>
+          </label>
+        </div>
+      </div>
+    `;
+  });
+
+  if (visibleCount === 0) {
+    html = '<div style="text-align:center; padding:30px; color:#787b86; font-size:12px;">Nessun indicatore corrisponde alla ricerca.</div>';
+  }
+
+  container.innerHTML = html;
+
+  const countBadge = document.getElementById('tv-ind-count-badge');
+  if (countBadge) {
+    countBadge.innerText = q ? `${visibleCount} Risultati` : `${TV_INDICATORS_CATALOG.length} Scripts`;
+  }
+}
+
+function toggleIndicatorFavorite(id, btn) {
+  const idx = favoriteIndicators.indexOf(id);
+  if (idx > -1) {
+    favoriteIndicators.splice(idx, 1);
+  } else {
+    favoriteIndicators.push(id);
+  }
+  try {
+    localStorage.setItem('tpu_fav_indicators_v27', JSON.stringify(favoriteIndicators));
+  } catch(e) {}
+
+  renderTradingViewIndicatorsModalList();
+}
+
+function filterTradingViewIndicators(query) {
+  renderTradingViewIndicatorsModalList();
+}
+
+function setTradingViewIndicatorCategory(cat, btn) {
+  document.querySelectorAll('.tv-ind-tab-pill').forEach(b => {
+    b.classList.remove('active');
+    b.removeAttribute('data-tab');
+  });
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('data-tab', cat);
+  }
+  renderTradingViewIndicatorsModalList();
+}
+
 function toggleIndicatorKey(key, isChecked) {
   activeIndicators[key] = isChecked;
   try {
     localStorage.setItem('tpu_active_indicators_v27', JSON.stringify(activeIndicators));
   } catch(e) {}
 
-  // Synchronize all matching checkboxes
-  const inputs = document.querySelectorAll(`input[data-ind-key="${key}"]`);
-  inputs.forEach(inp => {
-    if (inp.checked !== isChecked) inp.checked = isChecked;
-  });
+  // If momentum indicator enabled, activate momentum pane
+  const item = TV_INDICATORS_CATALOG.find(x => x.id === key);
+  if (item) {
+    if (item.category === 'momentum' && isChecked) {
+      activeIndicators.momentumPane = true;
+      activeMomentumMode = key;
+      const momPane = document.getElementById('chart-momentum-pane');
+      if (momPane) momPane.style.display = 'block';
+    } else if (item.category === 'volume' && isChecked) {
+      activeIndicators.volumePane = true;
+      const volPane = document.getElementById('chart-volume-pane');
+      if (volPane) volPane.style.display = 'block';
+    }
+  }
 
   updateIndicatorsBadge();
+  renderTradingViewIndicatorsModalList();
 
   if (window.currentCandles) {
     renderChartData(window.currentCandles);
+  }
+
+  if (window.showToast && item) {
+    window.showToast(`${item.name}: ${isChecked ? 'Attivato sul grafico' : 'Disattivato'}`, isChecked ? 'success' : 'info');
   }
 }
 
@@ -1155,8 +2008,10 @@ function updateIndicatorsBadge() {
   const activeCount = Object.keys(activeIndicators).filter(k => activeIndicators[k] === true).length;
   const badges = document.querySelectorAll('.ind-active-count-badge');
   badges.forEach(b => {
-    b.innerText = `${activeCount} Attivi`;
+    if (b.id !== 'tv-ind-count-badge') b.innerText = `${activeCount} Attivi`;
   });
+  const summary = document.getElementById('tv-ind-active-summary');
+  if (summary) summary.innerText = `${activeCount} indicatori attivi sul grafico`;
   const mainBtn = document.getElementById('btn-ind-header-label');
   if (mainBtn) {
     mainBtn.innerText = `Indicatori (${activeCount})`;
@@ -1167,37 +2022,17 @@ function openTradingViewIndicatorsModal() {
   const modal = document.getElementById('tradingview-indicators-modal');
   if (modal) {
     modal.classList.add('open');
+    renderTradingViewIndicatorsModalList();
     updateIndicatorsBadge();
+    setTimeout(() => {
+      document.getElementById('tv-ind-search-input')?.focus();
+    }, 100);
   }
 }
 
 function closeTradingViewIndicatorsModal() {
   const modal = document.getElementById('tradingview-indicators-modal');
   if (modal) modal.classList.remove('open');
-}
-
-function filterTradingViewIndicators(query) {
-  const q = (query || '').toLowerCase().trim();
-  const rows = document.querySelectorAll('.tv-ind-card');
-  rows.forEach(r => {
-    const text = (r.innerText || '').toLowerCase();
-    const matches = !q || text.includes(q);
-    r.style.display = matches ? 'flex' : 'none';
-  });
-}
-
-function setTradingViewIndicatorCategory(cat, btn) {
-  document.querySelectorAll('.tv-ind-tab-pill').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const rows = document.querySelectorAll('.tv-ind-card');
-  rows.forEach(r => {
-    const rCat = r.getAttribute('data-category') || 'all';
-    if (cat === 'all' || rCat === cat) {
-      r.style.display = 'flex';
-    } else {
-      r.style.display = 'none';
-    }
-  });
 }
 
 function resetIndicatorsToDefault() {
@@ -1218,23 +2053,32 @@ function resetIndicatorsToDefault() {
     rsi: true,
     macd: false,
     aroon: false,
-    adx: false,
-    chaikin: false
+    adx: false
   };
+  // Reset all other custom keys to false
+  for (let k in activeIndicators) {
+    activeIndicators[k] = defaults[k] !== undefined ? defaults[k] : false;
+  }
   Object.assign(activeIndicators, defaults);
+
   try {
     localStorage.setItem('tpu_active_indicators_v27', JSON.stringify(activeIndicators));
   } catch(e) {}
 
-  document.querySelectorAll('input[data-ind-key]').forEach(inp => {
-    const k = inp.getAttribute('data-ind-key');
-    if (k && defaults[k] !== undefined) inp.checked = defaults[k];
-  });
-
   updateIndicatorsBadge();
+  renderTradingViewIndicatorsModalList();
+
   if (window.currentCandles) renderChartData(window.currentCandles);
   if (window.showToast) window.showToast('Indicatori ripristinati alla configurazione istituzionale di default!', 'info');
 }
+
+// Initial modal list build
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderTradingViewIndicatorsModalList);
+} else {
+  setTimeout(renderTradingViewIndicatorsModalList, 100);
+}
+
 
 // Rome Real-Time Clock Synchronization & Minute Tick Broadcast
 function startRomeClock() {
