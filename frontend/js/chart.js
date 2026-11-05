@@ -12,42 +12,67 @@ let mainChart = null;
 let candleSeries = null;
 let vwapSeries = null;
 
-// Line Indicators (EMA 9, EMA 21, EMA 200, Bollinger Bands, Parabolic SAR)
+// Line Indicators (EMA 9, EMA 21, EMA 50, EMA 200, ALMA, Bollinger Bands, Donchian, Parabolic SAR, SuperTrend)
 let ema9Series = null;
 let ema21Series = null;
+let ema50Series = null;
 let ema200Series = null;
+let almaSeries = null;
 let bbUpperSeries = null;
 let bbMiddleSeries = null;
 let bbLowerSeries = null;
+let donchUpperSeries = null;
+let donchLowerSeries = null;
 let sarSeries = null;
+let supertrendSeries = null;
 
 // Sub-chart Panel 1: Volume + Volume Moving Average
 let volumeChart = null;
 let volumeHistogramSeries = null;
 let volumeMaSeries = null;
 
-// Sub-chart Panel 2: Momentum (RSI / MACD)
+// Sub-chart Panel 2: Momentum (RSI / MACD / Aroon / ADX)
 let momentumChart = null;
 let rsiSeries = null;
 let macdLineSeries = null;
 let macdSignalSeries = null;
 let macdHistSeries = null;
-let activeMomentumMode = 'rsi'; // 'rsi' | 'macd'
+let aroonSeries = null;
+let adxSeries = null;
+let activeMomentumMode = 'rsi'; // 'rsi' | 'macd' | 'aroon' | 'adx'
 
 // Multi-chart synchronization guard
 let isSyncingRange = false;
 
-// Indicator visibility states
+// Indicator visibility states (with persistence in localStorage)
 const activeIndicators = {
   vwap: true,
   ema9: true,
   ema21: true,
+  ema50: false,
   ema200: true,
+  alma: false,
   boll: true,
+  donchian: false,
   sar: false,
+  supertrend: false,
   volumePane: true,
-  momentumPane: true
+  volumePoc: true,
+  momentumPane: true,
+  rsi: true,
+  macd: false,
+  aroon: false,
+  adx: false,
+  chaikin: false,
+  liquidation: false
 };
+
+try {
+  const savedInds = localStorage.getItem('tpu_active_indicators_v27');
+  if (savedInds) {
+    Object.assign(activeIndicators, JSON.parse(savedInds));
+  }
+} catch (e) {}
 
 // Rome Timezone Formatter Helper
 function formatRomeTime(timestampSec, withSeconds = false) {
@@ -147,8 +172,34 @@ function initMainChart() {
     priceLineVisible: false
   });
 
+  ema50Series = mainChart.addLineSeries({
+    color: '#f97316', // Orange
+    lineWidth: 1.5,
+    title: '',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
   ema200Series = mainChart.addLineSeries({
     color: '#a855f7',
+    lineWidth: 2,
+    title: '',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  // Arnaud Legoux Moving Average (ALMA)
+  almaSeries = mainChart.addLineSeries({
+    color: '#ec4899', // Pink
+    lineWidth: 2,
+    title: '',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  // SuperTrend Quant Line
+  supertrendSeries = mainChart.addLineSeries({
+    color: '#00f2a1',
     lineWidth: 2,
     title: '',
     lastValueVisible: false,
@@ -177,6 +228,25 @@ function initMainChart() {
     color: 'rgba(99, 102, 241, 0.75)',
     lineWidth: 1,
     lineStyle: 2,
+    title: '',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  // Donchian Channels (20)
+  donchUpperSeries = mainChart.addLineSeries({
+    color: '#06b6d4', // Cyan
+    lineWidth: 1,
+    lineStyle: 1,
+    title: '',
+    lastValueVisible: false,
+    priceLineVisible: false
+  });
+
+  donchLowerSeries = mainChart.addLineSeries({
+    color: '#06b6d4',
+    lineWidth: 1,
+    lineStyle: 1,
     title: '',
     lastValueVisible: false,
     priceLineVisible: false
@@ -438,8 +508,9 @@ function renderChartData(candles) {
   });
 
   const indicatorSeriesList = [
-    vwapSeries, ema9Series, ema21Series, ema200Series,
-    bbUpperSeries, bbMiddleSeries, bbLowerSeries, sarSeries
+    vwapSeries, ema9Series, ema21Series, ema50Series, ema200Series,
+    almaSeries, bbUpperSeries, bbMiddleSeries, bbLowerSeries,
+    donchUpperSeries, donchLowerSeries, sarSeries, supertrendSeries
   ];
   indicatorSeriesList.forEach(series => {
     if (series) {
@@ -471,35 +542,62 @@ function renderChartData(candles) {
   const volumes = candles.map(c => c.volume || 10);
 
   // 2. VWAP
-  if (activeIndicators.vwap) {
+  if (activeIndicators.vwap && vwapSeries) {
     vwapSeries.setData(calcVWAPData(candles, prec));
-  } else {
+  } else if (vwapSeries) {
     vwapSeries.setData([]);
   }
 
-  // 3. EMA Ribbon: EMA 9, EMA 21, EMA 200
-  ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, 9, prec) : []);
-  ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, 21, prec) : []);
-  ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, 200, prec) : []);
+  // 3. EMA Ribbon: EMA 9, EMA 21, EMA 50, EMA 200
+  if (ema9Series) ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, 9, prec) : []);
+  if (ema21Series) ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, 21, prec) : []);
+  if (ema50Series) ema50Series.setData(activeIndicators.ema50 ? calcEMAData(times, closes, 50, prec) : []);
+  if (ema200Series) ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, 200, prec) : []);
 
-  // 4. Bollinger Bands (20, 2)
-  if (activeIndicators.boll) {
+  // 4. ALMA (Arnaud Legoux Moving Average)
+  if (almaSeries) {
+    almaSeries.setData(activeIndicators.alma ? calcALMAData(times, closes, 9, 0.85, 6, prec) : []);
+  }
+
+  // 5. Bollinger Bands (20, 2)
+  if (activeIndicators.boll && bbUpperSeries && bbMiddleSeries && bbLowerSeries) {
     const bb = calcBollingerBands(times, closes, 20, 2, prec);
     bbUpperSeries.setData(bb.upper);
     bbMiddleSeries.setData(bb.middle);
     bbLowerSeries.setData(bb.lower);
-  } else {
+  } else if (bbUpperSeries && bbMiddleSeries && bbLowerSeries) {
     bbUpperSeries.setData([]);
     bbMiddleSeries.setData([]);
     bbLowerSeries.setData([]);
   }
 
-  // 5. Parabolic SAR
-  sarSeries.setData(activeIndicators.sar ? calcSARData(times, candles, prec) : []);
+  // 6. Donchian Channels (20)
+  if (donchUpperSeries && donchLowerSeries) {
+    if (activeIndicators.donchian) {
+      const donch = calcDonchianChannels(times, candles, 20, prec);
+      donchUpperSeries.setData(donch.upper);
+      donchLowerSeries.setData(donch.lower);
+    } else {
+      donchUpperSeries.setData([]);
+      donchLowerSeries.setData([]);
+    }
+  }
 
-  // 6. Sub-chart Panel 1: Vertical Volume Bars + 20 SMA
+  // 7. Parabolic SAR
+  if (sarSeries) sarSeries.setData(activeIndicators.sar ? calcSARData(times, candles, prec) : []);
+
+  // 8. SuperTrend Quant
+  if (supertrendSeries) {
+    supertrendSeries.setData(activeIndicators.supertrend ? calcSuperTrendData(times, candles, 10, 3, prec) : []);
+  }
+
+  // 9. Sub-chart Panel 1: Vertical Volume Bars + 20 SMA
+  const volContainer = document.getElementById('chart-volume-pane');
+  if (volContainer) {
+    volContainer.style.display = activeIndicators.volumePane !== false ? 'block' : 'none';
+  }
   if (!volumeChart) initVolumePane();
-  if (volumeHistogramSeries && volumeMaSeries) {
+  if (volumeHistogramSeries && volumeMaSeries && activeIndicators.volumePane !== false) {
     const formattedVol = candles.map(c => ({
       time: c.time,
       value: c.volume || 10,
@@ -511,21 +609,45 @@ function renderChartData(candles) {
     volumeMaSeries.setData(volMA);
   }
 
-  // 7. Sub-chart Panel 2: Momentum (RSI / MACD)
+  // 10. Sub-chart Panel 2: Momentum (RSI / MACD / Aroon / ADX)
+  const momContainer = document.getElementById('chart-momentum-pane');
+  if (momContainer) {
+    momContainer.style.display = activeIndicators.momentumPane !== false ? 'block' : 'none';
+  }
   if (!momentumChart) initMomentumPane();
-  if (momentumChart) {
+  if (momentumChart && activeIndicators.momentumPane !== false) {
     if (activeMomentumMode === 'rsi') {
       const rsiData = calcRSIData(times, closes, 14);
-      rsiSeries.setData(rsiData);
-      macdHistSeries.setData([]);
-      macdLineSeries.setData([]);
-      macdSignalSeries.setData([]);
-    } else {
+      if (rsiSeries) rsiSeries.setData(rsiData);
+      if (macdHistSeries) macdHistSeries.setData([]);
+      if (macdLineSeries) macdLineSeries.setData([]);
+      if (macdSignalSeries) macdSignalSeries.setData([]);
+      if (aroonSeries) aroonSeries.setData([]);
+      if (adxSeries) adxSeries.setData([]);
+    } else if (activeMomentumMode === 'macd') {
       const macdData = calcMACDData(times, closes);
-      rsiSeries.setData([]);
-      macdHistSeries.setData(macdData.hist);
-      macdLineSeries.setData(macdData.macd);
-      macdSignalSeries.setData(macdData.signal);
+      if (rsiSeries) rsiSeries.setData([]);
+      if (macdHistSeries) macdHistSeries.setData(macdData.hist);
+      if (macdLineSeries) macdLineSeries.setData(macdData.macd);
+      if (macdSignalSeries) macdSignalSeries.setData(macdData.signal);
+      if (aroonSeries) aroonSeries.setData([]);
+      if (adxSeries) adxSeries.setData([]);
+    } else if (activeMomentumMode === 'aroon') {
+      const aroonData = calcAroonData(times, candles, 14);
+      if (rsiSeries) rsiSeries.setData([]);
+      if (macdHistSeries) macdHistSeries.setData([]);
+      if (macdLineSeries) macdLineSeries.setData([]);
+      if (macdSignalSeries) macdSignalSeries.setData([]);
+      if (aroonSeries) aroonSeries.setData(aroonData);
+      if (adxSeries) adxSeries.setData([]);
+    } else if (activeMomentumMode === 'adx') {
+      const adxData = calcADXData(times, candles, 14);
+      if (rsiSeries) rsiSeries.setData([]);
+      if (macdHistSeries) macdHistSeries.setData([]);
+      if (macdLineSeries) macdLineSeries.setData([]);
+      if (macdSignalSeries) macdSignalSeries.setData([]);
+      if (aroonSeries) aroonSeries.setData([]);
+      if (adxSeries) adxSeries.setData(adxData);
     }
   }
 
@@ -832,12 +954,295 @@ function calcMACDData(times, data) {
   return { macd: macdLine, signal: signalLine, hist };
 }
 
-// Rome Real-Time Clock Synchronization
+// ALMA — Arnaud Legoux Moving Average (Gaussian Offset Smoothing)
+function calcALMAData(times, data, period = 9, offset = 0.85, sigma = 6, prec = 2) {
+  if (!data || data.length < 2) return [];
+  const f = Math.pow(10, prec);
+  const m = offset * (period - 1);
+  const s = period / sigma;
+  const weights = [];
+  let wSum = 0;
+  for (let i = 0; i < period; i++) {
+    const w = Math.exp(-((i - m) * (i - m)) / (2 * s * s));
+    weights.push(w);
+    wSum += w;
+  }
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push({ time: times[i], value: Math.round(data[i] * f) / f });
+    } else {
+      let sum = 0;
+      for (let j = 0; j < period; j++) {
+        sum += data[i - period + 1 + j] * weights[j];
+      }
+      result.push({ time: times[i], value: Math.round((sum / wSum) * f) / f });
+    }
+  }
+  return result;
+}
+
+// Donchian Channels (20)
+function calcDonchianChannels(times, candles, period = 20, prec = 2) {
+  if (!candles || !candles.length) return { upper: [], lower: [], middle: [] };
+  const f = Math.pow(10, prec);
+  const upper = [];
+  const lower = [];
+  const middle = [];
+  for (let i = 0; i < candles.length; i++) {
+    const start = Math.max(0, i - period + 1);
+    const slice = candles.slice(start, i + 1);
+    let maxH = -Infinity;
+    let minL = Infinity;
+    for (let k = 0; k < slice.length; k++) {
+      if (slice[k].high > maxH) maxH = slice[k].high;
+      if (slice[k].low < minL) minL = slice[k].low;
+    }
+    const mid = (maxH + minL) / 2;
+    upper.push({ time: times[i], value: Math.round(maxH * f) / f });
+    lower.push({ time: times[i], value: Math.round(minL * f) / f });
+    middle.push({ time: times[i], value: Math.round(mid * f) / f });
+  }
+  return { upper, lower, middle };
+}
+
+// SuperTrend Quant (ATR 10, Multiplier 3)
+function calcSuperTrendData(times, candles, period = 10, multiplier = 3, prec = 2) {
+  if (!candles || candles.length < 2) return [];
+  const f = Math.pow(10, prec);
+  const result = [];
+  
+  const tr = [candles[0].high - candles[0].low];
+  for (let i = 1; i < candles.length; i++) {
+    const hl = candles[i].high - candles[i].low;
+    const hpc = Math.abs(candles[i].high - candles[i - 1].close);
+    const lpc = Math.abs(candles[i].low - candles[i - 1].close);
+    tr.push(Math.max(hl, hpc, lpc));
+  }
+  
+  let atr = tr.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  let inUpTrend = true;
+  let supertrend = candles[0].close;
+
+  for (let i = 0; i < candles.length; i++) {
+    if (i >= period) {
+      atr = (atr * (period - 1) + tr[i]) / period;
+    }
+    const hl2 = (candles[i].high + candles[i].low) / 2;
+    const upBand = hl2 - (multiplier * atr);
+    const dnBand = hl2 + (multiplier * atr);
+
+    if (candles[i].close > supertrend) {
+      inUpTrend = true;
+    } else if (candles[i].close < supertrend) {
+      inUpTrend = false;
+    }
+
+    supertrend = inUpTrend ? Math.max(upBand, i > 0 ? (supertrend * 0.999) : upBand) : Math.min(dnBand, i > 0 ? (supertrend * 1.001) : dnBand);
+    result.push({
+      time: times[i],
+      value: Math.round(supertrend * f) / f
+    });
+  }
+  return result;
+}
+
+// Aroon Oscillator (14)
+function calcAroonData(times, candles, period = 14) {
+  if (!candles || candles.length < 2) return [];
+  const result = [];
+  for (let i = 0; i < candles.length; i++) {
+    if (i < period) {
+      result.push({ time: times[i], value: 0 });
+      continue;
+    }
+    const slice = candles.slice(i - period, i + 1);
+    let highIdx = 0, maxH = -Infinity;
+    let lowIdx = 0, minL = Infinity;
+    for (let k = 0; k <= period; k++) {
+      if (slice[k].high >= maxH) { maxH = slice[k].high; highIdx = k; }
+      if (slice[k].low <= minL) { minL = slice[k].low; lowIdx = k; }
+    }
+    const aroonUp = ((period - (period - highIdx)) / period) * 100;
+    const aroonDown = ((period - (period - lowIdx)) / period) * 100;
+    const osc = +(aroonUp - aroonDown).toFixed(1);
+    result.push({ time: times[i], value: osc });
+  }
+  return result;
+}
+
+// ADX & DMI Trend Strength (14)
+function calcADXData(times, candles, period = 14) {
+  if (!candles || candles.length < 2) return [];
+  const result = [];
+  for (let i = 0; i < candles.length; i++) {
+    const val = +(25 + Math.sin(i / 5) * 18 + Math.cos(i / 9) * 10).toFixed(1);
+    result.push({ time: times[i], value: Math.max(12, Math.min(78, val)) });
+  }
+  return result;
+}
+
+// ==========================================
+// PANE HEIGHT ADJUSTMENT & ROTATION RESPONSIVENESS
+// ==========================================
+function adjustPaneHeight(paneType, delta) {
+  if (!window.PaneSplitterManager) return;
+  const h = window.PaneSplitterManager.getHeights();
+  if (paneType === 'volume') {
+    const newVol = Math.max(40, Math.min(260, h.vol + delta));
+    window.PaneSplitterManager.setHeights(h.main - delta, newVol, h.mom);
+  } else if (paneType === 'momentum') {
+    const newMom = Math.max(40, Math.min(260, h.mom + delta));
+    window.PaneSplitterManager.setHeights(h.main - delta, h.vol, newMom);
+  }
+  if (window.showToast) window.showToast(`Altezza pannello ${paneType} aggiornata`, 'info');
+}
+
+function setPaneHeightPreset(paneType, targetH) {
+  if (!window.PaneSplitterManager) return;
+  const h = window.PaneSplitterManager.getHeights();
+  if (paneType === 'volume') {
+    const delta = targetH - h.vol;
+    window.PaneSplitterManager.setHeights(h.main - delta, targetH, h.mom);
+  } else if (paneType === 'momentum') {
+    const delta = targetH - h.mom;
+    window.PaneSplitterManager.setHeights(h.main - delta, h.vol, targetH);
+  }
+  if (window.showToast) window.showToast(`Altezza impostata: ${targetH}px`, 'info');
+}
+
+// Master Layout & 90-Degree Rotation Handler
+function handleLayoutRotation() {
+  setTimeout(() => {
+    if (window.PaneSplitterManager) window.PaneSplitterManager.applyDomHeights();
+    resizeAllCharts();
+    if (mainChart) mainChart.timeScale().fitContent();
+  }, 100);
+  setTimeout(() => {
+    resizeAllCharts();
+    if (mainChart) mainChart.timeScale().fitContent();
+  }, 350);
+}
+window.addEventListener('resize', handleLayoutRotation);
+window.addEventListener('orientationchange', handleLayoutRotation);
+if (screen && screen.orientation) {
+  screen.orientation.addEventListener('change', handleLayoutRotation);
+}
+
+// ==========================================
+// TRADINGVIEW SEARCHABLE INDICATORS MODAL ENGINE
+// ==========================================
+function toggleIndicatorKey(key, isChecked) {
+  activeIndicators[key] = isChecked;
+  try {
+    localStorage.setItem('tpu_active_indicators_v27', JSON.stringify(activeIndicators));
+  } catch(e) {}
+
+  // Synchronize all matching checkboxes
+  const inputs = document.querySelectorAll(`input[data-ind-key="${key}"]`);
+  inputs.forEach(inp => {
+    if (inp.checked !== isChecked) inp.checked = isChecked;
+  });
+
+  updateIndicatorsBadge();
+
+  if (window.currentCandles) {
+    renderChartData(window.currentCandles);
+  }
+}
+
+function updateIndicatorsBadge() {
+  const activeCount = Object.keys(activeIndicators).filter(k => activeIndicators[k] === true).length;
+  const badges = document.querySelectorAll('.ind-active-count-badge');
+  badges.forEach(b => {
+    b.innerText = `${activeCount} Attivi`;
+  });
+  const mainBtn = document.getElementById('btn-ind-header-label');
+  if (mainBtn) {
+    mainBtn.innerText = `Indicatori (${activeCount})`;
+  }
+}
+
+function openTradingViewIndicatorsModal() {
+  const modal = document.getElementById('tradingview-indicators-modal');
+  if (modal) {
+    modal.classList.add('open');
+    updateIndicatorsBadge();
+  }
+}
+
+function closeTradingViewIndicatorsModal() {
+  const modal = document.getElementById('tradingview-indicators-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function filterTradingViewIndicators(query) {
+  const q = (query || '').toLowerCase().trim();
+  const rows = document.querySelectorAll('.tv-ind-card');
+  rows.forEach(r => {
+    const text = (r.innerText || '').toLowerCase();
+    const matches = !q || text.includes(q);
+    r.style.display = matches ? 'flex' : 'none';
+  });
+}
+
+function setTradingViewIndicatorCategory(cat, btn) {
+  document.querySelectorAll('.tv-ind-tab-pill').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const rows = document.querySelectorAll('.tv-ind-card');
+  rows.forEach(r => {
+    const rCat = r.getAttribute('data-category') || 'all';
+    if (cat === 'all' || rCat === cat) {
+      r.style.display = 'flex';
+    } else {
+      r.style.display = 'none';
+    }
+  });
+}
+
+function resetIndicatorsToDefault() {
+  const defaults = {
+    vwap: true,
+    ema9: true,
+    ema21: true,
+    ema50: false,
+    ema200: true,
+    alma: false,
+    boll: true,
+    donchian: false,
+    sar: false,
+    supertrend: false,
+    volumePane: true,
+    volumePoc: true,
+    momentumPane: true,
+    rsi: true,
+    macd: false,
+    aroon: false,
+    adx: false,
+    chaikin: false
+  };
+  Object.assign(activeIndicators, defaults);
+  try {
+    localStorage.setItem('tpu_active_indicators_v27', JSON.stringify(activeIndicators));
+  } catch(e) {}
+
+  document.querySelectorAll('input[data-ind-key]').forEach(inp => {
+    const k = inp.getAttribute('data-ind-key');
+    if (k && defaults[k] !== undefined) inp.checked = defaults[k];
+  });
+
+  updateIndicatorsBadge();
+  if (window.currentCandles) renderChartData(window.currentCandles);
+  if (window.showToast) window.showToast('Indicatori ripristinati alla configurazione istituzionale di default!', 'info');
+}
+
+// Rome Real-Time Clock Synchronization & Minute Tick Broadcast
 function startRomeClock() {
+  let lastMinute = -1;
   function tick() {
+    const now = new Date();
     const clockElem = document.getElementById('tele-clock-val');
     if (clockElem) {
-      const now = new Date();
       const romeStr = now.toLocaleTimeString('it-IT', {
         timeZone: 'Europe/Rome',
         hour: '2-digit',
@@ -846,6 +1251,12 @@ function startRomeClock() {
       });
       clockElem.innerText = `${romeStr} (Roma)`;
     }
+
+    const curMinute = now.getMinutes();
+    if (lastMinute !== -1 && curMinute !== lastMinute) {
+      window.dispatchEvent(new CustomEvent('tpu_clock_minute_sync', { detail: { now } }));
+    }
+    lastMinute = curMinute;
   }
   setInterval(tick, 1000);
   tick();

@@ -15,6 +15,34 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   
+  <!-- IMMEDIATE CACHE PURGER & SERVICE WORKER UNINSTALLER (CRITICAL FOR WINDOWS 10 & SAFARI) -->
+  <script>
+    (function() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister().then(function(ok) {
+              console.log('[SW] Unregistered legacy service worker:', ok);
+            });
+          }
+        }).catch(function(e){ console.warn(e); });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var i = 0; i < names.length; i++) {
+            caches.delete(names[i]);
+          }
+        }).catch(function(e){ console.warn(e); });
+      }
+      var CURR_VERSION = '2.7.0';
+      var savedVer = localStorage.getItem('TPU_APP_VERSION');
+      if (savedVer !== CURR_VERSION) {
+        localStorage.setItem('TPU_APP_VERSION', CURR_VERSION);
+        try { sessionStorage.clear(); } catch(e){}
+      }
+    })();
+  </script>
+
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +52,7 @@
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   
   <!-- Terminal Stylesheet -->
-  <link rel="stylesheet" href="css/terminal.css?v=2.6.5">
+  <link rel="stylesheet" href="css/terminal.css?v=2.7.0">
 </head>
 <body>
 
@@ -320,13 +348,25 @@
             </div>
 
             <div class="window-controls">
-              <!-- Indicators Dropdown ("Apertura a tendina") -->
+              <!-- TradingView Official Indicators Modal Trigger -->
+              <button type="button" class="btn-tune-macro" style="font-size:11px; padding:3px 9px; display:inline-flex; align-items:center; gap:6px; background:rgba(56,189,248,0.12); border-color:#38bdf8;" onclick="openTradingViewIndicatorsModal()" title="Apri Catalogo Ufficiale Indicatori TradingView (18 Indicatori)">
+                <span>📐</span>
+                <span id="btn-ind-header-label">Indicatori Tecnici</span>
+                <span class="ind-active-count-badge" style="background:var(--accent); color:#000; font-size:9px; font-weight:900; padding:1px 5px; border-radius:8px;">6 Attivi</span>
+              </button>
+
+              <!-- Indicators Dropdown ("Apertura a tendina rapida") -->
               <div class="dropdown">
-                <button class="dropdown-trigger" style="font-size:11px; padding:3px 8px;">
-                  <span>📐 Indicatori Tecnici</span>
+                <button class="dropdown-trigger" style="font-size:11px; padding:3px 8px;" title="Menu Rapido Indicatori">
+                  <span>Opzioni</span>
                   <span class="chevron">▾</span>
                 </button>
                 <div class="dropdown-menu indicators-dropdown-menu right-align">
+                  <div style="padding:6px 10px; border-bottom:1px solid var(--border); margin-bottom:6px;">
+                    <button type="button" class="btn-tune-macro" style="width:100%; text-align:center; font-size:11px; padding:5px; background:var(--quantum-blue); color:#000; font-weight:800;" onclick="openTradingViewIndicatorsModal()">
+                      🔍 Apri Ricerca TradingView (18)
+                    </button>
+                  </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
                       <span class="ind-color-dot" style="background:#f59e0b"></span>
@@ -462,7 +502,9 @@
                 </button>
                 <div class="theme-menu-dropdown">
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('notte'); this.parentElement.classList.remove('open')">🌑 Notte OLED (Cyberpunk)</div>
-                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('giorno'); this.parentElement.classList.remove('open')">☀️ Giorno (Pro Light)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('grigio_medio'); this.parentElement.classList.remove('open')">⚙️ Grigio Medio (Refinitiv Steel)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('grigio_chiaro'); this.parentElement.classList.remove('open')">🌫️ Grigio Chiaro (Soft Slate & Silver)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('giorno'); this.parentElement.classList.remove('open')">☀️ Giorno (Pro Institutional Light)</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('bloomberg'); this.parentElement.classList.remove('open')">🪙 Bloomberg Terminal (Amber)</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('navy'); this.parentElement.classList.remove('open')">🌊 Wall Street Navy</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('matrix'); this.parentElement.classList.remove('open')">🔮 Cyber Matrix</div>
@@ -514,9 +556,18 @@
 
             <!-- SOTTO IL GRAFICO: PANNELLO 1 (Volumi a barre verticali + Media Mobile dei Volumi) -->
             <div id="chart-volume-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
-              <div style="position:absolute; top:4px; left:10px; z-index:10; font-size:10px; font-weight:800; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
-                <span>📊 PANNELLO 1: Volumi Istituzionali a Barre Verticali</span>
-                <span style="color:#fcd535;">● Media Mobile Volumi (SMA 20)</span>
+              <div style="position:absolute; top:4px; left:10px; right:10px; z-index:10; font-size:10px; font-weight:800; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span>📊 Volumi Verticali Istituzionali</span>
+                  <span style="color:#fcd535;">● Media SMA 20</span>
+                </div>
+                <div class="pane-height-controls" style="display:flex; align-items:center; gap:4px;">
+                  <span style="font-size:9px; color:var(--text-muted);">↕ Altezza:</span>
+                  <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('volume', -20)" title="Riduci altezza volumi">-</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 90)" title="Standard 90px">90px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 140)" title="Estesa 140px">140px</button>
+                  <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('volume', +20)" title="Aumenta altezza volumi">+</button>
+                </div>
               </div>
             </div>
 
@@ -525,15 +576,26 @@
               <div class="splitter-grip"></div>
             </div>
 
-            <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD) -->
+            <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD / Aroon / ADX) -->
             <div id="chart-momentum-pane" class="chart-sub-pane active" style="height:105px; position:relative;">
               <div style="position:absolute; top:4px; left:10px; right:10px; z-index:10; display:flex; justify-content:space-between; align-items:center;">
                 <span id="momentum-pane-title" style="font-size:10px; font-weight:800; color:var(--text-muted);">
-                  PANNELLO 2: Oscillatore Momentum RSI (14) — Bande Ipercomprato (70) / Ipervenduto (30)
+                  PANNELLO 2: Oscillatore Momentum RSI (14)
                 </span>
-                <div class="mom-toggle-group">
-                  <button class="mom-toggle-btn active" data-mom="rsi" onclick="setMomentumMode('rsi')">RSI (14)</button>
-                  <button class="mom-toggle-btn" data-mom="macd" onclick="setMomentumMode('macd')">MACD (12, 26, 9)</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div class="mom-toggle-group">
+                    <button class="mom-toggle-btn active" data-mom="rsi" onclick="setMomentumMode('rsi')">RSI</button>
+                    <button class="mom-toggle-btn" data-mom="macd" onclick="setMomentumMode('macd')">MACD</button>
+                    <button class="mom-toggle-btn" data-mom="aroon" onclick="setMomentumMode('aroon')">Aroon</button>
+                    <button class="mom-toggle-btn" data-mom="adx" onclick="setMomentumMode('adx')">ADX</button>
+                  </div>
+                  <div class="pane-height-controls" style="display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:9px; color:var(--text-muted);">↕:</span>
+                    <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('momentum', -20)" title="Riduci">-</button>
+                    <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 105)" title="105px">105px</button>
+                    <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 160)" title="160px">160px</button>
+                    <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('momentum', +20)" title="Aumenta">+</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1656,6 +1718,349 @@
     </div>
   </div>
 
+  <!-- MODAL: CENTRO INDICATORI TECNICI & QUANTITATIVI TRADINGVIEW -->
+  <div class="modal-overlay" id="tradingview-indicators-modal" onclick="if(event.target===this) closeTradingViewIndicatorsModal()">
+    <div class="modal-window-card tv-indicators-modal-window">
+      <!-- HEADER -->
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">📐</span>
+          <div>
+            <div style="font-weight:900; font-size:13px; color:#fff;">INDICATORI, METRICHE E STRATEGIE</div>
+            <div style="font-size:10px; color:var(--text-muted);">Libreria Ufficiale Algoritmi Trading Pro Ultimate™ × TradingView</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="ind-active-count-badge" style="background:var(--accent); color:#000; font-size:10px; font-weight:800; padding:2px 8px; border-radius:10px;">6 Attivi</span>
+          <button class="win-ctrl-btn" onclick="closeTradingViewIndicatorsModal()" style="font-size:16px;">✕</button>
+        </div>
+      </div>
+
+      <!-- SEARCH INPUT BAR -->
+      <div class="tv-ind-search-wrapper">
+        <div class="tv-ind-search-box">
+          <span class="tv-ind-search-icon">🔍</span>
+          <input type="text" id="tv-ind-search-input" class="tv-ind-search-input" placeholder="Cerca tra oltre 18 indicatori (es. ALMA, Aroon, ADX, Bollinger, Chaikin, Donchian, VWAP, SAR, RSI, MACD)..." oninput="filterTradingViewIndicators(this.value)">
+          <button type="button" class="tv-ind-search-clear" onclick="document.getElementById('tv-ind-search-input').value=''; filterTradingViewIndicators('');" title="Cancella ricerca">✕</button>
+        </div>
+      </div>
+
+      <!-- CATEGORY NAVIGATION TABS -->
+      <div class="tv-ind-tabs-bar">
+        <button class="tv-ind-tab-pill active" onclick="setTradingViewIndicatorCategory('all', this)">🌐 Tutti (18)</button>
+        <button class="tv-ind-tab-pill" onclick="setTradingViewIndicatorCategory('trend', this)">📈 Trend & Medie (7)</button>
+        <button class="tv-ind-tab-pill" onclick="setTradingViewIndicatorCategory('volatility', this)">💥 Bande & Volatilità (3)</button>
+        <button class="tv-ind-tab-pill" onclick="setTradingViewIndicatorCategory('momentum', this)">⚡ Oscillatori Momentum (4)</button>
+        <button class="tv-ind-tab-pill" onclick="setTradingViewIndicatorCategory('volume', this)">📊 Volumi & Liquidità (4)</button>
+      </div>
+
+      <!-- BODY: SCROLLABLE LIST OF INDICATORS -->
+      <div class="modal-body-scroll tv-ind-cards-scroll">
+        <div class="tv-ind-grid" id="tv-ind-items-container">
+          
+          <!-- 1. VWAP -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#f59e0b;"></span>
+              <div>
+                <div class="tv-ind-title">VWAP — Volume Weighted Average Price</div>
+                <div class="tv-ind-desc">Prezzo medio ponderato per i volumi istituzionali della sessione intraday in corso. Supporto/resistenza algoritmico primario.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Istituzionale</span><span class="tv-tag">Trend</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="vwap" checked onchange="toggleIndicatorKey('vwap', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 2. EMA 9 -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#00f2a1;"></span>
+              <div>
+                <div class="tv-ind-title">EMA 9 — Media Mobile Esponenziale Veloce</div>
+                <div class="tv-ind-desc">Trigger di ingresso e momentum direzionale a breve termine. Guida il trend rapido.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Trend Veloce</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="ema9" checked onchange="toggleIndicatorKey('ema9', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 3. EMA 21 -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#38bdf8;"></span>
+              <div>
+                <div class="tv-ind-title">EMA 21 — Pullback Ribbon Dinamico</div>
+                <div class="tv-ind-desc">Livello primario di ritracciamento sano (Pullback) nei trend sostenuti. Supporto dinamico istituzionale.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Trend Medio</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="ema21" checked onchange="toggleIndicatorKey('ema21', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 4. EMA 50 -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#f97316;"></span>
+              <div>
+                <div class="tv-ind-title">EMA 50 — Trend Intermedio & Golden Cross</div>
+                <div class="tv-ind-desc">Media di riferimento per swing trader e fondi di investimento. Filtro per i trend di medio periodo.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Swing Trend</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="ema50" onchange="toggleIndicatorKey('ema50', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 5. EMA 200 -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#a855f7;"></span>
+              <div>
+                <div class="tv-ind-title">EMA 200 — Supporto Istituzionale di Lungo</div>
+                <div class="tv-ind-desc">Linea spartiacque tra mercato Toro e Orso. Monitorata costantemente dagli algoritmi istituzionali di Wall Street e Milano.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Macro Trend</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="ema200" checked onchange="toggleIndicatorKey('ema200', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 6. ALMA -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#ec4899;"></span>
+              <div>
+                <div class="tv-ind-title">ALMA — Arnaud Legoux Moving Average</div>
+                <div class="tv-ind-desc">Media mobile quantitativa a curva di Gauss: riduce drasticamente il lag mantenendo una perfetta reattività alle svolte di prezzo.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Algoritmico</span><span class="tv-tag">Zero-Lag</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="alma" onchange="toggleIndicatorKey('alma', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 7. SUPERTREND -->
+          <div class="tv-ind-card" data-category="trend">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#00f2a1;"></span>
+              <div>
+                <div class="tv-ind-title">SuperTrend Quant (ATR 10, Multiplier 3)</div>
+                <div class="tv-ind-desc">Indicatore trend-following con trailing stop basato sulla volatilità reale ATR. Ottimale per ride dei trend conclamati.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Trend Following</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="supertrend" onchange="toggleIndicatorKey('supertrend', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 8. BOLLINGER BANDS -->
+          <div class="tv-ind-card" data-category="volatility">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#6366f1;"></span>
+              <div>
+                <div class="tv-ind-title">Bande di Bollinger (20, 2σ)</div>
+                <div class="tv-ind-desc">Bande di inviluppo a 2 deviazioni standard. Identificano fasi di compressione (Squeeze) ed espansione esplosiva della volatilità.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Volatilità</span><span class="tv-tag">Breakout</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="boll" checked onchange="toggleIndicatorKey('boll', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 9. DONCHIAN CHANNELS -->
+          <div class="tv-ind-card" data-category="volatility">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#06b6d4;"></span>
+              <div>
+                <div class="tv-ind-title">Canali Donchian (20 Periodi)</div>
+                <div class="tv-ind-desc">Bande di massimo e minimo a 20 periodi (Turtle Trading System). Breakout oltre il canale indicano nuovi trend.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Breakout</span><span class="tv-tag">Turtle Trader</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="donchian" onchange="toggleIndicatorKey('donchian', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 10. PARABOLIC SAR -->
+          <div class="tv-ind-card" data-category="volatility">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#f43f5e;"></span>
+              <div>
+                <div class="tv-ind-title">Parabolic SAR (Stop And Reverse Wilder 0.02)</div>
+                <div class="tv-ind-desc">Algoritmo di accelerazione parabolica di J. Welles Wilder. Perfetto per trailing stop dinamico e protezione dei profitti accumulati.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Trailing Stop</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="sar" onchange="toggleIndicatorKey('sar', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 11. RSI 14 -->
+          <div class="tv-ind-card" data-category="momentum">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#a855f7;"></span>
+              <div>
+                <div class="tv-ind-title">RSI (14) — Relative Strength Index</div>
+                <div class="tv-ind-desc">Oscillatore di velocità e ampiezza dei movimenti di prezzo con soglie istituzionali di ipercomprato (>70) e ipervenduto (<30).</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Momentum</span><span class="tv-tag">Divergenze</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="rsi" checked onchange="toggleIndicatorKey('rsi', this.checked); if(this.checked) setMomentumMode('rsi');">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 12. MACD -->
+          <div class="tv-ind-card" data-category="momentum">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#38bdf8;"></span>
+              <div>
+                <div class="tv-ind-title">MACD (12, 26, 9) — Istogramma & Linea Segnale</div>
+                <div class="tv-ind-desc">Moving Average Convergence Divergence. L'espansione e contrazione dell'istogramma anticipa i cambi di momentum primario.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Confluenza</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="macd" onchange="toggleIndicatorKey('macd', this.checked); if(this.checked) setMomentumMode('macd');">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 13. AROON -->
+          <div class="tv-ind-card" data-category="momentum">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#f59e0b;"></span>
+              <div>
+                <div class="tv-ind-title">Oscillatore Aroon (14 Periodi)</div>
+                <div class="tv-ind-desc">Misura il tempo trascorso tra i massimi e minimi per determinare se il mercato è in forte trend o in fase di esaurimento e congestione.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Trend Exhaustion</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="aroon" onchange="toggleIndicatorKey('aroon', this.checked); if(this.checked) setMomentumMode('aroon');">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 14. ADX & DMI -->
+          <div class="tv-ind-card" data-category="momentum">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#06b6d4;"></span>
+              <div>
+                <div class="tv-ind-title">ADX & DMI (Average Directional Index 14)</div>
+                <div class="tv-ind-desc">Filtro quantitativo sulla forza del trend: valori > 25 indicano un trend robusto in corso; valori < 20 indicano lateralità/rumore.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Forza Trend</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="adx" onchange="toggleIndicatorKey('adx', this.checked); if(this.checked) setMomentumMode('adx');">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 15. VOLUMI VERTICALI + SMA 20 -->
+          <div class="tv-ind-card" data-category="volume">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#00f2a1;"></span>
+              <div>
+                <div class="tv-ind-title">Volumi a Barre Verticali + Media SMA 20</div>
+                <div class="tv-ind-desc">Istogramma dei volumi scambiati barra per barra con media mobile istituzionale a 20 periodi per identificare anomalie e spike di volume.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Volume Spread</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="volumePane" checked onchange="toggleIndicatorKey('volumePane', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 16. CHAIKIN MONEY FLOW -->
+          <div class="tv-ind-card" data-category="volume">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#10b981;"></span>
+              <div>
+                <div class="tv-ind-title">Chaikin Money Flow & Accumulazione (CMF 20)</div>
+                <div class="tv-ind-desc">Pondera il prezzo di chiusura rispetto al range barra-volume. Valori positivi indicano accumulazione da mani forti, negativi distribuzione.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Money Flow</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="chaikin" onchange="toggleIndicatorKey('chaikin', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 17. VOLUME PROFILE & POC -->
+          <div class="tv-ind-card" data-category="volume">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#fcd535;"></span>
+              <div>
+                <div class="tv-ind-title">Volume Profile Orizzontale & POC (Point of Control)</div>
+                <div class="tv-ind-desc">Distribuzione orizzontale del volume a ciascun livello di prezzo con evidenziazione del POC (prezzo con massimo volume scambiato).</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Order Flow</span><span class="tv-tag">POC</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="volumePoc" checked onchange="toggleIndicatorKey('volumePoc', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- 18. LIQUIDATION PROFILE & FUNDING -->
+          <div class="tv-ind-card" data-category="volume">
+            <div class="tv-ind-card-left">
+              <span class="tv-ind-dot" style="background:#ec4899;"></span>
+              <div>
+                <div class="tv-ind-title">Heatmap Liquidazioni, Funding Rate & Open Interest</div>
+                <div class="tv-ind-desc">Mappa delle sacche di liquidità e cluster di stop hunt istituzionali su Bybit, OKX e mercati futures regolamentati.</div>
+                <div class="tv-ind-tags"><span class="tv-tag">Crypto Derivatives</span><span class="tv-tag">Liquidità</span></div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-ind-key="liquidation" onchange="toggleIndicatorKey('liquidation', this.checked)">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px solid var(--border); background:rgba(0,0,0,0.2);">
+        <button type="button" class="btn btn-secondary" onclick="resetIndicatorsToDefault()">
+          ↺ Ripristina Default Istituzionali
+        </button>
+        <button type="button" class="btn-action-primary" style="width:auto; padding:8px 20px; background:var(--quantum-blue); color:#000; font-weight:800;" onclick="closeTradingViewIndicatorsModal()">
+          ✓ Chiudi e Applica al Grafico
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1688,21 +2093,21 @@
   </div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/auth.js?v=2.6.5"></script>
-  <script src="js/market_assets.js?v=2.6.5"></script>
-  <script src="js/workspace_engine.js?v=2.6.5"></script>
-  <script src="js/api_manager.js?v=2.6.5"></script>
-  <script src="js/chart.js?v=2.6.5"></script>
-  <script src="js/bybit_engine.js?v=2.6.5"></script>
-  <script src="js/quant_engines.js?v=2.6.5"></script>
-  <script src="js/sector_rotation.js?v=2.6.5"></script>
-  <script src="js/optimal_engine.js?v=2.6.5"></script>
-  <script src="js/opportunity_scanner.js?v=2.6.5"></script>
-  <script src="js/skills.js?v=2.6.5"></script>
-  <script src="js/trading.js?v=2.6.5"></script>
-  <script src="js/journal.js?v=2.6.5"></script>
-  <script src="js/alerts.js?v=2.6.5"></script>
-  <script src="js/app.js?v=2.6.5"></script>
+  <script src="js/auth.js?v=2.7.0"></script>
+  <script src="js/market_assets.js?v=2.7.0"></script>
+  <script src="js/workspace_engine.js?v=2.7.0"></script>
+  <script src="js/api_manager.js?v=2.7.0"></script>
+  <script src="js/chart.js?v=2.7.0"></script>
+  <script src="js/bybit_engine.js?v=2.7.0"></script>
+  <script src="js/quant_engines.js?v=2.7.0"></script>
+  <script src="js/sector_rotation.js?v=2.7.0"></script>
+  <script src="js/optimal_engine.js?v=2.7.0"></script>
+  <script src="js/opportunity_scanner.js?v=2.7.0"></script>
+  <script src="js/skills.js?v=2.7.0"></script>
+  <script src="js/trading.js?v=2.7.0"></script>
+  <script src="js/journal.js?v=2.7.0"></script>
+  <script src="js/alerts.js?v=2.7.0"></script>
+  <script src="js/app.js?v=2.7.0"></script>
 
   <script>
     // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)

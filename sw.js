@@ -1,20 +1,32 @@
-const CACHE_NAME = 'trading-pro-nexus-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js'
-];
+// TRADING PRO ULTIMATE™ — Service Worker Uninstaller & Cache Buster v2.7.0
+// Ensures clients always receive fresh real-time financial market data and scripts
 
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          console.log('[SW] Deleting stale cache:', key);
+          return caches.delete(key);
+        })
+      );
+    })
+    .then(() => self.registration.unregister())
+    .then(() => self.clients.matchAll())
+    .then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({ type: 'CACHE_PURGED_V27' });
+      });
+      return self.clients.claim();
+    })
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+// Network direct pass-through: never cache dynamic trading terminal responses
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
 });

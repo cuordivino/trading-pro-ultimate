@@ -18,6 +18,7 @@ window.TradingEngine = {
   // Bot Engine State
   botActive: false,
   botTimer: null,
+  watchdogTimer: null,
   botExecutionHistory: [],
   
   // Macro Settings (Tunable by user)
@@ -31,7 +32,9 @@ window.TradingEngine = {
     enabledSectors: ['crypto', 'italy', 'us', 'forex', 'commodities'],
     trailingStop: true,
     trailingType: 'sar',
-    marketHoursOnly: false
+    marketHoursOnly: false,
+    orderTtlMinutes: 10,
+    autoCloseOnTimeout: true
   },
 
   init: function() {
@@ -46,6 +49,17 @@ window.TradingEngine = {
         this.runBotAutonomousLoop();
       }
     }, 4500);
+
+    // Watchdog Timer for Automatic Order Timeout & Expired Order Closure (runs every 2.5s)
+    if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+    this.watchdogTimer = setInterval(() => {
+      this.runOrderWatchdog();
+    }, 2500);
+
+    // Live clock minute synchronization
+    window.addEventListener('tpu_clock_minute_sync', () => {
+      this.runOrderWatchdog();
+    });
   },
 
   // =========================================================================
@@ -363,9 +377,12 @@ window.TradingEngine = {
 
         <!-- BOT RECENT EXECUTIONS LOG -->
         <div class="bot-log-card">
-          <div class="bot-log-header">
+          <div class="bot-log-header" style="display:flex; justify-content:space-between; align-items:center;">
             <span>📋 Registro Esecuzioni Bot in Tempo Reale</span>
-            <span style="font-size:10px; color:var(--text-dim);">${history.length} Operazioni</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${activeCount > 0 ? `<button class="btn-tune-macro" style="background:rgba(255,69,96,0.15); border-color:#ff4560; color:#ff4560; padding:2px 7px; font-size:10px;" onclick="TradingEngine.closeAllOpenTrades()" title="Chiudi forzatamente tutte le posizioni aperte e libera gli slot bot">🧹 Chiudi Tutte (${activeCount})</button>` : ''}
+              <button class="btn-tune-macro" style="padding:2px 7px; font-size:10px;" onclick="TradingEngine.clearExpiredTrades()" title="Ripulisci storico da ordini chiusi o scaduti">🗑️ Pulisci</button>
+            </div>
           </div>
 
           <div class="bot-log-list">
@@ -373,7 +390,7 @@ window.TradingEngine = {
               <div style="text-align:center; padding:18px; color:var(--text-muted); font-size:11px;">
                 Nessuna operazione bot registrata oggi. Il bot è in monitoraggio continuativo su 235 titoli per setup con confluenza ≥ ${s.minScore}%.
               </div>
-            ` : history.slice(0, 10).map(h => `
+            ` : history.slice(0, 15).map(h => `
               <div class="bot-log-item">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:6px;">
@@ -381,8 +398,15 @@ window.TradingEngine = {
                     <span class="${h.side === 'LONG' ? 'side-tag-long' : 'side-tag-short'}" style="font-size:9px; padding:1px 5px;">${h.side}</span>
                     <span style="font-size:9px; color:var(--text-dim);">${h.time}</span>
                   </div>
-                  <div style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:${h.pnl >= 0 ? 'var(--buy)' : 'var(--sell)'};">
-                    ${h.status === 'APERTO' ? 'IN CORSO' : (h.pnl >= 0 ? '+' : '') + '$' + h.pnl.toFixed(2)}
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="font-family:var(--font-mono); font-size:11px; font-weight:800; color:${h.status === 'APERTO' ? '#00f2a1' : (h.pnl >= 0 ? 'var(--buy)' : 'var(--sell)')};">
+                      ${h.status === 'APERTO' ? 'IN CORSO' : (h.pnl >= 0 ? '+' : '') + '$' + h.pnl.toFixed(2)}
+                    </div>
+                    ${h.status === 'APERTO' ? `
+                      <button class="btn-tune-macro" style="background:rgba(255,69,96,0.18); border-color:#ff4560; color:#ff4560; font-size:9px; padding:1px 5px;" onclick="TradingEngine.closeBotTrade(${h.id})" title="Chiudi subito e sblocca lo slot bot">✕ Chiudi</button>
+                    ` : `
+                      <span style="font-size:8px; color:var(--text-muted); text-transform:uppercase;">${h.status.replace('CHIUSO ', '')}</span>
+                    `}
                   </div>
                 </div>
                 <div style="font-size:10px; color:var(--text-muted); margin-top:3px; line-height:1.2;">
@@ -395,6 +419,112 @@ window.TradingEngine = {
 
       </div>
     `;
+  },
+
+  // ORDER WATCHDOG & AUTO-CLOSURE ENGINE (Prevents "Tutto si blocca")
+  runOrderWatchdog: function() {
+    const s = this.macroSettings;
+    const now = Date.now();
+    const ttlMs = (s.orderTtlMinutes || 10) * 60 * 1000;
+    let modified = false;
+
+    // 1. Process Bot Open Positions
+    this.botExecutionHistory.forEach(trade => {
+      if (trade.status !== 'APERTO') return;
+
+      const sym = trade.symbol;
+      const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
+      let curPrice = (sym === window.currentSymbol && window.currentLivePrice) ? window.currentLivePrice : (asset && asset.livePrice ? asset.livePrice : trade.entry);
+
+      const isLong = trade.side === 'LONG';
+
+      // A. Take Profit Target Met
+      if ((isLong && curPrice >= trade.tp) || (!isLong && curPrice <= trade.tp)) {
+        trade.status = 'CHIUSO (TP)';
+        trade.exitPrice = curPrice;
+        trade.closedAt = new Date().toLocaleTimeString('it-IT');
+        trade.pnl = +(s.maxCap * (s.riskPerTrade / 100) * 2.4).toFixed(2);
+        trade.reason = `🎯 Take Profit Raggiunto a ${curPrice}! Profitto registrato con successo.`;
+        modified = true;
+        if (window.showToast) window.showToast(`🎯 Take Profit Eseguito: ${sym} +$${trade.pnl}`, 'success');
+        return;
+      }
+
+      // B. Stop Loss Hit
+      if ((isLong && curPrice <= trade.sl) || (!isLong && curPrice >= trade.sl)) {
+        trade.status = 'CHIUSO (STOP LOSS)';
+        trade.exitPrice = curPrice;
+        trade.closedAt = new Date().toLocaleTimeString('it-IT');
+        trade.pnl = -(s.maxCap * (s.riskPerTrade / 100));
+        trade.reason = `🛡️ Stop Loss Eseguito a ${curPrice}. Capitale protetto.`;
+        modified = true;
+        if (window.showToast) window.showToast(`🛡️ Stop Loss Eseguito: ${sym} -$${Math.abs(trade.pnl)}`, 'warning');
+        return;
+      }
+
+      // C. TTL Timeout Auto-Closure (Cancels unfulfilled / stagnant orders to free slot)
+      const ageMs = now - (trade.id || now);
+      if (s.autoCloseOnTimeout && ageMs > ttlMs) {
+        trade.status = 'CHIUSO (TIMEOUT)';
+        trade.exitPrice = curPrice;
+        trade.closedAt = new Date().toLocaleTimeString('it-IT');
+        const diffPct = (curPrice - trade.entry) / (trade.entry || 1) * (isLong ? 1 : -1);
+        trade.pnl = +(s.maxCap * (s.riskPerTrade / 100) * diffPct * 0.35).toFixed(2);
+        trade.reason = `⏰ Timeout Superato (${s.orderTtlMinutes} min): Ordine chiuso automaticamente senza bloccare il terminale. Slot sbloccato.`;
+        modified = true;
+        if (window.showToast) window.showToast(`⏰ Ordine su ${sym} chiuso per timeout: slot bot sbloccato!`, 'info');
+        return;
+      }
+    });
+
+    if (modified) {
+      this.saveBotHistory();
+      this.refreshAutomatedView();
+    }
+  },
+
+  closeBotTrade: function(tradeId) {
+    const trade = this.botExecutionHistory.find(h => h.id === tradeId);
+    if (!trade) return;
+
+    const sym = trade.symbol;
+    const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
+    const curPrice = (sym === window.currentSymbol && window.currentLivePrice) ? window.currentLivePrice : (asset && asset.livePrice ? asset.livePrice : trade.entry);
+
+    trade.status = 'CHIUSO (MANUALE)';
+    trade.exitPrice = curPrice;
+    trade.closedAt = new Date().toLocaleTimeString('it-IT');
+    const isLong = trade.side === 'LONG';
+    const diffPct = (curPrice - trade.entry) / (trade.entry || 1) * (isLong ? 1 : -1);
+    trade.pnl = +(this.macroSettings.maxCap * (this.macroSettings.riskPerTrade / 100) * diffPct).toFixed(2);
+    trade.reason = `Chiusura manuale anticipata a ${curPrice}. Slot bot liberato.`;
+
+    this.saveBotHistory();
+    this.refreshAutomatedView();
+    if (window.showToast) window.showToast(`Posizione bot ${sym} chiusa. Slot liberato!`, 'success');
+  },
+
+  closeAllOpenTrades: function() {
+    let count = 0;
+    this.botExecutionHistory.forEach(trade => {
+      if (trade.status === 'APERTO') {
+        trade.status = 'CHIUSO (RESET)';
+        trade.closedAt = new Date().toLocaleTimeString('it-IT');
+        trade.pnl = 0;
+        trade.reason = 'Chiusura totale forzata e sblocco immediato di tutti gli slot bot.';
+        count++;
+      }
+    });
+    this.saveBotHistory();
+    this.refreshAutomatedView();
+    if (window.showToast) window.showToast(`Chiusi ${count} ordini aperti. Tutti gli slot bot sono liberi!`, 'success');
+  },
+
+  clearExpiredTrades: function() {
+    this.botExecutionHistory = this.botExecutionHistory.filter(h => h.status === 'APERTO');
+    this.saveBotHistory();
+    this.refreshAutomatedView();
+    if (window.showToast) window.showToast('Registro storico ripulito dagli ordini chiusi.', 'info');
   },
 
   // AUTONOMOUS BOT LOOP

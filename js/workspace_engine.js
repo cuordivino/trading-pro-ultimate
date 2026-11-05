@@ -148,6 +148,60 @@ window.ThemeManager = {
         '--sell': '#ef4444',
         '--quantum-blue': '#4ade80'
       }
+    },
+    grigio_chiaro: {
+      id: 'grigio_chiaro',
+      name: '🌫️ Grigio Chiaro (Soft Slate & Silver)',
+      icon: '🌫️',
+      chartBg: '#f1f5f9',
+      paneBg: '#e2e8f0',
+      gridColor: 'rgba(0, 0, 0, 0.06)',
+      borderColor: '#cbd5e1',
+      textColor: '#1e293b',
+      candleUp: '#059669',
+      candleDown: '#e11d48',
+      vars: {
+        '--bg': '#e2e8f0',
+        '--bg-surface': '#f1f5f9',
+        '--bg-elevated': '#ffffff',
+        '--bg-card': 'rgba(255, 255, 255, 0.94)',
+        '--text-main': '#0f172a',
+        '--text-dim': '#334155',
+        '--text-muted': '#64748b',
+        '--border': '#cbd5e1',
+        '--border-light': 'rgba(0, 0, 0, 0.08)',
+        '--accent': '#0284c7',
+        '--buy': '#059669',
+        '--sell': '#e11d48',
+        '--quantum-blue': '#2563eb'
+      }
+    },
+    grigio_medio: {
+      id: 'grigio_medio',
+      name: '⚙️ Grigio Medio (Refinitiv Graphite & Steel)',
+      icon: '⚙️',
+      chartBg: '#1e222d',
+      paneBg: '#171b26',
+      gridColor: 'rgba(255, 255, 255, 0.05)',
+      borderColor: '#2e3546',
+      textColor: '#b2b5be',
+      candleUp: '#26a69a',
+      candleDown: '#ef5350',
+      vars: {
+        '--bg': '#131722',
+        '--bg-surface': '#1e222d',
+        '--bg-elevated': '#2a2e39',
+        '--bg-card': 'rgba(30, 34, 45, 0.92)',
+        '--text-main': '#d1d4dc',
+        '--text-dim': '#b2b5be',
+        '--text-muted': '#787b86',
+        '--border': '#2e3546',
+        '--border-light': 'rgba(255, 255, 255, 0.08)',
+        '--accent': '#2962ff',
+        '--buy': '#26a69a',
+        '--sell': '#ef5350',
+        '--quantum-blue': '#2962ff'
+      }
     }
   },
 
