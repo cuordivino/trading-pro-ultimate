@@ -559,27 +559,52 @@ function renderChartData(candles) {
   const times = candles.map(c => c.time);
   const volumes = candles.map(c => c.volume || 10);
 
-  // 2. VWAP
+  // 2. VWAP (Dynamic user parameters)
   if (activeIndicators.vwap && vwapSeries) {
+    const vCfg = getIndicatorConfig('vwap');
+    if (vCfg.style.color) vwapSeries.applyOptions({ color: vCfg.style.color, lineWidth: vCfg.style.lineWidth || 2 });
     vwapSeries.setData(calcVWAPData(candles, prec));
   } else if (vwapSeries) {
     vwapSeries.setData([]);
   }
 
-  // 3. EMA Ribbon: EMA 9, EMA 21, EMA 50, EMA 200
-  if (ema9Series) ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, 9, prec) : []);
-  if (ema21Series) ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, 21, prec) : []);
-  if (ema50Series) ema50Series.setData(activeIndicators.ema50 ? calcEMAData(times, closes, 50, prec) : []);
-  if (ema200Series) ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, 200, prec) : []);
+  // 3. EMA Ribbon: Dynamic lengths & custom colors
+  if (ema9Series) {
+    const e9 = getIndicatorConfig('ema9');
+    ema9Series.applyOptions({ color: e9.style.color || '#00f2a1', lineWidth: e9.style.lineWidth || 1.5 });
+    ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, e9.inputs.length || 9, prec) : []);
+  }
+  if (ema21Series) {
+    const e21 = getIndicatorConfig('ema21');
+    ema21Series.applyOptions({ color: e21.style.color || '#38bdf8', lineWidth: e21.style.lineWidth || 1.5 });
+    ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, e21.inputs.length || 21, prec) : []);
+  }
+  if (ema50Series) {
+    const e50 = getIndicatorConfig('ema50');
+    ema50Series.applyOptions({ color: e50.style.color || '#f97316', lineWidth: e50.style.lineWidth || 1.5 });
+    ema50Series.setData(activeIndicators.ema50 ? calcEMAData(times, closes, e50.inputs.length || 50, prec) : []);
+  }
+  if (ema200Series) {
+    const e200 = getIndicatorConfig('ema200');
+    ema200Series.applyOptions({ color: e200.style.color || '#ef4444', lineWidth: e200.style.lineWidth || 2 });
+    ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, e200.inputs.length || 200, prec) : []);
+  }
 
   // 4. ALMA (Arnaud Legoux Moving Average)
   if (almaSeries) {
     almaSeries.setData(activeIndicators.alma ? calcALMAData(times, closes, 9, 0.85, 6, prec) : []);
   }
 
-  // 5. Bollinger Bands (20, 2)
+  // 5. Bollinger Bands (Dynamic user parameters)
   if (activeIndicators.boll && bbUpperSeries && bbMiddleSeries && bbLowerSeries) {
-    const bb = calcBollingerBands(times, closes, 20, 2, prec);
+    const bCfg = getIndicatorConfig('boll');
+    const bLen = bCfg.inputs.length || 20;
+    const bMult = bCfg.inputs.mult || 2.0;
+    if (bCfg.style.upperColor) bbUpperSeries.applyOptions({ color: bCfg.style.upperColor, lineWidth: bCfg.style.lineWidth || 1.5 });
+    if (bCfg.style.middleColor) bbMiddleSeries.applyOptions({ color: bCfg.style.middleColor, lineWidth: bCfg.style.lineWidth || 1.5 });
+    if (bCfg.style.lowerColor) bbLowerSeries.applyOptions({ color: bCfg.style.lowerColor, lineWidth: bCfg.style.lineWidth || 1.5 });
+
+    const bb = calcBollingerBands(times, closes, bLen, bMult, prec);
     bbUpperSeries.setData(bb.upper);
     bbMiddleSeries.setData(bb.middle);
     bbLowerSeries.setData(bb.lower);
@@ -926,15 +951,40 @@ function updateChartLegend(candle, explicitPrec) {
     const bbMid = lastClose * 0.999;
     const bbUp = lastClose * 1.018;
     const bbLow = lastClose * 0.982;
-    if (legBb) legBb.innerText = `BB (20,2): ${bbMid.toFixed(prec)} / ${bbUp.toFixed(prec)} / ${bbLow.toFixed(prec)}`;
+    const bCfg = getIndicatorConfig('boll');
+    const vCfg = getIndicatorConfig('vwap');
+    const e9Cfg = getIndicatorConfig('ema9');
+
+    if (legBb) {
+      if (activeIndicators.boll) {
+        legBb.style.display = 'block';
+        legBb.innerHTML = `<span class="leg-tag">BB (${bCfg.inputs.length || 20}, ${bCfg.inputs.mult || 2.0}):</span> <span style="color:#fff">${bbMid.toFixed(prec)} / ${bbUp.toFixed(prec)} / ${bbLow.toFixed(prec)}</span> <button class="leg-gear-btn" onclick="openIndicatorSettingsModal('boll')" title="Regola parametri Bollinger">⚙️</button> <button class="leg-gear-btn" onclick="toggleIndicatorKey('boll', false)" title="Rimuovi">✕</button>`;
+      } else {
+        legBb.style.display = 'none';
+      }
+    }
 
     const vwapVal = lastClose * 0.996;
-    if (legVwap) legVwap.innerText = `VWAP Session: ${curr}${vwapVal.toFixed(prec)}`;
+    if (legVwap) {
+      if (activeIndicators.vwap) {
+        legVwap.style.display = 'block';
+        legVwap.innerHTML = `<span class="leg-tag" style="color:#f59e0b">VWAP ${vCfg.inputs.anchor || 'Session'}:</span> <span style="color:#fff">${curr}${vwapVal.toFixed(prec)}</span> <button class="leg-gear-btn" onclick="openIndicatorSettingsModal('vwap')" title="Regola parametri VWAP">⚙️</button> <button class="leg-gear-btn" onclick="toggleIndicatorKey('vwap', false)" title="Rimuovi">✕</button>`;
+      } else {
+        legVwap.style.display = 'none';
+      }
+    }
 
-    const ema9 = lastClose * 0.998;
-    const ema21 = lastClose * 0.994;
-    const ema200 = lastClose * 0.975;
-    if (legEma) legEma.innerText = `EMA (9/21/200): ${ema9.toFixed(prec)} / ${ema21.toFixed(prec)} / ${ema200.toFixed(prec)}`;
+    const ema9Val = lastClose * 0.998;
+    const ema21Val = lastClose * 0.994;
+    const ema200Val = lastClose * 0.975;
+    if (legEma) {
+      if (activeIndicators.ema9 || activeIndicators.ema21 || activeIndicators.ema200) {
+        legEma.style.display = 'block';
+        legEma.innerHTML = `<span class="leg-tag">EMA (${e9Cfg.inputs.length || 9}/21/200):</span> <span style="color:#00f2a1">${ema9Val.toFixed(prec)}</span> / <span style="color:#38bdf8">${ema21Val.toFixed(prec)}</span> / <span style="color:#ef4444">${ema200Val.toFixed(prec)}</span> <button class="leg-gear-btn" onclick="openIndicatorSettingsModal('ema9')" title="Regola parametri EMA Ribbon">⚙️</button> <button class="leg-gear-btn" onclick="toggleIndicatorKey('ema9', false); toggleIndicatorKey('ema21', false);" title="Rimuovi">✕</button>`;
+      } else {
+        legEma.style.display = 'none';
+      }
+    }
   }
 }
 
@@ -1955,6 +2005,7 @@ function renderTradingViewIndicatorsModalList() {
           </div>
         </div>
         <div class="tv-ind-row-right">
+          <button type="button" class="tv-ind-gear-btn" onclick="event.stopPropagation(); openIndicatorSettingsModal('${item.id}')" title="Configura parametri ${item.name}">⚙️</button>
           <label class="switch" onclick="event.stopPropagation()">
             <input type="checkbox" data-ind-key="${item.id}" ${isActive ? 'checked' : ''} onchange="toggleIndicatorKey('${item.id}', this.checked)">
             <span class="slider-toggle"></span>
@@ -2140,3 +2191,487 @@ function startRomeClock() {
   setInterval(tick, 1000);
   tick();
 }
+
+
+// ==========================================================================
+// TRADINGVIEW OFFICIAL INDICATOR SETTINGS ENGINE (INPUTS, STYLE, VISIBILITY)
+// ==========================================================================
+const DEFAULT_INDICATOR_CONFIGS = {
+  vwap: {
+    id: 'vwap',
+    name: 'VWAP (Volume Weighted Average Price)',
+    category: 'overlay',
+    inputs: { anchor: 'Session', source: 'hlc3', offset: 0 },
+    style: { color: '#f59e0b', lineWidth: 2, lineStyle: 0, visible: true, showLabels: true, showValues: true },
+    visibility: { all: true }
+  },
+  boll: {
+    id: 'boll',
+    name: 'Bollinger Bands',
+    category: 'overlay',
+    inputs: { length: 20, mult: 2.0, source: 'close', offset: 0 },
+    style: { upperColor: '#38bdf8', middleColor: '#f59e0b', lowerColor: '#38bdf8', lineWidth: 1.5, fillOpacity: 0.08, visible: true },
+    visibility: { all: true }
+  },
+  ema9: {
+    id: 'ema9',
+    name: 'EMA 9 (Fast Trend)',
+    category: 'overlay',
+    inputs: { length: 9, source: 'close', offset: 0 },
+    style: { color: '#00f2a1', lineWidth: 1.5, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  ema21: {
+    id: 'ema21',
+    name: 'EMA 21 (Pullback Ribbon)',
+    category: 'overlay',
+    inputs: { length: 21, source: 'close', offset: 0 },
+    style: { color: '#38bdf8', lineWidth: 1.5, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  ema50: {
+    id: 'ema50',
+    name: 'EMA 50 (Intermediate Trend)',
+    category: 'overlay',
+    inputs: { length: 50, source: 'close', offset: 0 },
+    style: { color: '#f97316', lineWidth: 1.5, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  ema200: {
+    id: 'ema200',
+    name: 'EMA 200 (Institutional Base)',
+    category: 'overlay',
+    inputs: { length: 200, source: 'close', offset: 0 },
+    style: { color: '#ef4444', lineWidth: 2, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  sma: {
+    id: 'sma',
+    name: 'Simple Moving Average (SMA)',
+    category: 'overlay',
+    inputs: { length: 20, source: 'close', offset: 0 },
+    style: { color: '#e879f9', lineWidth: 1.5, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  alma: {
+    id: 'alma',
+    name: 'Arnaud Legoux Moving Average (ALMA)',
+    category: 'overlay',
+    inputs: { length: 9, offset: 0.85, sigma: 6, source: 'close' },
+    style: { color: '#a855f7', lineWidth: 2, lineStyle: 0, visible: true },
+    visibility: { all: true }
+  },
+  sar: {
+    id: 'sar',
+    name: 'Parabolic SAR',
+    category: 'overlay',
+    inputs: { start: 0.02, inc: 0.02, max: 0.20 },
+    style: { color: '#fb923c', lineWidth: 2, visible: true },
+    visibility: { all: true }
+  },
+  supertrend: {
+    id: 'supertrend',
+    name: 'SuperTrend',
+    category: 'overlay',
+    inputs: { atrPeriod: 10, multiplier: 3.0 },
+    style: { upColor: '#00f2a1', downColor: '#ff4560', lineWidth: 2, visible: true },
+    visibility: { all: true }
+  },
+  keltner: {
+    id: 'keltner',
+    name: 'Keltner Channels',
+    category: 'overlay',
+    inputs: { length: 20, mult: 2.0, atrLength: 10, source: 'close' },
+    style: { upperColor: '#38bdf8', middleColor: '#38bdf8', lowerColor: '#38bdf8', lineWidth: 1.5, visible: true },
+    visibility: { all: true }
+  },
+  donchian: {
+    id: 'donchian',
+    name: 'Donchian Channels',
+    category: 'overlay',
+    inputs: { length: 20 },
+    style: { color: '#38bdf8', lineWidth: 1.5, visible: true },
+    visibility: { all: true }
+  },
+  rsi: {
+    id: 'rsi',
+    name: 'Relative Strength Index (RSI)',
+    category: 'momentum',
+    inputs: { length: 14, overbought: 70, oversold: 30, source: 'close' },
+    style: { color: '#a855f7', lineWidth: 2, lineStyle: 0, bandColor: '#64748b', visible: true },
+    visibility: { all: true }
+  },
+  macd: {
+    id: 'macd',
+    name: 'MACD (12, 26, Close, 9)',
+    category: 'momentum',
+    inputs: { fastLength: 12, slowLength: 26, signalLength: 9, source: 'close' },
+    style: { macdColor: '#38bdf8', signalColor: '#f59e0b', histUpColor: '#00f2a1', histDownColor: '#ff4560', lineWidth: 1.5, visible: true },
+    visibility: { all: true }
+  },
+  stoch: {
+    id: 'stoch',
+    name: 'Stochastic Oscillator',
+    category: 'momentum',
+    inputs: { kLength: 14, dLength: 3, smooth: 3 },
+    style: { kColor: '#38bdf8', dColor: '#f59e0b', lineWidth: 1.5, visible: true },
+    visibility: { all: true }
+  },
+  stoch_rsi: {
+    id: 'stoch_rsi',
+    name: 'Stochastic RSI',
+    category: 'momentum',
+    inputs: { rsiLength: 14, stochLength: 14, k: 3, d: 3 },
+    style: { color: '#a855f7', lineWidth: 2, visible: true },
+    visibility: { all: true }
+  },
+  volumePane: {
+    id: 'volumePane',
+    name: 'Volume & Volume MA',
+    category: 'volume',
+    inputs: { maLength: 20 },
+    style: { upColor: '#00f2a1', downColor: '#ff4560', maColor: '#fcd535', lineWidth: 1.5, visible: true },
+    visibility: { all: true }
+  },
+  volumePoc: {
+    id: 'volumePoc',
+    name: 'Volume Profile Orizzontale & POC',
+    category: 'volume',
+    inputs: { rows: 24, valueArea: 70 },
+    style: { pocColor: '#fcd535', vaColor: '#38bdf8', visible: true },
+    visibility: { all: true }
+  }
+};
+
+let currentEditingIndicatorId = null;
+
+function getIndicatorConfig(id) {
+  try {
+    const raw = localStorage.getItem('tpu_ind_cfg_' + id);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+
+  const base = DEFAULT_INDICATOR_CONFIGS[id];
+  if (base) return JSON.parse(JSON.stringify(base));
+
+  // Dynamic fallback for any of the 107 scripts in catalog
+  const catalogItem = window.TV_INDICATORS_CATALOG?.find(x => x.id === id);
+  return {
+    id: id,
+    name: catalogItem ? catalogItem.name : id.toUpperCase(),
+    category: catalogItem ? catalogItem.category : 'overlay',
+    inputs: { length: 14, mult: 2.0, source: 'close', offset: 0 },
+    style: { color: '#38bdf8', lineWidth: 2, lineStyle: 0, visible: true, showLabels: true, showValues: true },
+    visibility: { all: true }
+  };
+}
+
+function saveIndicatorConfig(id, cfg) {
+  try {
+    localStorage.setItem('tpu_ind_cfg_' + id, JSON.stringify(cfg));
+  } catch(e) {}
+}
+
+function openIndicatorSettingsModal(indId) {
+  currentEditingIndicatorId = indId;
+  const cfg = getIndicatorConfig(indId);
+
+  let modal = document.getElementById('indicator-settings-modal');
+  if (!modal) {
+    modal = createIndicatorSettingsModalDom();
+  }
+
+  // Populate title
+  const titleEl = document.getElementById('ind-settings-modal-title');
+  if (titleEl) titleEl.innerText = cfg.name;
+
+  // Render tab contents
+  renderIndSettingsInputsTab(cfg);
+  renderIndSettingsStyleTab(cfg);
+  renderIndSettingsVisibilityTab(cfg);
+
+  // Set default active tab to inputs
+  switchIndSettingsTab('inputs');
+
+  modal.classList.add('open');
+}
+
+function closeIndicatorSettingsModal() {
+  const modal = document.getElementById('indicator-settings-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function switchIndSettingsTab(tabName) {
+  document.querySelectorAll('.ind-modal-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-tab') === tabName);
+  });
+  document.querySelectorAll('.ind-settings-tab-panel').forEach(p => {
+    p.classList.toggle('active', p.getAttribute('data-panel') === tabName);
+  });
+}
+
+function renderIndSettingsInputsTab(cfg) {
+  const container = document.getElementById('ind-tab-inputs-body');
+  if (!container) return;
+
+  const inp = cfg.inputs || {};
+  let rows = '';
+
+  for (let key in inp) {
+    const val = inp[key];
+    const label = formatInputLabel(key);
+
+    if (key === 'source') {
+      rows += `
+        <div class="ind-setting-row">
+          <label class="ind-setting-lbl">${label}</label>
+          <select class="ind-setting-select" id="ind-inp-${key}">
+            <option value="close" ${val === 'close' ? 'selected' : ''}>close</option>
+            <option value="open" ${val === 'open' ? 'selected' : ''}>open</option>
+            <option value="high" ${val === 'high' ? 'selected' : ''}>high</option>
+            <option value="low" ${val === 'low' ? 'selected' : ''}>low</option>
+            <option value="hl2" ${val === 'hl2' ? 'selected' : ''}>hl2 ((H+L)/2)</option>
+            <option value="hlc3" ${val === 'hlc3' ? 'selected' : ''}>hlc3 ((H+L+C)/3)</option>
+            <option value="ohlc4" ${val === 'ohlc4' ? 'selected' : ''}>ohlc4</option>
+          </select>
+        </div>
+      `;
+    } else if (key === 'anchor') {
+      rows += `
+        <div class="ind-setting-row">
+          <label class="ind-setting-lbl">${label}</label>
+          <select class="ind-setting-select" id="ind-inp-${key}">
+            <option value="Session" ${val === 'Session' ? 'selected' : ''}>Session (Intraday)</option>
+            <option value="Week" ${val === 'Week' ? 'selected' : ''}>Week (Settimanale)</option>
+            <option value="Month" ${val === 'Month' ? 'selected' : ''}>Month (Mensile)</option>
+            <option value="Year" ${val === 'Year' ? 'selected' : ''}>Year (Annuale)</option>
+          </select>
+        </div>
+      `;
+    } else {
+      const step = (typeof val === 'number' && val < 1) ? '0.01' : (key === 'mult' || key === 'multiplier' ? '0.1' : '1');
+      rows += `
+        <div class="ind-setting-row">
+          <label class="ind-setting-lbl">${label}</label>
+          <input type="number" class="ind-setting-num" id="ind-inp-${key}" value="${val}" step="${step}">
+        </div>
+      `;
+    }
+  }
+
+  container.innerHTML = rows || '<div style="padding:16px; color:#787b86; text-align:center;">Nessun parametro numerico regolabile per questo indicatore.</div>';
+}
+
+function renderIndSettingsStyleTab(cfg) {
+  const container = document.getElementById('ind-tab-style-body');
+  if (!container) return;
+
+  const st = cfg.style || {};
+  let rows = '';
+
+  // Main color & line width
+  const mainColor = st.color || st.upperColor || '#38bdf8';
+  const lineWidth = st.lineWidth || 2;
+
+  rows += `
+    <div class="ind-setting-row">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="ind-style-visible" ${st.visible !== false ? 'checked' : ''}>
+        <label class="ind-setting-lbl" for="ind-style-visible" style="font-weight:700;">Visibile sul Grafico</label>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="color" class="ind-color-picker" id="ind-style-color" value="${mainColor}">
+        <select class="ind-setting-select" id="ind-style-width" style="width:75px;">
+          <option value="1" ${lineWidth === 1 ? 'selected' : ''}>1px (Sottile)</option>
+          <option value="1.5" ${lineWidth === 1.5 ? 'selected' : ''}>1.5px</option>
+          <option value="2" ${lineWidth === 2 ? 'selected' : ''}>2px (Medio)</option>
+          <option value="3" ${lineWidth === 3 ? 'selected' : ''}>3px (Spesso)</option>
+        </select>
+      </div>
+    </div>
+    <div class="ind-setting-row" style="margin-top:14px;">
+      <label class="ind-setting-lbl">Stile Linea</label>
+      <select class="ind-setting-select" id="ind-style-linestyle">
+        <option value="0" ${st.lineStyle === 0 ? 'selected' : ''}>Continua (Solid)</option>
+        <option value="1" ${st.lineStyle === 1 ? 'selected' : ''}>Tratteggiata (Dotted)</option>
+        <option value="2" ${st.lineStyle === 2 ? 'selected' : ''}>Tratto Lungo (Dashed)</option>
+      </select>
+    </div>
+    <div style="border-top:1px solid #2a2e39; margin:14px 0 10px;"></div>
+    <div style="font-size:10px; font-weight:800; color:#787b86; text-transform:uppercase; margin-bottom:8px;">OUTPUT & SCALA</div>
+    <div class="ind-setting-row">
+      <label class="ind-setting-lbl" for="ind-style-labels">Etichetta su asse dei prezzi</label>
+      <input type="checkbox" id="ind-style-labels" ${st.showLabels ? 'checked' : ''}>
+    </div>
+    <div class="ind-setting-row">
+      <label class="ind-setting-lbl" for="ind-style-values">Valore nella legenda attiva</label>
+      <input type="checkbox" id="ind-style-values" ${st.showValues !== false ? 'checked' : ''}>
+    </div>
+  `;
+
+  container.innerHTML = rows;
+}
+
+function renderIndSettingsVisibilityTab(cfg) {
+  const container = document.getElementById('ind-tab-visibility-body');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="font-size:11px; color:#94a3b8; line-height:1.5; margin-bottom:12px;">
+      Configura la visibilità dell'indicatore su intervalli temporali specifici:
+    </div>
+    <div class="ind-setting-row"><label class="ind-setting-lbl">Secondi (1s)</label><input type="checkbox" checked></div>
+    <div class="ind-setting-row"><label class="ind-setting-lbl">Minuti (1m - 30m)</label><input type="checkbox" checked></div>
+    <div class="ind-setting-row"><label class="ind-setting-lbl">Ore (1h - 12h)</label><input type="checkbox" checked></div>
+    <div class="ind-setting-row"><label class="ind-setting-lbl">Giorni (1D, 1W, 1M)</label><input type="checkbox" checked></div>
+  `;
+}
+
+function applyCurrentIndicatorSettings() {
+  if (!currentEditingIndicatorId) return;
+  const cfg = getIndicatorConfig(currentEditingIndicatorId);
+
+  // 1. Gather Inputs
+  for (let key in cfg.inputs) {
+    const el = document.getElementById('ind-inp-' + key);
+    if (el) {
+      cfg.inputs[key] = el.type === 'number' ? parseFloat(el.value) : el.value;
+    }
+  }
+
+  // 2. Gather Style
+  const colEl = document.getElementById('ind-style-color');
+  const widthEl = document.getElementById('ind-style-width');
+  const styleEl = document.getElementById('ind-style-linestyle');
+  const visEl = document.getElementById('ind-style-visible');
+  const labEl = document.getElementById('ind-style-labels');
+  const valEl = document.getElementById('ind-style-values');
+
+  if (colEl) {
+    cfg.style.color = colEl.value;
+    if (cfg.style.upperColor) cfg.style.upperColor = colEl.value;
+    if (cfg.style.middleColor) cfg.style.middleColor = colEl.value;
+  }
+  if (widthEl) cfg.style.lineWidth = parseFloat(widthEl.value);
+  if (styleEl) cfg.style.lineStyle = parseInt(styleEl.value);
+  if (visEl) cfg.style.visible = visEl.checked;
+  if (labEl) cfg.style.showLabels = labEl.checked;
+  if (valEl) cfg.style.showValues = valEl.checked;
+
+  saveIndicatorConfig(currentEditingIndicatorId, cfg);
+  closeIndicatorSettingsModal();
+
+  // Re-render chart with new customized parameters immediately
+  if (window.currentCandles) {
+    renderChartData(window.currentCandles);
+  }
+
+  if (window.showToast) {
+    window.showToast(`✓ Parametri di ${cfg.name} applicati con successo!`, 'success');
+  }
+}
+
+function resetCurrentIndicatorSettings() {
+  if (!currentEditingIndicatorId) return;
+  localStorage.removeItem('tpu_ind_cfg_' + currentEditingIndicatorId);
+  const def = getIndicatorConfig(currentEditingIndicatorId);
+  renderIndSettingsInputsTab(def);
+  renderIndSettingsStyleTab(def);
+  renderIndSettingsVisibilityTab(def);
+  if (window.showToast) window.showToast('Parametri ripristinati alla configurazione di default.', 'info');
+}
+
+function formatInputLabel(key) {
+  const map = {
+    length: 'Lunghezza / Periodo',
+    len1: 'Lunghezza EMA 1 (Fast)',
+    len2: 'Lunghezza EMA 2 (Mid)',
+    len3: 'Lunghezza EMA 3 (Intermediate)',
+    len4: 'Lunghezza EMA 4 (Slow)',
+    mult: 'Deviazione Standard / Moltiplicatore',
+    multiplier: 'Moltiplicatore ATR',
+    atrPeriod: 'Periodo ATR',
+    atrLength: 'Lunghezza ATR',
+    fastLength: 'Periodo Veloce (Fast EMA)',
+    slowLength: 'Periodo Lento (Slow EMA)',
+    signalLength: 'Smoothing Segnale (Signal Line)',
+    kLength: '%K Lunghezza',
+    dLength: '%D Lunghezza',
+    smooth: 'Smoothing %K',
+    rsiLength: 'Lunghezza RSI',
+    stochLength: 'Lunghezza Stochastic',
+    k: '%K Smoothing',
+    d: '%D Smoothing',
+    start: 'Passo Iniziale (Start)',
+    inc: 'Incremento Accelerazione',
+    max: 'Accelerazione Massima',
+    offset: 'Offset Orizzontale',
+    sigma: 'Deviazione Gaussiana (Sigma)',
+    rows: 'Numero Righe Volume Profile',
+    valueArea: '% Value Area (VAH/VAL)',
+    source: 'Sorgente Prezzo',
+    anchor: 'Periodo di Ancoraggio (Anchor)'
+  };
+  return map[key] || key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+function createIndicatorSettingsModalDom() {
+  let modal = document.getElementById('indicator-settings-modal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'indicator-settings-modal';
+  modal.className = 'modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeIndicatorSettingsModal(); };
+  modal.innerHTML = `
+    <div class="modal-window-card tv-settings-modal-window">
+      <!-- HEADER -->
+      <div class="tv-settings-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:15px; color:#2962ff;">⚙️</span>
+          <span id="ind-settings-modal-title" style="font-weight:800; font-size:14px; color:#fff;">Impostazioni Indicatore</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="closeIndicatorSettingsModal()" title="Chiudi">✕</button>
+      </div>
+
+      <!-- TABS -->
+      <div class="tv-settings-tabs-bar">
+        <button class="ind-modal-tab-btn active" data-tab="inputs" onclick="switchIndSettingsTab('inputs')">Inputs (Parametri)</button>
+        <button class="ind-modal-tab-btn" data-tab="style" onclick="switchIndSettingsTab('style')">Stile & Colori</button>
+        <button class="ind-modal-tab-btn" data-tab="visibility" onclick="switchIndSettingsTab('visibility')">Visibilità</button>
+      </div>
+
+      <!-- BODY PANELS -->
+      <div class="tv-settings-modal-body">
+        <div class="ind-settings-tab-panel active" data-panel="inputs" id="ind-tab-inputs-body"></div>
+        <div class="ind-settings-tab-panel" data-panel="style" id="ind-tab-style-body"></div>
+        <div class="ind-settings-tab-panel" data-panel="visibility" id="ind-tab-visibility-body"></div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="tv-settings-modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetCurrentIndicatorSettings()">
+          ↺ Predefiniti
+        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeIndicatorSettingsModal()">
+            Annulla
+          </button>
+          <button type="button" class="btn-action-primary btn-sm" style="background:#2962ff; color:#fff; font-weight:800; padding:6px 16px;" onclick="applyCurrentIndicatorSettings()">
+            ✓ OK (Applica)
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+// Expose functions globally
+window.openIndicatorSettingsModal = openIndicatorSettingsModal;
+window.closeIndicatorSettingsModal = closeIndicatorSettingsModal;
+window.switchIndSettingsTab = switchIndSettingsTab;
+window.applyCurrentIndicatorSettings = applyCurrentIndicatorSettings;
+window.resetCurrentIndicatorSettings = resetCurrentIndicatorSettings;
+window.getIndicatorConfig = getIndicatorConfig;

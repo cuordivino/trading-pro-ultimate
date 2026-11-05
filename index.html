@@ -18,7 +18,7 @@
   <!-- SAFE APP VERSION & PASSIVE CACHE PURGER (CRASH-FREE FOR SAFARI & WINDOWS 10) -->
   <script>
     (function() {
-      var CURR_VERSION = '2.7.6';
+      var CURR_VERSION = '2.7.7';
       try {
         var savedVer = localStorage.getItem('TPU_APP_VERSION');
         if (savedVer !== CURR_VERSION) {
@@ -55,7 +55,7 @@
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   
   <!-- Terminal Stylesheet -->
-  <link rel="stylesheet" href="css/terminal.css?v=2.7.6">
+  <link rel="stylesheet" href="css/terminal.css?v=2.7.7">
 </head>
 <body>
 
@@ -154,7 +154,7 @@
         <span>⚡ TRADING<span class="accent-pro">PRO</span> ULTIMATE™</span>
         <span class="brand-author-badge">© by cuordivino</span>
       </div>
-      <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)">
+      <div class="brand-subtitle" style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)">
         TUTTI I DIRITTI RISERVATI • QUANT INSTITUTIONAL TERMINAL
       </div>
     </div>
@@ -378,10 +378,13 @@
                       <span class="ind-color-dot" style="background:#f59e0b"></span>
                       <span>VWAP (Volume Weighted Avg Price)</span>
                     </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <button type="button" class="leg-gear-btn" onclick="event.stopPropagation(); openIndicatorSettingsModal('vwap')" title="Configura parametri VWAP">⚙️</button>
                     <label class="switch">
                       <input type="checkbox" checked onchange="toggleIndicatorKey('vwap', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -392,6 +395,7 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema9', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -402,6 +406,7 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema21', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -412,16 +417,20 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema200', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
                       <span class="ind-color-dot" style="background:rgba(99, 102, 241, 0.7)"></span>
                       <span>Bande di Bollinger (20, 2)</span>
                     </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <button type="button" class="leg-gear-btn" onclick="event.stopPropagation(); openIndicatorSettingsModal('boll')" title="Configura parametri Bollinger">⚙️</button>
                     <label class="switch">
                       <input type="checkbox" checked onchange="toggleIndicatorKey('boll', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -432,6 +441,7 @@
                       <input type="checkbox" onchange="toggleIndicatorKey('sar', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
+                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -1791,6 +1801,50 @@
     </div>
   </div>
 
+  
+  <!-- MODAL: TRADINGVIEW OFFICIAL INDICATOR SETTINGS (INPUTS, STYLE, VISIBILITY) -->
+  <div class="modal-overlay" id="indicator-settings-modal" onclick="if(event.target===this) closeIndicatorSettingsModal()">
+    <div class="modal-window-card tv-settings-modal-window">
+      <!-- HEADER -->
+      <div class="tv-settings-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:15px; color:#2962ff;">⚙️</span>
+          <span id="ind-settings-modal-title" style="font-weight:800; font-size:14px; color:#fff;">Impostazioni Indicatore</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="closeIndicatorSettingsModal()" title="Chiudi">✕</button>
+      </div>
+
+      <!-- TABS -->
+      <div class="tv-settings-tabs-bar">
+        <button class="ind-modal-tab-btn active" data-tab="inputs" onclick="switchIndSettingsTab('inputs')">Inputs (Parametri)</button>
+        <button class="ind-modal-tab-btn" data-tab="style" onclick="switchIndSettingsTab('style')">Stile & Colori</button>
+        <button class="ind-modal-tab-btn" data-tab="visibility" onclick="switchIndSettingsTab('visibility')">Visibilità</button>
+      </div>
+
+      <!-- BODY PANELS -->
+      <div class="tv-settings-modal-body">
+        <div class="ind-settings-tab-panel active" data-panel="inputs" id="ind-tab-inputs-body"></div>
+        <div class="ind-settings-tab-panel" data-panel="style" id="ind-tab-style-body"></div>
+        <div class="ind-settings-tab-panel" data-panel="visibility" id="ind-tab-visibility-body"></div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="tv-settings-modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="resetCurrentIndicatorSettings()">
+          ↺ Predefiniti
+        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeIndicatorSettingsModal()">
+            Annulla
+          </button>
+          <button type="button" class="btn-action-primary btn-sm" style="background:#2962ff; color:#fff; font-weight:800; padding:6px 16px;" onclick="applyCurrentIndicatorSettings()">
+            ✓ OK (Applica)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1823,22 +1877,22 @@
   </div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/auth.js?v=2.7.6"></script>
-  <script src="js/market_assets.js?v=2.7.6"></script>
-  <script src="js/workspace_engine.js?v=2.7.6"></script>
-  <script src="js/api_manager.js?v=2.7.6"></script>
-  <script src="js/chart.js?v=2.7.6"></script>
-  <script src="js/bybit_engine.js?v=2.7.6"></script>
-  <script src="js/casario_quant_engine.js?v=2.7.6"></script>
-  <script src="js/quant_engines.js?v=2.7.6"></script>
-  <script src="js/sector_rotation.js?v=2.7.6"></script>
-  <script src="js/optimal_engine.js?v=2.7.6"></script>
-  <script src="js/opportunity_scanner.js?v=2.7.6"></script>
-  <script src="js/skills.js?v=2.7.6"></script>
-  <script src="js/trading.js?v=2.7.6"></script>
-  <script src="js/journal.js?v=2.7.6"></script>
-  <script src="js/alerts.js?v=2.7.6"></script>
-  <script src="js/app.js?v=2.7.6"></script>
+  <script src="js/auth.js?v=2.7.7"></script>
+  <script src="js/market_assets.js?v=2.7.7"></script>
+  <script src="js/workspace_engine.js?v=2.7.7"></script>
+  <script src="js/api_manager.js?v=2.7.7"></script>
+  <script src="js/chart.js?v=2.7.7"></script>
+  <script src="js/bybit_engine.js?v=2.7.7"></script>
+  <script src="js/casario_quant_engine.js?v=2.7.7"></script>
+  <script src="js/quant_engines.js?v=2.7.7"></script>
+  <script src="js/sector_rotation.js?v=2.7.7"></script>
+  <script src="js/optimal_engine.js?v=2.7.7"></script>
+  <script src="js/opportunity_scanner.js?v=2.7.7"></script>
+  <script src="js/skills.js?v=2.7.7"></script>
+  <script src="js/trading.js?v=2.7.7"></script>
+  <script src="js/journal.js?v=2.7.7"></script>
+  <script src="js/alerts.js?v=2.7.7"></script>
+  <script src="js/app.js?v=2.7.7"></script>
 
   <script>
     // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)
@@ -1901,7 +1955,7 @@
       const orderCol = document.getElementById('bb-col-order');
       const posDock = document.getElementById('bb-col-positions');
 
-      if (window.innerWidth <= 860) {
+      if (window.innerWidth <= 1024 || window.innerHeight <= 550) {
         if (chartCol) chartCol.style.display = viewKey === 'chart' ? 'block' : 'none';
         if (bookCol) bookCol.style.display = viewKey === 'book' ? 'flex' : 'none';
         if (orderCol) orderCol.style.display = viewKey === 'order' ? 'block' : 'none';
@@ -1917,7 +1971,7 @@
 
     // Initialize Mobile Terminal View on Load
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.innerWidth <= 860) {
+      if (window.innerWidth <= 1024 || window.innerHeight <= 550) {
         const firstMBtn = document.querySelector('.m-view-btn');
         switchMobileTerminalView('chart', firstMBtn);
       }
