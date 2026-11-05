@@ -70,16 +70,18 @@ window.BybitEngine = {
     const base = asset ? asset.basePrice : (window.activePrice || 100);
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
     const f = Math.pow(10, prec);
+    const chgPct = (asset && asset.change24h !== undefined) ? (asset.change24h / 100) : 0.0125;
+    const vol24h = (asset && asset.volume24h) ? asset.volume24h : (asset && asset.cat === 'eu_stock' ? 2500000 : 48000000);
 
     this.tickerData = {
       lastPrice: base,
       indexPrice: base,
       markPrice: base,
-      price24hPcnt: 0.0125,
+      price24hPcnt: chgPct,
       highPrice24h: Math.round((base * 1.018) * f) / f,
       lowPrice24h: Math.round((base * 0.982) * f) / f,
-      volume24h: asset && asset.cat === 'eu_stock' ? 24500000 : 48000000,
-      turnover24h: base * (asset && asset.cat === 'eu_stock' ? 24500000 : 48000000),
+      volume24h: vol24h,
+      turnover24h: base * vol24h,
       fundingRate: 0,
       nextFundingTime: Date.now() + 14400000,
       openInterest: 0

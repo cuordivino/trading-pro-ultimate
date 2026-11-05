@@ -50,14 +50,20 @@ def health():
 # MARKET DATA ENDPOINTS
 # ==========================================
 @app.route('/api/quote/<symbol>')
-def get_quote(symbol):
+@app.route('/api/market/ticker')
+def get_quote(symbol=None):
+    if not symbol:
+        symbol = request.args.get('symbol', 'BTCUSDT')
     quote = market_data.get_ticker_quote(symbol)
     return jsonify(quote)
 
 @app.route('/api/kline/<symbol>')
-def get_klines(symbol):
+@app.route('/api/market/candles')
+def get_klines(symbol=None):
+    if not symbol:
+        symbol = request.args.get('symbol', 'BTCUSDT')
     interval = request.args.get('interval', '15m')
-    limit = int(request.args.get('limit', 120))
+    limit = int(request.args.get('limit', 180))
     candles = market_data.get_klines(symbol, interval=interval, limit=limit)
     return jsonify(candles)
 

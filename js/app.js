@@ -266,7 +266,8 @@ async function pollActiveQuote() {
     const base = asset ? asset.basePrice : 100.00;
     const curr = asset ? asset.currency : '$';
     const price = base;
-    const chg = 1.25;
+    const chg = (asset && asset.change24h !== undefined) ? asset.change24h : 1.25;
+    const vol = (asset && asset.volume24h) ? asset.volume24h : (asset && asset.cat === 'eu_stock' ? 2500000 : 48200000);
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, sym) : (asset ? (asset.precision || 2) : 2);
 
     q = {
@@ -275,7 +276,7 @@ async function pollActiveQuote() {
       change: chg,
       high: +(price * 1.018).toFixed(prec),
       low: +(price * 0.982).toFixed(prec),
-      volume: asset && asset.cat === 'eu_stock' ? 24500000 : 48200000,
+      volume: vol,
       currency: curr
     };
   }
@@ -419,14 +420,26 @@ async function loadCandleHistory() {
     let p = targetPrice;
     const tempCandles = [];
 
+    const base24hVol = (asset && asset.volume24h) ? asset.volume24h : (targetPrice > 1000 ? 50000 : 2500000);
+    const barsPerDay = Math.max(1, Math.floor(86400 / tfSeconds));
+    const baseBarVol = Math.max(50, base24hVol / barsPerDay);
+
     for (let i = count - 1; i >= 0; i--) {
       const cTime = alignedNow - ((count - 1 - i) * tfSeconds);
       const close = (i === count - 1) ? targetPrice : p;
       const change = (Math.random() - 0.495) * stepScale;
       const open = Math.round((close - change) * f) / f;
-      const high = Math.round((Math.max(open, close) + Math.random() * (stepScale * 0.5)) * f) / f;
-      const low = Math.round((Math.min(open, close) - Math.random() * (stepScale * 0.5)) * f) / f;
-      const volume = Math.round((Math.random() * 8000 + 1200) * tfVol);
+      const spread = Math.abs(close - open);
+      const wickH = Math.random() * (stepScale * 0.45);
+      const wickL = Math.random() * (stepScale * 0.45);
+      const high = Math.round((Math.max(open, close) + wickH) * f) / f;
+      const low = Math.round((Math.min(open, close) - wickL) * f) / f;
+
+      // True Wyckoff Volume-Price Action Coupling (VPA)
+      const spreadRatio = spread / (stepScale + 1e-9);
+      const wickRatio = (wickH + wickL) / (stepScale + 1e-9);
+      const vpaMultiplier = 0.45 + (1.6 * spreadRatio) + (0.7 * wickRatio);
+      const volume = Math.round(baseBarVol * vpaMultiplier * (0.85 + Math.random() * 0.3));
 
       tempCandles.unshift({
         time: cTime,

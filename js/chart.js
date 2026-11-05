@@ -126,7 +126,7 @@ function initMainChart() {
   vwapSeries = mainChart.addLineSeries({
     color: '#f59e0b',
     lineWidth: 2,
-    title: 'VWAP',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -134,7 +134,7 @@ function initMainChart() {
   ema9Series = mainChart.addLineSeries({
     color: '#00f2a1',
     lineWidth: 1.5,
-    title: 'EMA 9',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -142,7 +142,7 @@ function initMainChart() {
   ema21Series = mainChart.addLineSeries({
     color: '#38bdf8',
     lineWidth: 1.5,
-    title: 'EMA 21',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -150,7 +150,7 @@ function initMainChart() {
   ema200Series = mainChart.addLineSeries({
     color: '#a855f7',
     lineWidth: 2,
-    title: 'EMA 200',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -159,7 +159,7 @@ function initMainChart() {
     color: 'rgba(99, 102, 241, 0.75)',
     lineWidth: 1,
     lineStyle: 2,
-    title: 'BB Upper',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -168,7 +168,7 @@ function initMainChart() {
     color: 'rgba(99, 102, 241, 0.4)',
     lineWidth: 1,
     lineStyle: 0,
-    title: 'BB Mid',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -177,7 +177,7 @@ function initMainChart() {
     color: 'rgba(99, 102, 241, 0.75)',
     lineWidth: 1,
     lineStyle: 2,
-    title: 'BB Lower',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -186,7 +186,7 @@ function initMainChart() {
     color: '#f43f5e',
     lineWidth: 1,
     lineStyle: 1,
-    title: 'SAR',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -285,7 +285,7 @@ function initVolumePane() {
   volumeMaSeries = volumeChart.addLineSeries({
     color: '#fcd535',
     lineWidth: 1.5,
-    title: 'Vol MA (20)',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -324,14 +324,14 @@ function initMomentumPane() {
   rsiSeries = momentumChart.addLineSeries({
     color: '#a855f7',
     lineWidth: 1.5,
-    title: 'RSI 14',
+    title: '',
     lastValueVisible: true,
     priceLineVisible: false
   });
 
   macdHistSeries = momentumChart.addHistogramSeries({
     color: '#38bdf8',
-    title: 'Istogramma',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -339,7 +339,7 @@ function initMomentumPane() {
   macdLineSeries = momentumChart.addLineSeries({
     color: '#00f2a1',
     lineWidth: 1.5,
-    title: 'MACD',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -347,7 +347,7 @@ function initMomentumPane() {
   macdSignalSeries = momentumChart.addLineSeries({
     color: '#ff4560',
     lineWidth: 1.5,
-    title: 'Signal',
+    title: '',
     lastValueVisible: false,
     priceLineVisible: false
   });
@@ -448,7 +448,10 @@ function renderChartData(candles) {
           type: 'price',
           precision: prec,
           minMove: minMove
-        }
+        },
+        title: '',
+        lastValueVisible: false,
+        priceLineVisible: false
       });
     }
   });
