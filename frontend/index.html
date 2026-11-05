@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Trading Pro Ultimate™ × cuordivino</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#07090e">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Lightweight Charts Standalone CDN -->
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  
+  <!-- Terminal Stylesheet -->
+  <link rel="stylesheet" href="css/terminal.css?v=2.6.0">
+</head>
+<body>
+
+  <!-- GATEKEEPER SECURITY OVERLAY (PROTEZIONE ACCESSO CON PASSWORD) -->
+  <div id="terminal-gatekeeper" class="gatekeeper-overlay">
+    <div class="gatekeeper-card">
+      <div class="gatekeeper-shield-icon">
+        <div class="shield-halo"></div>
+        <span>🔒</span>
+      </div>
+
+      <div class="gatekeeper-brand">
+        <div class="gk-title">TRADING PRO <span class="accent-pro">ULTIMATE™</span></div>
+        <div class="gk-author">© by cuordivino — Accesso Riservato</div>
+      </div>
+
+      <div class="gk-badge">TERMINALE AD ACCESSO PROTETTO</div>
+
+      <p class="gk-desc">
+        Questa piattaforma contiene algoritmi quantitativi proprietari, motori di trading e comitati decisionali riservati. Inserisci la password di autorizzazione fornita dall'amministratore per accedere.
+      </p>
+
+      <div class="gk-form">
+        <div class="gk-input-wrapper">
+          <input type="password" id="gatekeeper-pwd" class="gk-input" placeholder="Inserisci Password di Accesso..." autofocus onkeydown="if(event.key==='Enter') verifyTerminalPassword()">
+          <button type="button" class="gk-eye-btn" onclick="toggleGatekeeperPwdVisibility()" title="Mostra/Nascondi Password">👁️</button>
+        </div>
+
+        <div class="gk-remember-row">
+          <label class="gk-checkbox-label">
+            <input type="checkbox" id="gk-remember-device" checked>
+            <span>Ricorda questo dispositivo (7 giorni)</span>
+          </label>
+        </div>
+
+        <div id="gk-error-msg" class="gk-error-banner" style="display:none;">
+          ⚠️ Accesso Negato: Password non valida o non autorizzata.
+        </div>
+
+        <button type="button" class="gk-submit-btn" onclick="verifyTerminalPassword()">
+          <span>Sblocca Terminale Quantitativo</span>
+          <span>→</span>
+        </button>
+
+        <div class="gk-footer-note">
+          Richiesta credenziali: Contattare <b>@cuordivino</b> su Telegram
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP INSTITUTIONAL TELEMETRY BAR -->
+  <div class="top-telemetry-bar">
+    <div class="telemetry-left">
+      <div class="tele-metric">
+        <span class="lbl">NAV:</span>
+        <span class="val" id="tele-nav-val">$25,000.00</span>
+      </div>
+      <div class="tele-metric">
+        <span class="lbl">PnL Oggi:</span>
+        <span class="val text-green" id="tele-pnl-val">+$0.00 (0.0%)</span>
+      </div>
+      <div class="tele-metric">
+        <span class="lbl">Win Rate:</span>
+        <span class="val text-accent" id="tele-winrate-val">--%</span>
+      </div>
+      <div class="tele-metric">
+        <span class="lbl">Circuit Breakers:</span>
+        <span class="val text-green" style="font-size:10px">ATTIVI / SICURI</span>
+      </div>
+    </div>
+
+    <div class="telemetry-right" style="display:flex; align-items:center; gap:14px;">
+      <div class="tele-metric">
+        <span class="lbl">Engine Latency:</span>
+        <span class="val text-green" id="tele-latency-val">24ms</span>
+      </div>
+      <div class="tele-metric">
+        <span class="lbl">Ora Roma (CET):</span>
+        <span class="val text-green" id="tele-clock-val" style="font-weight:700">--:--:--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER MARQUEE TAPE -->
+  <div class="ticker-tape-wrapper">
+    <div class="ticker-tape-track" id="ticker-tape-container">
+      <!-- Injected via app.js -->
+    </div>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="terminal-header">
+    <div class="brand-box">
+      <div class="brand-title">
+        <span>⚡ TRADING<span class="accent-pro">PRO</span> ULTIMATE™</span>
+        <span class="brand-author-badge">© by cuordivino</span>
+      </div>
+      <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)">
+        TUTTI I DIRITTI RISERVATI • QUANT INSTITUTIONAL TERMINAL
+      </div>
+    </div>
+
+    <!-- MAIN NAV TABS -->
+    <nav class="nav-tabs-container">
+      <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
+        <span>📈</span> Terminale
+      </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-scanner" onclick="switchMainTab('tab-scanner', this); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
+        <span>🎯</span> Radar Opportunità
+      </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-consensus" onclick="switchMainTab('tab-consensus', this)">
+        <span>🧠</span> Comitato Investitori
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-quant" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
+        <span>🤖</span> Motori Quant (4)
+      </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-rotation" onclick="switchMainTab('tab-rotation', this); if(window.SectorRotation) SectorRotation.renderSectorRotationTab();">
+        <span>🌐</span> Rotazione Settoriale
+      </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-optimal" onclick="switchMainTab('tab-optimal', this); if(window.OptimalEngine) OptimalEngine.renderOptimalUI();">
+        <span>🎯</span> Posizioni Ottimali & Auto-Pilot
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-chat" onclick="switchMainTab('tab-chat', this)">
+        <span>💬</span> Chat Grandi Maestri
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-hub" onclick="switchMainTab('tab-hub', this)">
+        <span>📚</span> Hub 63 Skills
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-sizer" onclick="switchMainTab('tab-sizer', this)">
+        <span>📐</span> Position Sizer
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-journal" onclick="switchMainTab('tab-journal', this)">
+        <span>📓</span> Diario Trading
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-alerts" onclick="switchMainTab('tab-alerts', this)">
+        <span>🔔</span> Allarmi
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-settings" onclick="switchMainTab('tab-settings', this)">
+        <span>⚙️</span> Impostazioni
+      </button>
+    </nav>
+
+    <!-- RIGHT STATUS ACTIONS -->
+    <div class="header-right-actions">
+      <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:#00f2a1; color:#00f2a1; cursor:pointer;" onclick="if(window.ApiManager) ApiManager.openModal()" title="Gestione Connessione API Broker (OKX, Bybit, Kraken, Telegram)">
+        🔑 API Broker
+      </button>
+      <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
+        📜 Paternità & Copyright
+      </button>
+      <button class="btn-lock-terminal" onclick="lockTerminal()" title="Blocca Terminale con Password">
+        <span>🔒</span> Blocca
+      </button>
+      <div class="engine-status-pill">
+        <span class="pulse-indicator"></span>
+        <span>LIVE ENGINE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ACTIVE ASSET HERO QUOTE BAR WITH MEGA-DROPDOWN ("APERTURA A TENDINA") -->
+  <div class="active-asset-bar">
+    <div class="asset-core-group">
+      
+      <!-- MEGA-DROPDOWN ASSET SELECTOR -->
+      <div class="dropdown" id="asset-mega-dropdown">
+        <button class="dropdown-trigger" style="padding:6px 14px; font-size:13px; font-family:var(--font-mono)">
+          <span style="color:var(--accent); font-weight:800" id="active-asset-trigger-sym">BTCUSDT</span>
+          <span class="chevron">▾</span>
+        </button>
+        
+        <!-- MEGA-DROPDOWN MENU CONTENT -->
+        <div class="dropdown-menu mega-asset-dropdown">
+          <input type="text" class="mega-search-box" placeholder="Cerca ticker (es. BTC, NVDA, ENEL, AAPL, ETH)..." oninput="onMegaSearchInput(this.value)">
+          
+          <div class="mega-tabs">
+            <button class="mega-tab-pill active" onclick="filterMegaCategory('favorites', this)">⭐ Preferiti</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('all', this)">Tutti</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('crypto', this)">🪙 Crypto (Bybit/OKX/Kraken)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('eu_stock', this)">🇮🇹 FTSE MIB (40/40)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('us_stock', this)">🇺🇸 USA (S&P/NASDAQ)</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('forex', this)">💱 Forex & Materie</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('etf', this)">📈 ETF Settoriali</button>
+          </div>
+
+          <div class="mega-asset-list" id="mega-asset-list-container">
+            <!-- Injected via app.js -->
+          </div>
+        </div>
+      </div>
+
+      <span class="live-price-box" id="active-live-price">---</span>
+      <span class="pct-chg-pill up" id="active-chg-badge">---</span>
+    </div>
+
+    <!-- Live 24h Metrics -->
+    <div class="asset-stat-group">
+      <div class="stat-item">
+        <span class="lbl">Massimo 24h</span>
+        <span class="val" id="active-metric-high">---</span>
+      </div>
+      <div class="stat-item">
+        <span class="lbl">Minimo 24h</span>
+        <span class="val" id="active-metric-low">---</span>
+      </div>
+      <div class="stat-item">
+        <span class="lbl">Volume 24h</span>
+        <span class="val" id="active-metric-vol">---</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER FOR VIEWS -->
+  <main class="main-wrapper">
+
+    <!-- ====================================================================
+         VIEW 1: TERMINAL PRO (BYBIT PERPETUAL INTERFACE × 100% RESPONSIVE)
+         ==================================================================== -->
+    <div id="tab-terminal" class="view-panel active">
+
+      <!-- BYBIT OFFICIAL PERPETUAL TELEMETRY STRIP -->
+      <div class="bybit-telemetry-strip">
+        <div class="bb-tele-item">
+          <span class="k">Contratto</span>
+          <span class="v" style="color:var(--accent); font-size:13px" id="bb-tele-contract">BTCUSDT Perp</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Ultimo Prezzo</span>
+          <span class="v text-green" style="font-size:14px" id="bb-last-price">$80,355.50</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Index Price</span>
+          <span class="v" id="bb-index-price">$80,393.32</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Mark Price</span>
+          <span class="v" id="bb-mark-price">$80,355.50</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Variazione 24h</span>
+          <span class="v text-green" id="bb-24h-chg">+3.46%</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Massimo 24h</span>
+          <span class="v" id="bb-24h-high">$81,181.10</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Minimo 24h</span>
+          <span class="v" id="bb-24h-low">$75,673.20</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Volume 24h</span>
+          <span class="v" id="bb-24h-vol">97,968 BTC</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Turnover 24h</span>
+          <span class="v" id="bb-24h-turnover">$7.68B</span>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Funding Rate / Countdown</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="v text-accent" id="bb-funding-rate">0.0100%</span>
+            <span class="v" style="font-size:10px; color:var(--text-muted)" id="bb-funding-countdown">03:45:12</span>
+          </div>
+        </div>
+        <div class="bb-tele-item">
+          <span class="k">Open Interest</span>
+          <span class="v" id="bb-open-interest">67,244 BTC</span>
+        </div>
+      </div>
+
+      <!-- MOBILE VIEW SWITCHER (VISIBLE ON TABLETS/SMARTPHONES) -->
+      <div class="mobile-view-switcher">
+        <button class="m-view-btn active" onclick="switchMobileTerminalView('chart', this)">📊 Grafico</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('book', this)">📖 Book</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('order', this)">⚡ Ordine</button>
+        <button class="m-view-btn" onclick="switchMobileTerminalView('positions', this)">📜 Posizioni</button>
+      </div>
+
+      <!-- QUICK OPPORTUNITY RADAR DOCK (MONITORAGGIO MULTI-MERCATO RAPIDO) -->
+      <div id="terminal-quick-radar-container"></div>
+
+      <!-- BYBIT 3-COLUMN RESPONSIVE GRID -->
+      <div class="bybit-terminal-grid">
+        
+        <!-- COLUMN 1: CANDLESTICK CHART & TECHNICAL TOOLS -->
+        <div class="window-card" id="bb-col-chart">
+          <div class="window-header">
+            <div class="window-title">
+              <span>📈 Grafico Professionale Candele</span>
+              <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)" id="active-sym-title">BTCUSDT</span>
+            </div>
+
+            <div class="window-controls">
+              <!-- Indicators Dropdown ("Apertura a tendina") -->
+              <div class="dropdown">
+                <button class="dropdown-trigger" style="font-size:11px; padding:3px 8px;">
+                  <span>📐 Indicatori Tecnici</span>
+                  <span class="chevron">▾</span>
+                </button>
+                <div class="dropdown-menu indicators-dropdown-menu right-align">
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#f59e0b"></span>
+                      <span>VWAP (Volume Weighted Avg Price)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('vwap', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#00f2a1"></span>
+                      <span>EMA 9 (Trend Veloce / Trigger)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema9', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#38bdf8"></span>
+                      <span>EMA 21 (Trend Medio / Pullback Ribbon)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema21', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#a855f7"></span>
+                      <span>EMA 200 (Supporto Istituzionale)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('ema200', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:rgba(99, 102, 241, 0.7)"></span>
+                      <span>Bande di Bollinger (20, 2)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="toggleIndicatorKey('boll', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#f43f5e"></span>
+                      <span>Parabolic SAR</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" onchange="toggleIndicatorKey('sar', this.checked)">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                  <div class="ind-toggle-row">
+                    <div class="ind-label-group">
+                      <span class="ind-color-dot" style="background:#f59e0b"></span>
+                      <span>Volumi Locali POC/VAH (OpenMarket)</span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked onchange="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()">
+                      <span class="slider-toggle"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Minimize Window Button -->
+              <button class="win-ctrl-btn" onclick="toggleWindowCollapse(this)">▴</button>
+            </div>
+          </div>
+
+          <div class="window-body">
+            <!-- Bybit Chart Subtabs (Grafico / Panoramica / Dati / Alimentazione) -->
+            <div class="bybit-subtabs-nav">
+              <button class="bybit-subtab-btn active" onclick="switchBybitSubtab('chart', this)">Grafico</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('overview', this)">Panoramica</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('data', this)">Dati</button>
+              <button class="bybit-subtab-btn" onclick="switchBybitSubtab('feed', this)">Alimentazione</button>
+            </div>
+
+            <!-- Chart Toolbar with Bybit Timeframes -->
+            <div class="chart-toolbar">
+              <div class="tf-pill-group">
+                <button class="tf-pill" onclick="changeTimeframe('1s', this)">1s</button>
+                <button class="tf-pill" onclick="changeTimeframe('1m', this)">1m</button>
+                <button class="tf-pill" onclick="changeTimeframe('5m', this)">5m</button>
+                <button class="tf-pill active" onclick="changeTimeframe('15m', this)">15m</button>
+                <button class="tf-pill" onclick="changeTimeframe('30m', this)">30m</button>
+                <button class="tf-pill" onclick="changeTimeframe('1h', this)">1h</button>
+                <button class="tf-pill" onclick="changeTimeframe('4h', this)">4h</button>
+                <button class="tf-pill" onclick="changeTimeframe('1d', this)">1d</button>
+                <button class="tf-pill" onclick="changeTimeframe('1w', this)">1w</button>
+                <button class="tf-pill" onclick="changeTimeframe('1M', this)" title="Timeframe Mensile (1 Mese)">1Mese</button>
+              </div>
+
+              <!-- Timeframe Custom Dropdown ("Apertura a tendina Bybit") -->
+              <div class="dropdown">
+                <button class="dropdown-trigger" style="font-size:10px; padding:3px 8px;">
+                  <span id="active-tf-trigger">Altro</span>
+                  <span class="chevron">▾</span>
+                </button>
+                <div class="dropdown-menu" style="min-width:140px; padding:6px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-bottom:6px;">
+                    <button class="tf-sub-pill" onclick="changeTimeframe('3m')">3m</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('2h')">2h</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('6h')">6h</button>
+                    <button class="tf-sub-pill" onclick="changeTimeframe('12h')">12h</button>
+                  </div>
+                  <div class="mega-asset-row" style="padding:6px 8px; font-size:11px; border-top:1px solid var(--border);" onclick="promptCustomTimeframe()">
+                    <span>⏱ Lasso personalizzato...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- OpenMarket Volume Profile Quick Toggle -->
+              <button id="btn-toggle-vp" class="tf-pill" style="display:flex; align-items:center; gap:5px; border-color:rgba(245,158,11,0.5); color:#f59e0b; font-weight:700;" onclick="if(window.OptimalEngine) OptimalEngine.toggleVolumeProfileVisibility()" title="Visualizza i Volumi Locali orizzontali per fascia temporale (POC/VAH/VAL)">
+                <span>📊 Volumi Locali (POC)</span>
+              </button>
+
+              <!-- Theme Quick Switcher -->
+              <div class="dropdown" style="position:relative;">
+                <button class="theme-pill-btn" onclick="this.nextElementSibling.classList.toggle('open')" title="Cambia Tema (Notte / Giorno / Bloomberg / Wall St / Matrix)">
+                  <span id="theme-trigger-icon">🌑</span>
+                  <span id="theme-trigger-name">Tema</span>
+                  <span style="font-size:9px;">▾</span>
+                </button>
+                <div class="theme-menu-dropdown">
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('notte'); this.parentElement.classList.remove('open')">🌑 Notte OLED (Cyberpunk)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('giorno'); this.parentElement.classList.remove('open')">☀️ Giorno (Pro Light)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('bloomberg'); this.parentElement.classList.remove('open')">🪙 Bloomberg Terminal (Amber)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('navy'); this.parentElement.classList.remove('open')">🌊 Wall Street Navy</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('matrix'); this.parentElement.classList.remove('open')">🔮 Cyber Matrix</div>
+                </div>
+              </div>
+
+              <!-- Maschere di Lavoro (Layout Presets) -->
+              <div class="dropdown" style="position:relative;">
+                <button class="mask-pill-btn" onclick="this.nextElementSibling.classList.toggle('open')" title="Maschere di Lavoro e Layout Salvati">
+                  <span>🎭</span>
+                  <span id="active-mask-label">Maschere</span>
+                  <span style="font-size:9px;">▾</span>
+                </button>
+                <div class="theme-menu-dropdown">
+                  <div style="padding:6px 14px; font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Maschere Predefinite</div>
+                  <div class="theme-option-row" onclick="WorkspaceMaskManager.applyMask('scalping'); this.parentElement.classList.remove('open')">⚡ Scalping 5M (Ribbon & Vol)</div>
+                  <div class="theme-option-row" onclick="WorkspaceMaskManager.applyMask('trend'); this.parentElement.classList.remove('open')">📈 Trend Follower (BB & RSI)</div>
+                  <div class="theme-option-row" onclick="WorkspaceMaskManager.applyMask('quant'); this.parentElement.classList.remove('open')">🏛️ Quant Istituzionale (MACD)</div>
+                  <div class="theme-option-row" onclick="WorkspaceMaskManager.applyMask('price_action'); this.parentElement.classList.remove('open')">🕯️ Price Action Puro (100%)</div>
+                  <div style="border-top:1px solid var(--border); margin:4px 0;"></div>
+                  <div class="theme-option-row" style="color:var(--accent);" onclick="WorkspaceMaskManager.saveCurrentMask(); this.parentElement.classList.remove('open')">💾 Salva Maschera Corrente...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
+            <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
+              <!-- FLOATING BYBIT ON-CHART LIVE LEGEND -->
+              <div class="bybit-chart-legend" id="bybit-chart-legend">
+                <div class="bybit-legend-line main">
+                  <span class="bybit-leg-sym" id="bybit-leg-sym">BTCUSDT Perpetual</span>
+                  <span class="bybit-leg-tf" id="bybit-leg-tf">15</span>
+                  <span class="bybit-leg-exch">Bybit</span>
+                  <span class="bybit-leg-ohlc" id="bybit-leg-ohlc">O: -- H: -- L: -- C: -- (--%)</span>
+                </div>
+                <div class="bybit-legend-line bb" id="bybit-leg-bb">BB 20 2 0: -- -- --</div>
+                <div class="bybit-legend-line vwap" id="bybit-leg-vwap">VWAP hlc3 Session: --</div>
+                <div class="bybit-legend-line ema" id="bybit-leg-ema">EMA 9 / 21 / 200: -- / -- / --</div>
+              </div>
+
+              <div id="chart-container" style="width:100%; height:100%;"></div>
+              <div id="chart-vp-overlay"></div>
+            </div>
+
+            <!-- DRAGGABLE SPLITTER 1: MAIN CHART / VOLUMI -->
+            <div class="chart-splitter" id="splitter-vol" title="Trascina su/giù per ridimensionare il pannello Volumi">
+              <div class="splitter-grip"></div>
+            </div>
+
+            <!-- SOTTO IL GRAFICO: PANNELLO 1 (Volumi a barre verticali + Media Mobile dei Volumi) -->
+            <div id="chart-volume-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
+              <div style="position:absolute; top:4px; left:10px; z-index:10; font-size:10px; font-weight:800; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+                <span>📊 PANNELLO 1: Volumi Istituzionali a Barre Verticali</span>
+                <span style="color:#fcd535;">● Media Mobile Volumi (SMA 20)</span>
+              </div>
+            </div>
+
+            <!-- DRAGGABLE SPLITTER 2: VOLUMI / MOMENTUM -->
+            <div class="chart-splitter" id="splitter-mom" title="Trascina su/giù per ridimensionare il pannello Momentum">
+              <div class="splitter-grip"></div>
+            </div>
+
+            <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD) -->
+            <div id="chart-momentum-pane" class="chart-sub-pane active" style="height:105px; position:relative;">
+              <div style="position:absolute; top:4px; left:10px; right:10px; z-index:10; display:flex; justify-content:space-between; align-items:center;">
+                <span id="momentum-pane-title" style="font-size:10px; font-weight:800; color:var(--text-muted);">
+                  PANNELLO 2: Oscillatore Momentum RSI (14) — Bande Ipercomprato (70) / Ipervenduto (30)
+                </span>
+                <div class="mom-toggle-group">
+                  <button class="mom-toggle-btn active" data-mom="rsi" onclick="setMomentumMode('rsi')">RSI (14)</button>
+                  <button class="mom-toggle-btn" data-mom="macd" onclick="setMomentumMode('macd')">MACD (12, 26, 9)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: BYBIT ORDER BOOK & RECENT TRADES -->
+        <div class="bb-book-trades-card" id="bb-col-book">
+          <div class="bb-book-tabs-header">
+            <button class="bb-subtab-btn active" id="bb-tab-ob-btn" onclick="switchBookSubTab('orderbook')">
+              📖 Order Book (L2 Depth)
+            </button>
+            <button class="bb-subtab-btn" id="bb-tab-tr-btn" onclick="switchBookSubTab('trades')">
+              ⚡ Trade Recenti
+            </button>
+          </div>
+
+          <!-- Order Book View -->
+          <div id="bb-view-orderbook" style="display:flex; flex-direction:column; height:100%;">
+            <div class="bb-ob-head">
+              <span>Prezzo (USDT)</span>
+              <span>Dim. (BTC)</span>
+              <span>Totale</span>
+            </div>
+            <div class="bb-ob-body" id="bb-orderbook-rows">
+              <!-- Injected dynamically via bybit_engine.js -->
+            </div>
+          </div>
+
+          <!-- Recent Trades View -->
+          <div id="bb-view-trades" style="display:none; flex-direction:column; height:100%;" class="bb-trades-wrap">
+            <div class="bb-ob-head">
+              <span>Prezzo (USDT)</span>
+              <span>Dim. (BTC)</span>
+              <span>Ora</span>
+            </div>
+            <div style="flex:1; overflow-y:auto;" id="bb-recent-trades-rows">
+              <!-- Injected dynamically via bybit_engine.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMN 3: BYBIT PERPETUAL ORDER EXECUTION PANEL -->
+        <div class="window-card order-execution-col" id="bb-col-order">
+          <div class="window-header">
+            <div class="window-title">
+              <span>⚡ Esecuzione Ordine Bybit</span>
+            </div>
+            <div class="window-controls">
+              <span style="font-size:11px; color:var(--accent); font-family:var(--font-mono); margin-right:4px">
+                Leva: <b id="lev-display-val">10x</b>
+              </span>
+              <button class="win-ctrl-btn" onclick="toggleWindowCollapse(this)">▴</button>
+            </div>
+          </div>
+
+          <div class="window-body">
+            <div class="order-execution-window">
+              
+              <!-- TRIPLE TRADING SYSTEM: MANUALE | ASSISTITO | AUTOMATIZZATO -->
+              <div class="trading-mode-selector-bar">
+                <div class="trading-mode-header">
+                  <span class="mode-title-lbl">MODALITÀ OPERATIVA</span>
+                  <span class="mode-status-badge mode-manual" id="trading-mode-badge">🕹️ MANUALE DIRETTO</span>
+                </div>
+                <div class="trading-mode-pills">
+                  <button type="button" class="t-mode-btn active" id="btn-tmode-manual" onclick="TradingEngine.setExecutionMode('manual')">
+                    🕹️ Manuale
+                  </button>
+                  <button type="button" class="t-mode-btn" id="btn-tmode-assisted" onclick="TradingEngine.setExecutionMode('assisted')">
+                    🧭 Assistito
+                  </button>
+                  <button type="button" class="t-mode-btn" id="btn-tmode-automated" onclick="TradingEngine.setExecutionMode('automated')">
+                    🤖 Automatizzato
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW 1: MANUALE DIRETTO -->
+              <div id="trading-view-manual" style="display:block;">
+                <!-- MARGIN MODE: CROSS / ISOLATED -->
+                <div class="bb-margin-toggles">
+                  <button class="bb-margin-btn active" data-margin="cross" onclick="BybitEngine.setMarginMode('cross')">Cross Margin</button>
+                  <button class="bb-margin-btn" data-margin="isolated" onclick="BybitEngine.setMarginMode('isolated')">Isolated Margin</button>
+                </div>
+
+                <!-- ORDER TYPE: MARKET / LIMIT / CONDITIONAL -->
+                <div class="bb-ot-tabs">
+                  <button class="bb-ot-btn active" data-ot="Market" onclick="BybitEngine.setOrderType('Market')">Market</button>
+                  <button class="bb-ot-btn" data-ot="Limit" onclick="BybitEngine.setOrderType('Limit')">Limit</button>
+                  <button class="bb-ot-btn" data-ot="Conditional" onclick="BybitEngine.setOrderType('Conditional')">Conditional</button>
+                </div>
+
+                <!-- BUY / SELL LONG / SHORT SWITCH GRID -->
+                <div class="side-switch-grid">
+                  <button class="side-btn long active" id="btn-mode-long" onclick="setTradeSide('LONG')">
+                    ▲ BUY / LONG
+                  </button>
+                  <button class="side-btn short" id="btn-mode-short" onclick="setTradeSide('SHORT')">
+                    ▼ SELL / SHORT
+                  </button>
+                </div>
+
+                <!-- Leverage Presets Pills -->
+                <div class="form-field">
+                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
+                    <span>LEVA FINANZIARIA</span>
+                    <span>1x - 100x</span>
+                  </div>
+                  <div class="presets-row">
+                    <div class="preset-chip lev-chip" data-val="1" onclick="setLeveragePreset(1, this)">1x</div>
+                    <div class="preset-chip lev-chip" data-val="5" onclick="setLeveragePreset(5, this)">5x</div>
+                    <div class="preset-chip lev-chip active" data-val="10" onclick="setLeveragePreset(10, this)">10x</div>
+                    <div class="preset-chip lev-chip" data-val="25" onclick="setLeveragePreset(25, this)">25x</div>
+                    <div class="preset-chip lev-chip" data-val="50" onclick="setLeveragePreset(50, this)">50x</div>
+                    <div class="preset-chip lev-chip" data-val="100" onclick="setLeveragePreset(100, this)">100x</div>
+                  </div>
+                  <input type="range" min="1" max="100" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
+                </div>
+
+                <!-- Order Price & Trigger (if Limit/Conditional) -->
+                <div class="form-field" id="bb-entry-field-wrap" style="display:none;">
+                  <label>Prezzo Ordine ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="BybitEngine.recalcBybitOrderMetrics()">
+                </div>
+
+                <div class="form-field" id="bb-trigger-field-wrap" style="display:none;">
+                  <label>Prezzo Trigger Condizionale ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="bb-trigger-price" placeholder="Trigger price...">
+                </div>
+
+                <!-- Order Quantity (BTC) & Quick Percentage Chips -->
+                <div class="form-field">
+                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
+                    <span>QUANTITÀ ORDINE</span>
+                    <span>Valore Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
+                  </div>
+                  <input type="number" step="any" class="terminal-input" id="bb-order-qty" value="0.100" oninput="BybitEngine.recalcBybitOrderMetrics()">
+                  
+                  <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100%) -->
+                  <div class="bb-pct-chips-row">
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(10)">10%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(25)">25%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(50)">50%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(75)">75%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(100)">100%</div>
+                  </div>
+                </div>
+
+                <!-- Strategy Mentor & TP/SL -->
+                <div class="input-grid-2col">
+                  <div class="form-field">
+                    <label>Strategia Mentor</label>
+                    <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
+                      <option value="Minervini VCP">Minervini VCP</option>
+                      <option value="Buffett Value">Buffett Value</option>
+                      <option value="Dalio All-Weather">Dalio All-Weather</option>
+                      <option value="Simons Quant">Simons Quant</option>
+                      <option value="Burry Contrarian">Burry Contrarian</option>
+                      <option value="Freqtrade ML">Freqtrade ML</option>
+                      <option value="Discretionary" selected>Discrezionale</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label>Stop Loss ($)</label>
+                    <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="recalcPosition()">
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <label>Take Profit ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
+                </div>
+
+                <!-- Bybit Real-Time Position Sizing & Liquidation Metrics -->
+                <div class="pos-summary">
+                  <div class="pos-row">
+                    <span>Costo / Margine Iniziale:</span>
+                    <span id="bb-cost-val" style="font-weight:800; color:var(--accent)">$0.00</span>
+                  </div>
+                  <div class="pos-row">
+                    <span>Prezzo Liquidazione Stimato:</span>
+                    <span id="bb-liq-val" style="color:var(--sell); font-weight:800; font-family:var(--font-mono)">$0.00</span>
+                  </div>
+                  <div class="pos-row">
+                    <span>Rapporto R/R:</span>
+                    <span id="pos-res-rr" style="font-weight:800">1 : 2.5</span>
+                  </div>
+                  <div class="pos-row" style="display:none;">
+                    <span id="pos-res-units">0.1</span>
+                    <span id="pos-res-margin">$0.00</span>
+                    <span id="pos-res-liq">$0.00</span>
+                  </div>
+                </div>
+
+                <!-- ACCORDION DRAWER: Multi-Target TP -->
+                <div class="accordion-drawer" id="multi-tp-drawer">
+                  <div class="accordion-header" onclick="toggleDrawer('multi-tp-drawer')">
+                    <span>Target Multi-Scaglione (TP1, TP2, TP3 Runner)</span>
+                    <span class="chevron">▾</span>
+                  </div>
+                  <div class="accordion-content">
+                    <table class="multi-tp-table">
+                      <thead>
+                        <tr style="color:var(--text-muted); font-size:10px">
+                          <th>Scaglione</th>
+                          <th>Prezzo Target</th>
+                          <th>R/R</th>
+                          <th>Profitto</th>
+                        </tr>
+                      </thead>
+                      <tbody id="multi-tp-tbody">
+                        <tr><td colspan="4" style="text-align:center; color:var(--text-muted)">Imposta Entry e Stop Loss per calcolare</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Execute Order Button -->
+                <button class="btn-action-primary btn-buy" id="btn-execute-order" onclick="executeTrade()">
+                  Apri Posizione BUY / LONG
+                </button>
+
+                <!-- Motivated Telegram Signal Dispatch Button -->
+                <button class="btn-telegram-dispatch" onclick="dispatchActiveOrderToTelegram()" title="Invia segnale motivato con target, SL e motivazione su Telegram">
+                  <span>📲</span> Invia Segnale Motivano su Telegram (@cuordivino)
+                </button>
+
+                <!-- Quick Consensus Widget -->
+                <div class="quick-consensus-panel">
+                  <div class="qc-top-row">
+                    <span class="qc-title">🧠 Consensus Comitato</span>
+                    <span class="qc-score-pill" id="qc-score-val">--/100</span>
+                  </div>
+                  <div style="font-size:11px; font-weight:800; margin:6px 0;" id="qc-verdict-val">Analisi in corso...</div>
+                  <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; font-size:11px; padding:6px" onclick="switchMainTab('tab-consensus', document.querySelector('[data-tab=tab-consensus]'))">
+                    Vedi Delibera Completa Comitato →
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW 2: ASSISTITO (CO-PILOT CON INDICAZIONI MOTIVATE & PRECISE) -->
+              <div id="trading-view-assisted" style="display:none;">
+                <div id="assisted-content-container"></div>
+              </div>
+
+              <!-- VIEW 3: TOTALMENTE AUTOMATIZZATO (QUANT BOT ALGORITMICO) -->
+              <div id="trading-view-automated" style="display:none;">
+                <div id="automated-content-container"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM DOCK: BYBIT ACTIVE POSITIONS & ORDERS -->
+      <div class="bb-positions-dock" id="bb-col-positions">
+        <div class="bb-pos-tabs-header">
+          <div class="bb-pos-tab active" onclick="switchPositionsSubTab('positions', this)">Posizioni Attive (1)</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('closed', this)">PnL Chiuso</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('open_orders', this)">Ordini Aperti (0)</div>
+          <div class="bb-pos-tab" onclick="switchPositionsSubTab('history', this)">Storico Ordini</div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="pro-terminal-table">
+            <thead>
+              <tr>
+                <th>Contratto</th>
+                <th>Dimensione</th>
+                <th>Prezzo Entry</th>
+                <th>Mark Price</th>
+                <th>Prezzo Liq.</th>
+                <th>Margine Impegnato</th>
+                <th>PnL Non Realizzato (ROI)</th>
+                <th>TP / SL</th>
+                <th>Azione</th>
+              </tr>
+            </thead>
+            <tbody id="bb-positions-table-body">
+              <tr>
+                <td><b style="color:var(--text-main)">BTCUSDT Perp</b> <span class="strat-tag" style="background:rgba(0,242,161,0.15); color:var(--buy)">LONG 10x</span></td>
+                <td style="font-family:var(--font-mono)">0.250 BTC</td>
+                <td style="font-family:var(--font-mono)">$80,100.00</td>
+                <td style="font-family:var(--font-mono)" id="bb-pos-mark">$80,355.50</td>
+                <td style="font-family:var(--font-mono); color:var(--sell)">$72,400.00</td>
+                <td style="font-family:var(--font-mono)">$2,002.50</td>
+                <td class="text-green" style="font-weight:800; font-family:var(--font-mono)" id="bb-pos-pnl">+$63.88 (+3.19%)</td>
+                <td>$84,000.00 / $77,500.00</td>
+                <td>
+                  <button class="btn btn-secondary" style="padding:3px 8px; font-size:10px; color:var(--sell)" onclick="showToast('Posizione BTCUSDT chiusa a mercato!', 'info')">Chiudi Market</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====================================================================
+         VIEW 2: MASTER COMMITTEE CONSENSUS & RADAR PILLARS
+         ==================================================================== -->
+    <div id="tab-consensus" class="view-panel">
+      <!-- HERO CONSENSUS WINDOW CARD -->
+      <div class="committee-hero-card">
+        
+        <!-- CIRCULAR SVG GAUGE -->
+        <div class="gauge-visual-box">
+          <svg class="svg-gauge-ring" viewBox="0 0 140 140">
+            <!-- Background Ring -->
+            <circle cx="70" cy="70" r="60" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="10"></circle>
+            <!-- Animated Value Ring (Circumference = 377) -->
+            <circle id="svg-gauge-circle" cx="70" cy="70" r="60" fill="transparent" stroke="var(--buy)" stroke-width="10" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="100" style="transition: stroke-dashoffset 0.8s ease, stroke 0.5s;"></circle>
+          </svg>
+          <div class="gauge-center-content">
+            <div class="gauge-num" id="svg-gauge-num">--</div>
+            <div class="gauge-caption">Consensus /100</div>
+          </div>
+          <div style="font-size:12px; font-weight:800; margin-top:8px;" id="gauge-verdict-label">In Attesa</div>
+        </div>
+
+        <!-- 6 RADAR PILLARS BREAKDOWN BARS -->
+        <div class="radar-bars-card">
+          <div style="font-size:11px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px;">
+            I 6 Pilastri Decisionali del Consiglio:
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Moat & Intrinsic Value (Buffett)</span><span id="radar-moat-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-moat" style="width:50%; background:#00f2a1;"></div></div>
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Trend & Contrazione VCP (Minervini)</span><span id="radar-vcp-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-vcp" style="width:50%; background:#fcd535;"></div></div>
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Ciclo Macro & Risk Parity (Dalio)</span><span id="radar-macro-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-macro" style="width:50%; background:#818cf8;"></div></div>
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Anomalia Z-Score Quant (Simons)</span><span id="radar-quant-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-quant" style="width:50%; background:#22d3ee;"></div></div>
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Asimmetria Contrarian (Burry)</span><span id="radar-contrarian-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-contrarian" style="width:50%; background:#ff4560;"></div></div>
+          </div>
+
+          <div class="radar-row">
+            <div class="radar-lbl-row"><span>Punti Pivot & Momentum (Livermore)</span><span id="radar-pivots-val">50%</span></div>
+            <div class="radar-track"><div class="radar-fill" id="radar-pivots" style="width:50%; background:#c084fc;"></div></div>
+          </div>
+        </div>
+
+        <!-- ACTIONS & TARGETS BOX -->
+        <div class="consensus-actions-box">
+          <div class="consensus-meta-item">
+            <span class="lbl">TARGET CONSENSUS:</span>
+            <span class="val" style="color:var(--buy)" id="consensus-target-val">$0.00</span>
+          </div>
+          <div class="consensus-meta-item">
+            <span class="lbl">STOP INVALIDAZIONE:</span>
+            <span class="val" style="color:var(--sell)" id="consensus-stop-val">$0.00</span>
+          </div>
+          <div class="consensus-meta-item">
+            <span class="lbl">RISCHIO CONSIGLIATO:</span>
+            <span class="val" id="consensus-risk-val">1.5%</span>
+          </div>
+
+          <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; margin-top:8px;" onclick="applyConsensusToOrder()">
+            ✓ Applica Parametri al Trade
+          </button>
+          
+          <button class="btn-telegram-dispatch" style="margin-top:6px; width:100%" onclick="dispatchActiveOrderToTelegram()">
+            <span>📲</span> Invia Delibera Comitato su Telegram
+          </button>
+        </div>
+
+      </div>
+
+      <!-- COUNCIL MENTOR CARDS GRID WITH ACCORDION DRAWERS -->
+      <div class="mentor-cards-grid" id="council-cards-container">
+        <!-- Injected via skills.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW QUANT: THE 4 QUANTITATIVE ENGINES (FREQTRADE, HUMMINGBOT, NAUTILUS, OPENBB)
+         ==================================================================== -->
+    <div id="tab-quant" class="view-panel">
+      <div id="quant-engines-view-container">
+        <!-- Injected via quant_engines.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW SCANNER: RADAR OPPORTUNITÀ DI TRADING ISTITUZIONALE
+         ==================================================================== -->
+    <div id="tab-scanner" class="view-panel">
+      <div id="tab-scanner-view-container">
+        <!-- Injected via opportunity_scanner.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW ROTATION: ROTAZIONE SETTORIALE & MONEY FLOW (RISK-ON / RISK-OFF)
+         ==================================================================== -->
+    <div id="tab-rotation" class="view-panel">
+      <div id="sector-rotation-view-container">
+        <!-- Injected via sector_rotation.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW OPTIMAL: POSIZIONI OTTIMALI & AUTOPILOT (KIYOTAKA & OPENMARKET)
+         ==================================================================== -->
+    <div id="tab-optimal" class="view-panel">
+      <div id="optimal-engine-view-container">
+        <!-- Injected via optimal_engine.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 3: INTERACTIVE PERSONA CHAT THEATER
+         ==================================================================== -->
+    <div id="tab-chat" class="view-panel">
+      <div class="chat-dock-layout">
+        
+        <!-- PERSONA DOCK SIDEBAR -->
+        <div class="persona-dock-sidebar">
+          <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px">
+            Seleziona Mentor:
+          </div>
+
+          <button class="mentor-select-btn active" data-persona="buffett" onclick="selectChatPersona('buffett', this)">
+            <span style="font-size:20px">👴</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Warren Buffett</div>
+              <div style="font-size:10px; color:var(--text-muted)">Value & Moat</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="minervini-vcp" onclick="selectChatPersona('minervini-vcp', this)">
+            <span style="font-size:20px">⚡</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Mark Minervini</div>
+              <div style="font-size:10px; color:var(--text-muted)">VCP & Breakout</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="dalio-principles-allweather" onclick="selectChatPersona('dalio-principles-allweather', this)">
+            <span style="font-size:20px">🌐</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Ray Dalio</div>
+              <div style="font-size:10px; color:var(--text-muted)">Macro & Risk Parity</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="simons-quant" onclick="selectChatPersona('simons-quant', this)">
+            <span style="font-size:20px">📐</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Jim Simons</div>
+              <div style="font-size:10px; color:var(--text-muted)">Quant Stat-Arb</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="burry-asymmetric-contrarian" onclick="selectChatPersona('burry-asymmetric-contrarian', this)">
+            <span style="font-size:20px">🔍</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Michael Burry</div>
+              <div style="font-size:10px; color:var(--text-muted)">Asymmetric Short</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="livermore" onclick="selectChatPersona('livermore', this)">
+            <span style="font-size:20px">📈</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Jesse Livermore</div>
+              <div style="font-size:10px; color:var(--text-muted)">Pivots & Tape</div>
+            </div>
+          </button>
+
+          <button class="mentor-select-btn" data-persona="arthur-hayes-liquidity" onclick="selectChatPersona('arthur-hayes-liquidity', this)">
+            <span style="font-size:20px">🪙</span>
+            <div>
+              <div style="font-size:13px; font-weight:800">Arthur Hayes</div>
+              <div style="font-size:10px; color:var(--text-muted)">Crypto & Liquidity</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- CHAT THEATER CARD -->
+        <div class="chat-theater-card">
+          <div class="chat-theater-header">
+            <span style="font-weight:800; font-size:13px" id="chat-active-persona-title">
+              👴 Conversazione attiva con WARREN BUFFETT
+            </span>
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono)">InvestorSkills Engine v2</span>
+          </div>
+
+          <!-- Quick Preset Prompts Bar ("Apertura a tendina rapida") -->
+          <div class="chat-prompts-bar">
+            <button class="prompt-chip" onclick="sendPresetPrompt('Qual è il Margine di Sicurezza su questo titolo a questi prezzi?')">🛡️ Margine di Sicurezza</button>
+            <button class="prompt-chip" onclick="sendPresetPrompt('Verifica se il pattern VCP e la contrazione di volume sono completati.')">⚡ Verifica VCP</button>
+            <button class="prompt-chip" onclick="sendPresetPrompt('Cosa dice il ciclo macro di liquidità su questo asset?')">🌐 Regime Macro</button>
+            <button class="prompt-chip" onclick="sendPresetPrompt('Il Z-Score mostra un\'anomalia quantitativa di Mean Reversion?')">📐 Test Z-Score</button>
+            <button class="prompt-chip" onclick="sendPresetPrompt('A quale livello di prezzo la tua tesi verrebbe categoricamente invalidata?')">⚠️ Trigger Invalidazione</button>
+          </div>
+
+          <div class="chat-feed-box" id="chat-messages-container">
+            <div class="chat-bubble mentor">
+              Benvenuto! Sono pronto ad analizzare l'asset attivo secondo i miei rigorosi principi di investimento. Seleziona un prompt rapido o digita la tua domanda.
+            </div>
+          </div>
+
+          <div class="chat-send-bar">
+            <input type="text" class="chat-send-input" id="chat-user-input" placeholder="Chiedi un parere su questo asset, livelli di stop, o catalizzatori..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+            <button class="btn-action-primary" style="width:auto; padding:10px 18px; background:var(--ai-gradient); color:#fff" onclick="sendChatMessage()">Invia Domanda</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 4: INVESTOR SKILLS HUB (63 MASTERS)
+         ==================================================================== -->
+    <div id="tab-hub" class="view-panel">
+      <!-- Toolbar -->
+      <div class="hub-toolbar-card">
+        <div class="hub-filter-pills">
+          <button class="hub-filter-btn active" onclick="filterSkillsCategory('all', this)">Tutti (63)</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('value_quality', this)">Value & Moat</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('macro_cycles', this)">Macro & Cicli</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('momentum_breakouts', this)">Momentum & VCP</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('quant_systematic', this)">Quant & Stat</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('short_forensic', this)">Short / Forensic</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('activist_special', this)">Attivismo</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('crypto_native', this)">Crypto Native</button>
+          <button class="hub-filter-btn" onclick="filterSkillsCategory('vc_innovation', this)">VC & Innovation</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px">
+          <span id="skills-count-badge" style="font-size:11px; color:var(--text-dim); font-family:var(--font-mono)">63 Sistemi</span>
+          <input type="text" class="terminal-input" style="width:240px; padding:6px 12px;" placeholder="Cerca maestro o strategia..." oninput="searchSkillsInput(this.value)">
+        </div>
+      </div>
+
+      <!-- Skills Grid -->
+      <div class="skills-catalog-grid" id="skills-directory-grid">
+        <!-- Injected via skills.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 5: POSITION SIZER & RISK STUDIO
+         ==================================================================== -->
+    <div id="tab-sizer" class="view-panel">
+      <div style="max-width:850px; margin: 0 auto;">
+        
+        <div class="window-card" style="margin-bottom:16px;">
+          <div class="window-header">
+            <div class="window-title"><span>📐 Studio Professionale di Position Sizing & Parità di Rischio</span></div>
+          </div>
+          <div class="window-body" style="padding:16px;">
+            <p style="color:var(--text-dim); font-size:12px; line-height:1.5;">
+              Combina i motori di calcolo di Trading Pro Ultimate con i modelli di Ray Dalio, Mark Minervini e la formula Half-Kelly di Jim Simons per dimensionare scientificamente ogni trade in base alla volatilità e al win rate.
+            </p>
+          </div>
+        </div>
+
+        <div class="window-card">
+          <div class="window-header">
+            <div class="window-title"><span>Parametri di Input</span></div>
+          </div>
+          <div class="window-body" style="padding:16px;">
+            <div class="input-grid-2col">
+              <div class="form-field">
+                <label>Capitale Totale ($)</label>
+                <input type="number" class="terminal-input" id="calc-capitale" value="25000" oninput="recalcStandaloneSizer()">
+              </div>
+              <div class="form-field">
+                <label>Rischio per Operazione (%)</label>
+                <input type="number" step="0.1" class="terminal-input" id="calc-risk-pct" value="1.5" oninput="recalcStandaloneSizer()">
+              </div>
+            </div>
+
+            <div class="input-grid-2col" style="margin-top:10px;">
+              <div class="form-field">
+                <label>Modello di Calcolo</label>
+                <select class="terminal-input" id="sizing-mode-select" onchange="recalcPosition(); recalcStandaloneSizer()">
+                  <option value="standard">Standard Fixed Fractional (Trading Pro Classic)</option>
+                  <option value="minervini">Minervini Strict Cut (Max -7% Stop, Scale-in)</option>
+                  <option value="volatility">Parità di Volatilità (ATR Volatility Parity)</option>
+                  <option value="kelly">Formula Half-Kelly (Quant & Stat)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Leva Finanziaria</label>
+                <select class="terminal-input" id="calc-leverage" onchange="recalcStandaloneSizer()">
+                  <option value="1">1x (Spot / Nessuna Leva)</option>
+                  <option value="2">2x (Prudenziale)</option>
+                  <option value="5">5x (Moderata)</option>
+                  <option value="10" selected>10x (Standard)</option>
+                  <option value="20">20x (Aggressiva)</option>
+                  <option value="30">30x (Massima)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-grid-2col" style="margin-top:10px;">
+              <div class="form-field">
+                <label>Prezzo Entry ($)</label>
+                <input type="number" step="any" class="terminal-input" id="calc-entry-standalone" value="65000" oninput="recalcStandaloneSizer()">
+              </div>
+              <div class="form-field">
+                <label>Prezzo Stop Loss ($)</label>
+                <input type="number" step="any" class="terminal-input" id="calc-sl-standalone" value="62000" oninput="recalcStandaloneSizer()">
+              </div>
+            </div>
+
+            <div class="form-field" style="margin-top:10px;">
+              <label>Prezzo Obiettivo Take Profit ($)</label>
+              <input type="number" step="any" class="terminal-input" id="calc-tp-standalone" value="75000" oninput="recalcStandaloneSizer()">
+            </div>
+
+            <!-- Calculated Results -->
+            <div class="pos-summary" style="margin-top:18px; padding:16px;">
+              <div class="pos-row" style="margin-bottom:8px">
+                <span>Dimensione Posizione (Unità):</span>
+                <span id="stand-res-units" style="font-weight:900; color:var(--accent); font-size:16px;">0</span>
+              </div>
+              <div class="pos-row" style="margin-bottom:6px">
+                <span>Valore Nominale Totale:</span>
+                <span id="stand-res-nominal">$0.00</span>
+              </div>
+              <div class="pos-row" style="margin-bottom:6px">
+                <span>Margine Richiesto:</span>
+                <span id="stand-res-margin">$0.00</span>
+              </div>
+              <div class="pos-row" style="margin-bottom:6px">
+                <span>Capitale a Rischio:</span>
+                <span id="stand-res-risk" style="color:var(--sell); font-weight:800">$0.00</span>
+              </div>
+              <div class="pos-row" style="margin-bottom:6px">
+                <span>Profitto Stimato (al TP):</span>
+                <span id="stand-res-profit" style="color:var(--buy); font-weight:800">$0.00</span>
+              </div>
+              <div class="pos-row">
+                <span>Rapporto R:R:</span>
+                <span id="stand-res-rr" style="font-weight:900">1 : 0</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 6: TRADE JOURNAL & ANALYTICS
+         ==================================================================== -->
+    <div id="tab-journal" class="view-panel">
+      <div class="stats-overview-deck">
+        <div class="stat-box-card">
+          <div class="stat-box-lbl">Totale Operazioni</div>
+          <div class="stat-box-val" id="stat-total-trades">0</div>
+        </div>
+        <div class="stat-box-card">
+          <div class="stat-box-lbl">Win Rate %</div>
+          <div class="stat-box-val text-green" id="stat-win-rate">0%</div>
+        </div>
+        <div class="stat-box-card">
+          <div class="stat-box-lbl">PnL Netto Realizzato</div>
+          <div class="stat-box-val" id="stat-net-pnl">$0.00</div>
+        </div>
+        <div class="stat-box-card">
+          <div class="stat-box-lbl">Profit Factor</div>
+          <div class="stat-box-val text-accent" id="stat-profit-factor">0.00</div>
+        </div>
+      </div>
+
+      <div class="table-glass-container">
+        <table class="pro-terminal-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Data/Ora</th>
+              <th>Asset</th>
+              <th>Lato</th>
+              <th>Entry</th>
+              <th>Exit</th>
+              <th>Qty (Leva)</th>
+              <th>SL / TP</th>
+              <th>PnL Netto</th>
+              <th>Mentor / Skill</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="journal-table-body">
+            <!-- Injected via journal.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 7: ALERTS & NOTIFICATIONS
+         ==================================================================== -->
+    <div id="tab-alerts" class="view-panel">
+      <div style="max-width:850px; margin:0 auto;">
+        
+        <div class="window-card" style="margin-bottom:16px;">
+          <div class="window-header">
+            <div class="window-title"><span>🔔 Nuovo Allarme di Prezzo o Segnale Mentor</span></div>
+          </div>
+          <div class="window-body" style="padding:16px;">
+            <div class="input-grid-2col">
+              <div class="form-field">
+                <label>Condizione</label>
+                <select class="terminal-input" id="alert-condition-select">
+                  <option value="ABOVE">Il Prezzo supera al rialzo</option>
+                  <option value="BELOW">Il Prezzo scende al ribasso</option>
+                  <option value="VCP_BREAKOUT">Minervini VCP Breakout Trigger</option>
+                  <option value="MARGIN_OF_SAFETY">Buffett Margin of Safety Trigger</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Prezzo Target ($)</label>
+                <input type="number" step="any" class="terminal-input" id="alert-target-price" placeholder="es. 68000">
+              </div>
+            </div>
+
+            <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; margin-top:14px" onclick="addAlert()">
+              Attiva Allarme Intelligente
+            </button>
+          </div>
+        </div>
+
+        <div class="window-card">
+          <div class="window-header">
+            <div class="window-title"><span>Allarmi Attivi</span></div>
+          </div>
+          <div class="window-body">
+            <div class="table-glass-container">
+              <table class="pro-terminal-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Asset</th>
+                    <th>Condizione</th>
+                    <th>Prezzo Target</th>
+                    <th>Tipo Segnale</th>
+                    <th>Azione</th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-table-body">
+                  <!-- Injected via alerts.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW 8: SETTINGS & BROKER
+         ==================================================================== -->
+    <div id="tab-settings" class="view-panel">
+      <div style="max-width:750px; margin:0 auto;">
+        
+        <div class="window-card">
+          <div class="window-header">
+            <div class="window-title"><span>⚙️ Parametri Terminale & Broker</span></div>
+          </div>
+          <div class="window-body" style="padding:18px;">
+            
+            <div class="input-grid-2col">
+              <div class="form-field">
+                <label>Capitale Iniziale ($)</label>
+                <input type="number" class="terminal-input" id="set-capital" value="25000">
+              </div>
+              <div class="form-field">
+                <label>Rischio Standard (%)</label>
+                <input type="number" step="0.1" class="terminal-input" id="set-risk-pct" value="1.5">
+              </div>
+            </div>
+
+            <div class="form-field" style="margin-top:12px;">
+              <label>Profilo di Rischio Globale</label>
+              <select class="terminal-input" id="set-risk-profile">
+                <option value="conservative">Conservativo (Buffett/Graham - Max 2x Leva, -2% Drawdown max)</option>
+                <option value="moderate" selected>Moderato (Dalio/Lynch - Max 10x Leva, -3% Drawdown max)</option>
+                <option value="aggressive">Aggressivo (Druckenmiller/Minervini - Fino a 30x Leva)</option>
+              </select>
+            </div>
+
+            <div style="margin: 18px 0; border-top:1px solid var(--border); padding-top:14px">
+              <h4 style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--cyan); margin-bottom:8px">
+                Integrazione Bot Telegram
+              </h4>
+              <div class="form-field">
+                <label>Telegram Bot Token</label>
+                <input type="text" class="terminal-input" id="set-tg-token" placeholder="123456789:ABCDefgh...">
+              </div>
+              <div class="form-field" style="margin-top:8px;">
+                <label>Telegram Chat ID</label>
+                <input type="text" class="terminal-input" id="set-tg-chat" placeholder="-100123456789">
+              </div>
+              <button class="btn-action-primary" style="width:auto; padding:6px 14px; font-size:11px; margin-top:10px; background:var(--bg-elevated); border:1px solid var(--border); color:var(--text-main)" onclick="testTelegramNotification()">
+                Invia Messaggio di Prova Telegram
+              </button>
+            </div>
+
+            <!-- GATEKEEPER PASSWORD SECURITY CARD -->
+            <div style="margin: 20px 0; border-top:1px solid var(--border); padding-top:16px">
+              <h4 style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>🔐</span> Protezione Accesso al Sito con Password
+              </h4>
+              <p style="font-size:11px; color:var(--text-muted); line-height:1.4; margin-bottom:12px;">
+                Il sito è protetto da un Gatekeeper crittografico SHA-256. Puoi modificare la password principale del sito o generare una password temporanea per gli ospiti.
+              </p>
+
+              <div class="input-grid-2col">
+                <div class="form-field">
+                  <label>Password Attuale</label>
+                  <input type="password" class="terminal-input" id="sec-current-pwd" placeholder="es. Deia2026">
+                </div>
+                <div class="form-field">
+                  <label>Nuova Password Personale</label>
+                  <input type="password" class="terminal-input" id="sec-new-pwd" placeholder="Nuova password...">
+                </div>
+              </div>
+
+              <div class="form-field" style="margin-top:8px;">
+                <label>Conferma Nuova Password</label>
+                <input type="password" class="terminal-input" id="sec-confirm-pwd" placeholder="Ripeti nuova password...">
+              </div>
+
+              <button class="btn-action-primary" style="width:auto; padding:7px 16px; font-size:11px; margin-top:8px; background:var(--accent); color:#000; font-weight:800; cursor:pointer;" onclick="updateTerminalPassword()">
+                Aggiorna Password Principale
+              </button>
+
+              <div style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px;">
+                <label style="font-size:11px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;">
+                  Chiave di Accesso Ospite / Condivisa (Opzionale):
+                </label>
+                <div style="display:flex; gap:8px;">
+                  <input type="text" class="terminal-input" id="sec-guest-pwd" placeholder="es. OSPITE_2026 (lascia vuoto per disabilitare)">
+                  <button class="btn btn-secondary" style="font-size:11px; padding:6px 12px; white-space:nowrap; cursor:pointer;" onclick="setGuestAccessPassword()">
+                    Salva Password Ospite
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-action-primary btn-buy" style="margin-top:12px;" onclick="saveSettings()">
+              Salva Tutte le Configurazioni
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SLEEK FOOTER BAR -->
+  <footer class="terminal-footer-bar">
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+      <span>⚡ <b>TRADING PRO ULTIMATE™</b></span>
+      <span>•</span>
+      <span>Autore: <span class="footer-author-tag" onclick="openCopyrightModal()">cuordivino</span></span>
+      <span>•</span>
+      <span>Tutti i diritti riservati ©</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap">
+      <span style="color:var(--buy); font-weight:700">● 4 Motori Quant Istituzionali</span>
+      <span style="color:var(--cyan); font-weight:700; cursor:pointer;" onclick="dispatchActiveOrderToTelegram()">📲 Telegram Ufficiale (@cuordivino)</span>
+      <button class="btn btn-secondary" style="font-size:10px; padding:2px 8px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
+        📜 Paternità Opera
+      </button>
+    </div>
+  </footer>
+
+  <!-- SKILL DETAIL MODAL -->
+  <div class="modal-overlay" id="skill-detail-modal" onclick="if(event.target===this) closeSkillModal()">
+    <div class="modal-window-card">
+      <div class="modal-header-bar">
+        <span style="font-weight:800; font-size:15px">📚 Dettagli Sistema d'Investimento</span>
+        <button class="win-ctrl-btn" onclick="closeSkillModal()" style="font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body-scroll" id="skill-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- COPYRIGHT & PATERNITÀ DELL'OPERA MODAL -->
+  <div class="modal-overlay" id="copyright-modal" onclick="if(event.target===this) closeCopyrightModal()">
+    <div class="modal-window-card" style="max-width:620px;">
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:20px">📜</span>
+          <span style="font-weight:900; font-size:15px; color:var(--accent)">PATERNITÀ DELL'OPERA & NOTE DI COPYRIGHT</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="closeCopyrightModal()" style="font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body-scroll" style="line-height:1.6; font-size:12px; color:var(--text-dim)">
+        <div style="background:rgba(252,213,53,0.06); border:1px solid rgba(252,213,53,0.3); border-radius:8px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:900; color:#fff; margin-bottom:4px;">
+            TRADING PRO ULTIMATE™
+          </div>
+          <div style="font-size:12px; color:var(--accent); font-weight:800;">
+            Autore & Sviluppatore: cuordivino
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+            Copyright © Tutti i diritti riservati — All Rights Reserved.
+          </div>
+        </div>
+
+        <p style="margin-bottom:12px;">
+          Questa piattaforma costituisce un'architettura integrata avanzata ideata e sviluppata da <b>cuordivino</b>, unendo l'analisi tecnica e discrezionale ad algoritmi ad alta frequenza e intelligenza artificiale applicata ai mercati finanziari.
+        </p>
+
+        <h4 style="font-size:12px; font-weight:800; color:var(--cyan); margin:14px 0 8px 0; text-transform:uppercase;">
+          Moduli e Motori Quantitativi Integrati:
+        </h4>
+        <ul style="padding-left:18px; margin-bottom:14px; line-height:1.7;">
+          <li><b>Freqtrade:</b> Strategie algoritmiche crypto e machine learning (FreqAI, Supertrend Alpha, TWAP Almgren-Chriss, Custom Trailing PSAR).</li>
+          <li><b>Hummingbot:</b> Pure Market Making ad alta frequenza (PMM), Modello di riserva Avellaneda-Stoikov e simulatore di Order Book Imbalance (OBI).</li>
+          <li><b>NautilusTrader:</b> Architettura event-driven multi-asset (Crypto, Azioni US, Forex EUR/USD, Borsa Italiana Milano) con Smart Order Routing (SOR) e indice di tossicità VPIN.</li>
+          <li><b>OpenBB Platform:</b> Suite di ricerca quantitativa, scorecard fondamentali (Altman Z-Score, Piotroski F-Score) e monitoraggio della curva dei tassi (Treasury Yield Curve 10Y-2Y).</li>
+          <li><b>InvestorSkills AI:</b> Consiglio d'investimento e comitato di saggi basato sulle strategie di 63 grandi maestri (Buffett, Dalio, Minervini, Simons, Burry, Livermore).</li>
+          <li><b>Bot Telegram Ufficiale:</b> Modulo di notifica automatica con segnali motivati, target multi-scaglione e parametri di rischio calcolati in tempo reale.</li>
+        </ul>
+
+        <div style="font-size:10px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:10px; margin-top:14px;">
+          Avvertenza Legale: Le informazioni e i segnali forniti dalla piattaforma hanno valore analitico e didattico. L'utilizzo operativo nei mercati finanziari avviene sotto la piena responsabilità dell'utente.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API BROKER MANAGER MODAL (OKX, BYBIT, KRAKEN, TELEGRAM, BINANCE) -->
+  <div class="modal-overlay" id="api-manager-modal" onclick="if(event.target===this) ApiManager.closeModal()">
+    <div class="modal-window-card" style="max-width:680px; max-height:88vh;">
+      <div class="modal-header-bar">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="font-size:20px">🔑</span>
+          <span style="font-weight:900; font-size:15px; color:#00f2a1">CONNESSIONI API BROKER (OKX • BYBIT • KRAKEN • TELEGRAM)</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="ApiManager.closeModal()" style="font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body-scroll" id="api-manager-modal-body" style="padding:16px;">
+        <!-- Injected via ApiManager.renderApiManagerModal() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGOLAZIONE PARAMETRI MACRO & SINTESI BOT QUANT -->
+  <div class="modal-overlay" id="macro-bot-modal" onclick="if(event.target===this) TradingEngine.closeMacroModal()">
+    <div class="modal-window-card" style="max-width:680px; max-height:90vh;">
+      <div class="modal-header-bar">
+        <div style="font-weight:900; font-size:13px; display:flex; align-items:center; gap:8px;">
+          <span>⚙️</span>
+          <span>REGOLAZIONE PARAMETRI MACRO & SCELTA ALGORITMICA</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="TradingEngine.closeMacroModal()" style="font-size:16px;">✕</button>
+      </div>
+
+      <div class="modal-body-scroll" style="padding:16px;">
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:14px; line-height:1.4;">
+          Personalizza ogni singolo aspetto di sintesi macroeconomica, filtri di rischio, mercati abilitati e regole di stop per il <b>Quant Bot Autonomo</b> (Coding-Kitties & OpenAlgo Engine).
+        </p>
+
+        <!-- SEZIONE 1: REGIME MACRO DI MERCATO -->
+        <div class="macro-form-group">
+          <label class="macro-group-lbl">1. Regime Macro di Mercato (Macro Bias):</label>
+          <div class="macro-bias-selector">
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="risk_on">
+              <div class="bias-content">
+                <span class="bias-title">🚀 Risk-On (Aggressivo)</span>
+                <span class="bias-desc">Massimizza l'esposizione su crypto ad alto beta, azioni tech NASDAQ ed energetici.</span>
+              </div>
+            </label>
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="neutral" checked>
+              <div class="bias-content">
+                <span class="bias-title">⚖️ Neutro (All-Weather)</span>
+                <span class="bias-desc">Approccio bilanciato Dalio/Simons. Ripartizione del rischio paritaria tra azioni, crypto e materie prime.</span>
+              </div>
+            </label>
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="risk_off">
+              <div class="bias-content">
+                <span class="bias-title">🛡️ Risk-Off (Conservativo)</span>
+                <span class="bias-desc">Priorità a preservazione capitale, oro, metalli difensivi, titoli utility FTSE MIB e forex safe-haven.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- SEZIONE 2: SOGLIA MINIMA CONFLUENZA & RISCHIO -->
+        <div class="macro-form-grid-2">
+          <div class="macro-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="macro-group-lbl">2. Soglia Min. Confluenza:</label>
+              <span class="macro-val-badge" id="m-val-minscore">82%</span>
+            </div>
+            <input type="range" min="70" max="95" value="82" class="lev-slider" id="m-input-minscore" oninput="document.getElementById('m-val-minscore').innerText = this.value + '%'">
+            <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">Il bot esegue solo se lo score quant supera questo valore.</div>
+          </div>
+
+          <div class="macro-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="macro-group-lbl">3. Rischio Massimo per Trade:</label>
+              <span class="macro-val-badge" id="m-val-risk">1.5%</span>
+            </div>
+            <input type="range" min="0.5" max="5.0" step="0.5" value="1.5" class="lev-slider" id="m-input-risk" oninput="document.getElementById('m-val-risk').innerText = parseFloat(this.value).toFixed(1) + '%'">
+            <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">Percentuale del capitale netto a rischio per singola operazione.</div>
+          </div>
+        </div>
+
+        <!-- SEZIONE 3: CAPITALE, TRADES CONTEMPORANEI & CIRCUIT BREAKER -->
+        <div class="macro-form-grid-3">
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">4. Capitale Allocato ($):</label>
+            <input type="number" class="terminal-input" id="m-input-cap" value="25000">
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">5. Max Operazioni Aperte:</label>
+            <select class="terminal-input" id="m-input-trades">
+              <option value="1">1 Posizione</option>
+              <option value="2">2 Posizioni</option>
+              <option value="3" selected>3 Posizioni</option>
+              <option value="5">5 Posizioni</option>
+              <option value="10">10 Posizioni</option>
+            </select>
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">6. Daily Circuit Breaker:</label>
+            <select class="terminal-input" id="m-input-cb">
+              <option value="-2.0">-2.0% Stop Giornaliero</option>
+              <option value="-3.0">-3.0% Stop Giornaliero</option>
+              <option value="-4.0" selected>-4.0% Stop Istituzionale</option>
+              <option value="-6.0">-6.0% Stop Estremo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SEZIONE 4: ASSET CLASS E MERCATI ABILITATI -->
+        <div class="macro-form-group" style="margin-top:12px;">
+          <label class="macro-group-lbl">7. Mercati e Asset Class Abilitati per il Bot:</label>
+          <div class="macro-checkbox-grid">
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="crypto" checked>
+              <span>🪙 Criptovalute (OKX / Bybit Linear)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="italy" checked>
+              <span>🇮🇹 Borsa Italiana (FTSE MIB & Mid Cap)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="us" checked>
+              <span>🇺🇸 Wall Street (NASDAQ-100 & S&P 500)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="forex" checked>
+              <span>💱 Forex Majors & Crosses</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="commodities" checked>
+              <span>🛢️ Materie Prime (Metalli, Energia, CME)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- SEZIONE 5: TRAILING STOP PROTECTION -->
+        <div class="macro-form-grid-2" style="margin-top:12px;">
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">8. Trailing Stop Automatico:</label>
+            <label class="switch" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="m-cb-trailing" checked>
+              <span class="slider-toggle"></span>
+              <span style="font-size:11px; color:#fff; font-weight:700;">Attiva Trailing Dinamico</span>
+            </label>
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">Tipo Trailing Stop:</label>
+            <select class="terminal-input" id="m-select-trailing">
+              <option value="sar" selected>Parabolic SAR (Wilder AF 0.02)</option>
+              <option value="atr">Volatilità Dinamica 1.5x ATR</option>
+              <option value="ema">Trailing su Media Mobile EMA 21</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FOOTER ACTIONS -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-secondary" onclick="TradingEngine.resetMacroSettingsToDefault()">
+            🔄 Ripristina Default
+          </button>
+          <button type="button" class="btn-action-primary" style="width:auto; padding:10px 24px; font-weight:800; background:var(--buy); color:#000;" onclick="TradingEngine.saveMacroSettingsFromModal()">
+            💾 Salva Parametri Macro
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <div class="mobile-bottom-nav">
+    <button class="m-bottom-nav-item active" onclick="switchMainTab('tab-terminal', this)">
+      <span class="icon">📈</span>
+      <span>Terminale</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-scanner', this); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
+      <span class="icon">🎯</span>
+      <span>Radar</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-consensus', this)">
+      <span class="icon">🧠</span>
+      <span>Consensus</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
+      <span class="icon">🤖</span>
+      <span>Quant (4)</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-chat', this)">
+      <span class="icon">💬</span>
+      <span>Chat AI</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-journal', this)">
+      <span class="icon">📓</span>
+      <span>Diario</span>
+    </button>
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/auth.js?v=2.6.0"></script>
+  <script src="js/market_assets.js?v=2.6.0"></script>
+  <script src="js/workspace_engine.js?v=2.6.0"></script>
+  <script src="js/api_manager.js?v=2.6.0"></script>
+  <script src="js/chart.js?v=2.6.0"></script>
+  <script src="js/bybit_engine.js?v=2.6.0"></script>
+  <script src="js/quant_engines.js?v=2.6.0"></script>
+  <script src="js/sector_rotation.js?v=2.6.0"></script>
+  <script src="js/optimal_engine.js?v=2.6.0"></script>
+  <script src="js/opportunity_scanner.js?v=2.6.0"></script>
+  <script src="js/skills.js?v=2.6.0"></script>
+  <script src="js/trading.js?v=2.6.0"></script>
+  <script src="js/journal.js?v=2.6.0"></script>
+  <script src="js/alerts.js?v=2.6.0"></script>
+  <script src="js/app.js?v=2.6.0"></script>
+
+  <script>
+    // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)
+    function switchBybitSubtab(tabKey, btn) {
+      document.querySelectorAll('.bybit-subtab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      if (tabKey === 'chart') {
+        if (window.mainChart) window.mainChart.timeScale().fitContent();
+      } else if (tabKey === 'overview') {
+        if (window.showToast) window.showToast('Panoramica mercato Bybit attiva', 'info');
+      } else if (tabKey === 'data') {
+        if (window.showToast) window.showToast('Dati profondità e statistiche Bybit attive', 'info');
+      } else if (tabKey === 'feed') {
+        if (window.showToast) window.showToast('Feed Real-time WebSocket attivo', 'success');
+      }
+    }
+
+    // Custom Timeframe Prompt
+    function promptCustomTimeframe() {
+      const custom = prompt('Inserisci lasso di tempo personalizzato (es: 3m, 2h, 6h, 12h, 3d):', '2h');
+      if (custom && window.changeTimeframe) {
+        window.changeTimeframe(custom.trim().toLowerCase());
+      }
+    }
+
+    // Bybit Subtab Switcher: Orderbook vs Trades
+    function switchBookSubTab(tab) {
+      const btnOb = document.getElementById('bb-tab-ob-btn');
+      const btnTr = document.getElementById('bb-tab-tr-btn');
+      const viewOb = document.getElementById('bb-view-orderbook');
+      const viewTr = document.getElementById('bb-view-trades');
+
+      if (tab === 'orderbook') {
+        btnOb?.classList.add('active');
+        btnTr?.classList.remove('active');
+        if (viewOb) viewOb.style.display = 'flex';
+        if (viewTr) viewTr.style.display = 'none';
+      } else {
+        btnTr?.classList.add('active');
+        btnOb?.classList.remove('active');
+        if (viewTr) viewTr.style.display = 'flex';
+        if (viewOb) viewOb.style.display = 'none';
+      }
+    }
+
+    // Bybit Bottom Positions Subtabs
+    function switchPositionsSubTab(tabKey, element) {
+      document.querySelectorAll('.bb-pos-tab').forEach(b => b.classList.remove('active'));
+      if (element) element.classList.add('active');
+      if (window.showToast) window.showToast(`Sezione ${tabKey.toUpperCase()} attiva`, 'info');
+    }
+
+    // Mobile Terminal View Switcher (Chart / Book / Order / Positions)
+    function switchMobileTerminalView(viewKey, btn) {
+      document.querySelectorAll('.m-view-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const chartCol = document.getElementById('bb-col-chart');
+      const bookCol = document.getElementById('bb-col-book');
+      const orderCol = document.getElementById('bb-col-order');
+      const posDock = document.getElementById('bb-col-positions');
+
+      if (window.innerWidth <= 860) {
+        if (chartCol) chartCol.style.display = viewKey === 'chart' ? 'block' : 'none';
+        if (bookCol) bookCol.style.display = viewKey === 'book' ? 'flex' : 'none';
+        if (orderCol) orderCol.style.display = viewKey === 'order' ? 'block' : 'none';
+        if (posDock) posDock.style.display = viewKey === 'positions' ? 'block' : 'none';
+
+        if (viewKey === 'chart' && window.mainChart) {
+          setTimeout(() => {
+            window.mainChart.timeScale().fitContent();
+          }, 60);
+        }
+      }
+    }
+
+    // Initialize Mobile Terminal View on Load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.innerWidth <= 860) {
+        const firstMBtn = document.querySelector('.m-view-btn');
+        switchMobileTerminalView('chart', firstMBtn);
+      }
+    });
+
+    // Copyright Modal Handlers
+    function openCopyrightModal() {
+      document.getElementById('copyright-modal')?.classList.add('open');
+    }
+    function closeCopyrightModal() {
+      document.getElementById('copyright-modal')?.classList.remove('open');
+    }
+
+    // Live Clock Update
+    function updateLiveClock() {
+      const now = new Date();
+      const clockElem = document.getElementById('tele-clock-val');
+      if (clockElem) {
+        clockElem.innerText = now.toTimeString().split(' ')[0] + ' UTC';
+      }
+    }
+    setInterval(updateLiveClock, 1000);
+    updateLiveClock();
+
+    // Standalone Sizer Calculation
+    function recalcStandaloneSizer() {
+      const cap = parseFloat(document.getElementById('calc-capitale')?.value) || 25000;
+      const riskPct = parseFloat(document.getElementById('calc-risk-pct')?.value) || 1.5;
+      const entry = parseFloat(document.getElementById('calc-entry-standalone')?.value) || 1;
+      const sl = parseFloat(document.getElementById('calc-sl-standalone')?.value) || 1;
+      const tp = parseFloat(document.getElementById('calc-tp-standalone')?.value) || 0;
+      const lev = parseInt(document.getElementById('calc-leverage')?.value) || 1;
+
+      const dist = Math.abs(entry - sl);
+      const riskValuta = cap * (riskPct / 100);
+      const units = dist > 0 ? (riskValuta / dist) : 0;
+      const nominal = units * entry;
+      const margin = nominal / lev;
+      const profit = tp > 0 ? units * Math.abs(tp - entry) : 0;
+      const rr = dist > 0 && tp > 0 ? (Math.abs(tp - entry) / dist) : 0;
+
+      document.getElementById('stand-res-units').innerText = units.toFixed(units < 1 ? 4 : 2);
+      document.getElementById('stand-res-nominal').innerText = `$${nominal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      document.getElementById('stand-res-margin').innerText = `$${margin.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      document.getElementById('stand-res-risk').innerText = `$${riskValuta.toFixed(2)}`;
+      document.getElementById('stand-res-profit').innerText = `$${profit.toFixed(2)}`;
+      document.getElementById('stand-res-rr').innerText = `1 : ${rr.toFixed(2)}`;
+    }
+    setTimeout(recalcStandaloneSizer, 400);
+  </script>
+</body>
+</html>

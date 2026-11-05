@@ -21,7 +21,7 @@
   <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
   
   <!-- Terminal Stylesheet -->
-  <link rel="stylesheet" href="css/terminal.css?v=2.5.0">
+  <link rel="stylesheet" href="css/terminal.css?v=2.6.0">
 </head>
 <body>
 
@@ -129,6 +129,9 @@
     <nav class="nav-tabs-container">
       <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
         <span>📈</span> Terminale
+      </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-scanner" onclick="switchMainTab('tab-scanner', this); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
+        <span>🎯</span> Radar Opportunità
       </button>
       <button class="tab-nav-btn ai-glow" data-tab="tab-consensus" onclick="switchMainTab('tab-consensus', this)">
         <span>🧠</span> Comitato Investitori
@@ -298,6 +301,9 @@
         <button class="m-view-btn" onclick="switchMobileTerminalView('order', this)">⚡ Ordine</button>
         <button class="m-view-btn" onclick="switchMobileTerminalView('positions', this)">📜 Posizioni</button>
       </div>
+
+      <!-- QUICK OPPORTUNITY RADAR DOCK (MONITORAGGIO MULTI-MERCATO RAPIDO) -->
+      <div id="terminal-quick-radar-container"></div>
 
       <!-- BYBIT 3-COLUMN RESPONSIVE GRID -->
       <div class="bybit-terminal-grid">
@@ -584,191 +590,196 @@
           <div class="window-body">
             <div class="order-execution-window">
               
-              <!-- KIYOTAKA & OPENMARKET EXECUTION MODE SELECTOR -->
-              <div class="optimal-mode-selector-bar" style="margin-bottom:12px; background:rgba(18,24,38,0.8); border:1px solid var(--border); border-radius:8px; padding:8px 10px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;">
-                  <span style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Modalità Operativa</span>
-                  <span class="optimal-mode-badge" id="opt-mode-status-badge" style="font-size:9px; font-weight:800; padding:2px 7px; border-radius:4px; background:rgba(99,102,241,0.15); color:var(--accent); border:1px solid rgba(99,102,241,0.3);">⚡ SEMI-AUTO ATTIVO</span>
+              <!-- TRIPLE TRADING SYSTEM: MANUALE | ASSISTITO | AUTOMATIZZATO -->
+              <div class="trading-mode-selector-bar">
+                <div class="trading-mode-header">
+                  <span class="mode-title-lbl">MODALITÀ OPERATIVA</span>
+                  <span class="mode-status-badge mode-manual" id="trading-mode-badge">🕹️ MANUALE DIRETTO</span>
                 </div>
-                <div class="optimal-mode-pills" style="display:grid; grid-template-columns:1fr 1.25fr 1.35fr; gap:4px;">
-                  <button type="button" class="opt-mode-btn" id="btn-mode-manual" onclick="OptimalEngine.setExecutionMode('manual')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer;">
-                    Manuale
+                <div class="trading-mode-pills">
+                  <button type="button" class="t-mode-btn active" id="btn-tmode-manual" onclick="TradingEngine.setExecutionMode('manual')">
+                    🕹️ Manuale
                   </button>
-                  <button type="button" class="opt-mode-btn active" id="btn-mode-semi" onclick="OptimalEngine.setExecutionMode('semi_auto')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--accent); background:rgba(99,102,241,0.2); color:#fff; cursor:pointer;">
-                    ⚡ Semi-Auto
+                  <button type="button" class="t-mode-btn" id="btn-tmode-assisted" onclick="TradingEngine.setExecutionMode('assisted')">
+                    🧭 Assistito
                   </button>
-                  <button type="button" class="opt-mode-btn" id="btn-mode-auto" onclick="OptimalEngine.setExecutionMode('full_auto')" style="padding:5px 4px; font-size:10px; font-weight:700; border-radius:4px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer;">
-                    🤖 Auto-Pilot
-                  </button>
-                </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                  <span id="opt-mode-desc-text" style="font-size:9px; color:var(--text-muted); line-height:1.2;">
-                    Segnale IA telegram & 1-click execution.
-                  </span>
-                  <button type="button" onclick="OptimalEngine.sendOptimalTelegramSignal(false)" style="font-size:9px; padding:2px 6px; background:rgba(0,136,204,0.15); border:1px solid #0088cc; color:#0088cc; border-radius:3px; cursor:pointer;" title="Invia configurazione ottimale a Telegram">
-                    ✈️ Invia Segnale
+                  <button type="button" class="t-mode-btn" id="btn-tmode-automated" onclick="TradingEngine.setExecutionMode('automated')">
+                    🤖 Automatizzato
                   </button>
                 </div>
               </div>
 
-              <!-- MARGIN MODE: CROSS / ISOLATED -->
-              <div class="bb-margin-toggles">
-                <button class="bb-margin-btn active" data-margin="cross" onclick="BybitEngine.setMarginMode('cross')">Cross Margin</button>
-                <button class="bb-margin-btn" data-margin="isolated" onclick="BybitEngine.setMarginMode('isolated')">Isolated Margin</button>
-              </div>
-
-              <!-- ORDER TYPE: MARKET / LIMIT / CONDITIONAL -->
-              <div class="bb-ot-tabs">
-                <button class="bb-ot-btn active" data-ot="Market" onclick="BybitEngine.setOrderType('Market')">Market</button>
-                <button class="bb-ot-btn" data-ot="Limit" onclick="BybitEngine.setOrderType('Limit')">Limit</button>
-                <button class="bb-ot-btn" data-ot="Conditional" onclick="BybitEngine.setOrderType('Conditional')">Conditional</button>
-              </div>
-
-              <!-- BUY / SELL LONG / SHORT SWITCH GRID -->
-              <div class="side-switch-grid">
-                <button class="side-btn long active" id="btn-mode-long" onclick="setTradeSide('LONG')">
-                  ▲ BUY / LONG
-                </button>
-                <button class="side-btn short" id="btn-mode-short" onclick="setTradeSide('SHORT')">
-                  ▼ SELL / SHORT
-                </button>
-              </div>
-
-              <!-- Leverage Presets Pills -->
-              <div class="form-field">
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
-                  <span>LEVA FINANZIARIA</span>
-                  <span>1x - 100x</span>
+              <!-- VIEW 1: MANUALE DIRETTO -->
+              <div id="trading-view-manual" style="display:block;">
+                <!-- MARGIN MODE: CROSS / ISOLATED -->
+                <div class="bb-margin-toggles">
+                  <button class="bb-margin-btn active" data-margin="cross" onclick="BybitEngine.setMarginMode('cross')">Cross Margin</button>
+                  <button class="bb-margin-btn" data-margin="isolated" onclick="BybitEngine.setMarginMode('isolated')">Isolated Margin</button>
                 </div>
-                <div class="presets-row">
-                  <div class="preset-chip lev-chip" data-val="1" onclick="setLeveragePreset(1, this)">1x</div>
-                  <div class="preset-chip lev-chip" data-val="5" onclick="setLeveragePreset(5, this)">5x</div>
-                  <div class="preset-chip lev-chip active" data-val="10" onclick="setLeveragePreset(10, this)">10x</div>
-                  <div class="preset-chip lev-chip" data-val="25" onclick="setLeveragePreset(25, this)">25x</div>
-                  <div class="preset-chip lev-chip" data-val="50" onclick="setLeveragePreset(50, this)">50x</div>
-                  <div class="preset-chip lev-chip" data-val="100" onclick="setLeveragePreset(100, this)">100x</div>
+
+                <!-- ORDER TYPE: MARKET / LIMIT / CONDITIONAL -->
+                <div class="bb-ot-tabs">
+                  <button class="bb-ot-btn active" data-ot="Market" onclick="BybitEngine.setOrderType('Market')">Market</button>
+                  <button class="bb-ot-btn" data-ot="Limit" onclick="BybitEngine.setOrderType('Limit')">Limit</button>
+                  <button class="bb-ot-btn" data-ot="Conditional" onclick="BybitEngine.setOrderType('Conditional')">Conditional</button>
                 </div>
-                <input type="range" min="1" max="100" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
-              </div>
 
-              <!-- Order Price & Trigger (if Limit/Conditional) -->
-              <div class="form-field" id="bb-entry-field-wrap" style="display:none;">
-                <label>Prezzo Ordine ($)</label>
-                <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="BybitEngine.recalcBybitOrderMetrics()">
-              </div>
-
-              <div class="form-field" id="bb-trigger-field-wrap" style="display:none;">
-                <label>Prezzo Trigger Condizionale ($)</label>
-                <input type="number" step="any" class="terminal-input" id="bb-trigger-price" placeholder="Trigger price...">
-              </div>
-
-              <!-- Order Quantity (BTC) & Quick Percentage Chips -->
-              <div class="form-field">
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
-                  <span>QUANTITÀ ORDINE (BTC)</span>
-                  <span>Valore Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
+                <!-- BUY / SELL LONG / SHORT SWITCH GRID -->
+                <div class="side-switch-grid">
+                  <button class="side-btn long active" id="btn-mode-long" onclick="setTradeSide('LONG')">
+                    ▲ BUY / LONG
+                  </button>
+                  <button class="side-btn short" id="btn-mode-short" onclick="setTradeSide('SHORT')">
+                    ▼ SELL / SHORT
+                  </button>
                 </div>
-                <input type="number" step="0.001" class="terminal-input" id="bb-order-qty" value="0.100" oninput="BybitEngine.recalcBybitOrderMetrics()">
-                
-                <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100%) -->
-                <div class="bb-pct-chips-row">
-                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(10)">10%</div>
-                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(25)">25%</div>
-                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(50)">50%</div>
-                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(75)">75%</div>
-                  <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(100)">100%</div>
-                </div>
-              </div>
 
-              <!-- Strategy Mentor & TP/SL -->
-              <div class="input-grid-2col">
+                <!-- Leverage Presets Pills -->
                 <div class="form-field">
-                  <label>Strategia Mentor</label>
-                  <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
-                    <option value="Minervini VCP">Minervini VCP</option>
-                    <option value="Buffett Value">Buffett Value</option>
-                    <option value="Dalio All-Weather">Dalio All-Weather</option>
-                    <option value="Simons Quant">Simons Quant</option>
-                    <option value="Burry Contrarian">Burry Contrarian</option>
-                    <option value="Freqtrade ML">Freqtrade ML</option>
-                    <option value="Discretionary" selected>Discrezionale</option>
-                  </select>
+                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
+                    <span>LEVA FINANZIARIA</span>
+                    <span>1x - 100x</span>
+                  </div>
+                  <div class="presets-row">
+                    <div class="preset-chip lev-chip" data-val="1" onclick="setLeveragePreset(1, this)">1x</div>
+                    <div class="preset-chip lev-chip" data-val="5" onclick="setLeveragePreset(5, this)">5x</div>
+                    <div class="preset-chip lev-chip active" data-val="10" onclick="setLeveragePreset(10, this)">10x</div>
+                    <div class="preset-chip lev-chip" data-val="25" onclick="setLeveragePreset(25, this)">25x</div>
+                    <div class="preset-chip lev-chip" data-val="50" onclick="setLeveragePreset(50, this)">50x</div>
+                    <div class="preset-chip lev-chip" data-val="100" onclick="setLeveragePreset(100, this)">100x</div>
+                  </div>
+                  <input type="range" min="1" max="100" value="10" class="lev-slider" id="leverage-slider" style="margin-top:6px" oninput="updateLeverage(this.value)">
                 </div>
+
+                <!-- Order Price & Trigger (if Limit/Conditional) -->
+                <div class="form-field" id="bb-entry-field-wrap" style="display:none;">
+                  <label>Prezzo Ordine ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="t-entry" placeholder="0.00" oninput="BybitEngine.recalcBybitOrderMetrics()">
+                </div>
+
+                <div class="form-field" id="bb-trigger-field-wrap" style="display:none;">
+                  <label>Prezzo Trigger Condizionale ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="bb-trigger-price" placeholder="Trigger price...">
+                </div>
+
+                <!-- Order Quantity (BTC) & Quick Percentage Chips -->
                 <div class="form-field">
-                  <label>Stop Loss ($)</label>
-                  <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="recalcPosition()">
+                  <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:700">
+                    <span>QUANTITÀ ORDINE</span>
+                    <span>Valore Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
+                  </div>
+                  <input type="number" step="any" class="terminal-input" id="bb-order-qty" value="0.100" oninput="BybitEngine.recalcBybitOrderMetrics()">
+                  
+                  <!-- Quick Percentage Buttons (10%, 25%, 50%, 75%, 100%) -->
+                  <div class="bb-pct-chips-row">
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(10)">10%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(25)">25%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(50)">50%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(75)">75%</div>
+                    <div class="bb-pct-chip" onclick="BybitEngine.setBalancePercent(100)">100%</div>
+                  </div>
                 </div>
-              </div>
 
-              <div class="form-field">
-                <label>Take Profit ($)</label>
-                <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
-              </div>
+                <!-- Strategy Mentor & TP/SL -->
+                <div class="input-grid-2col">
+                  <div class="form-field">
+                    <label>Strategia Mentor</label>
+                    <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
+                      <option value="Minervini VCP">Minervini VCP</option>
+                      <option value="Buffett Value">Buffett Value</option>
+                      <option value="Dalio All-Weather">Dalio All-Weather</option>
+                      <option value="Simons Quant">Simons Quant</option>
+                      <option value="Burry Contrarian">Burry Contrarian</option>
+                      <option value="Freqtrade ML">Freqtrade ML</option>
+                      <option value="Discretionary" selected>Discrezionale</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label>Stop Loss ($)</label>
+                    <input type="number" step="any" class="terminal-input" id="t-sl" placeholder="0.00" oninput="recalcPosition()">
+                  </div>
+                </div>
 
-              <!-- Bybit Real-Time Position Sizing & Liquidation Metrics -->
-              <div class="pos-summary">
-                <div class="pos-row">
-                  <span>Costo / Margine Iniziale:</span>
-                  <span id="bb-cost-val" style="font-weight:800; color:var(--accent)">$0.00</span>
+                <div class="form-field">
+                  <label>Take Profit ($)</label>
+                  <input type="number" step="any" class="terminal-input" id="t-tp" placeholder="0.00" oninput="recalcPosition()">
                 </div>
-                <div class="pos-row">
-                  <span>Prezzo Liquidazione Stimato:</span>
-                  <span id="bb-liq-val" style="color:var(--sell); font-weight:800; font-family:var(--font-mono)">$0.00</span>
-                </div>
-                <div class="pos-row">
-                  <span>Rapporto R/R:</span>
-                  <span id="pos-res-rr" style="font-weight:800">1 : 2.5</span>
-                </div>
-                <div class="pos-row" style="display:none;">
-                  <span id="pos-res-units">0.1</span>
-                  <span id="pos-res-margin">$0.00</span>
-                  <span id="pos-res-liq">$0.00</span>
-                </div>
-              </div>
 
-              <!-- ACCORDION DRAWER: Multi-Target TP -->
-              <div class="accordion-drawer" id="multi-tp-drawer">
-                <div class="accordion-header" onclick="toggleDrawer('multi-tp-drawer')">
-                  <span>Target Multi-Scaglione (TP1, TP2, TP3 Runner)</span>
-                  <span class="chevron">▾</span>
+                <!-- Bybit Real-Time Position Sizing & Liquidation Metrics -->
+                <div class="pos-summary">
+                  <div class="pos-row">
+                    <span>Costo / Margine Iniziale:</span>
+                    <span id="bb-cost-val" style="font-weight:800; color:var(--accent)">$0.00</span>
+                  </div>
+                  <div class="pos-row">
+                    <span>Prezzo Liquidazione Stimato:</span>
+                    <span id="bb-liq-val" style="color:var(--sell); font-weight:800; font-family:var(--font-mono)">$0.00</span>
+                  </div>
+                  <div class="pos-row">
+                    <span>Rapporto R/R:</span>
+                    <span id="pos-res-rr" style="font-weight:800">1 : 2.5</span>
+                  </div>
+                  <div class="pos-row" style="display:none;">
+                    <span id="pos-res-units">0.1</span>
+                    <span id="pos-res-margin">$0.00</span>
+                    <span id="pos-res-liq">$0.00</span>
+                  </div>
                 </div>
-                <div class="accordion-content">
-                  <table class="multi-tp-table">
-                    <thead>
-                      <tr style="color:var(--text-muted); font-size:10px">
-                        <th>Scaglione</th>
-                        <th>Prezzo Target</th>
-                        <th>R/R</th>
-                        <th>Profitto</th>
-                      </tr>
-                    </thead>
-                    <tbody id="multi-tp-tbody">
-                      <tr><td colspan="4" style="text-align:center; color:var(--text-muted)">Imposta Entry e Stop Loss per calcolare</td></tr>
-                    </tbody>
-                  </table>
+
+                <!-- ACCORDION DRAWER: Multi-Target TP -->
+                <div class="accordion-drawer" id="multi-tp-drawer">
+                  <div class="accordion-header" onclick="toggleDrawer('multi-tp-drawer')">
+                    <span>Target Multi-Scaglione (TP1, TP2, TP3 Runner)</span>
+                    <span class="chevron">▾</span>
+                  </div>
+                  <div class="accordion-content">
+                    <table class="multi-tp-table">
+                      <thead>
+                        <tr style="color:var(--text-muted); font-size:10px">
+                          <th>Scaglione</th>
+                          <th>Prezzo Target</th>
+                          <th>R/R</th>
+                          <th>Profitto</th>
+                        </tr>
+                      </thead>
+                      <tbody id="multi-tp-tbody">
+                        <tr><td colspan="4" style="text-align:center; color:var(--text-muted)">Imposta Entry e Stop Loss per calcolare</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Execute Order Button -->
-              <button class="btn-action-primary btn-buy" id="btn-execute-order" onclick="executeTrade()">
-                Apri Posizione BUY / LONG
-              </button>
-
-              <!-- Motivated Telegram Signal Dispatch Button -->
-              <button class="btn-telegram-dispatch" onclick="dispatchActiveOrderToTelegram()" title="Invia segnale motivato con target, SL e motivazione su Telegram">
-                <span>📲</span> Invia Segnale Motivano su Telegram (@cuordivino)
-              </button>
-
-              <!-- Quick Consensus Widget -->
-              <div class="quick-consensus-panel">
-                <div class="qc-top-row">
-                  <span class="qc-title">🧠 Consensus Comitato</span>
-                  <span class="qc-score-pill" id="qc-score-val">--/100</span>
-                </div>
-                <div style="font-size:11px; font-weight:800; margin:6px 0;" id="qc-verdict-val">Analisi in corso...</div>
-                <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; font-size:11px; padding:6px" onclick="switchMainTab('tab-consensus', document.querySelector('[data-tab=tab-consensus]'))">
-                  Vedi Delibera Completa Comitato →
+                <!-- Execute Order Button -->
+                <button class="btn-action-primary btn-buy" id="btn-execute-order" onclick="executeTrade()">
+                  Apri Posizione BUY / LONG
                 </button>
+
+                <!-- Motivated Telegram Signal Dispatch Button -->
+                <button class="btn-telegram-dispatch" onclick="dispatchActiveOrderToTelegram()" title="Invia segnale motivato con target, SL e motivazione su Telegram">
+                  <span>📲</span> Invia Segnale Motivano su Telegram (@cuordivino)
+                </button>
+
+                <!-- Quick Consensus Widget -->
+                <div class="quick-consensus-panel">
+                  <div class="qc-top-row">
+                    <span class="qc-title">🧠 Consensus Comitato</span>
+                    <span class="qc-score-pill" id="qc-score-val">--/100</span>
+                  </div>
+                  <div style="font-size:11px; font-weight:800; margin:6px 0;" id="qc-verdict-val">Analisi in corso...</div>
+                  <button class="btn-action-primary" style="background:var(--ai-gradient); color:#fff; font-size:11px; padding:6px" onclick="switchMainTab('tab-consensus', document.querySelector('[data-tab=tab-consensus]'))">
+                    Vedi Delibera Completa Comitato →
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW 2: ASSISTITO (CO-PILOT CON INDICAZIONI MOTIVATE & PRECISE) -->
+              <div id="trading-view-assisted" style="display:none;">
+                <div id="assisted-content-container"></div>
+              </div>
+
+              <!-- VIEW 3: TOTALMENTE AUTOMATIZZATO (QUANT BOT ALGORITMICO) -->
+              <div id="trading-view-automated" style="display:none;">
+                <div id="automated-content-container"></div>
               </div>
 
             </div>
@@ -919,6 +930,15 @@
     <div id="tab-quant" class="view-panel">
       <div id="quant-engines-view-container">
         <!-- Injected via quant_engines.js -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         VIEW SCANNER: RADAR OPPORTUNITÀ DI TRADING ISTITUZIONALE
+         ==================================================================== -->
+    <div id="tab-scanner" class="view-panel">
+      <div id="tab-scanner-view-container">
+        <!-- Injected via opportunity_scanner.js -->
       </div>
     </div>
 
@@ -1480,6 +1500,159 @@
     </div>
   </div>
 
+  <!-- MODAL: REGOLAZIONE PARAMETRI MACRO & SINTESI BOT QUANT -->
+  <div class="modal-overlay" id="macro-bot-modal" onclick="if(event.target===this) TradingEngine.closeMacroModal()">
+    <div class="modal-window-card" style="max-width:680px; max-height:90vh;">
+      <div class="modal-header-bar">
+        <div style="font-weight:900; font-size:13px; display:flex; align-items:center; gap:8px;">
+          <span>⚙️</span>
+          <span>REGOLAZIONE PARAMETRI MACRO & SCELTA ALGORITMICA</span>
+        </div>
+        <button class="win-ctrl-btn" onclick="TradingEngine.closeMacroModal()" style="font-size:16px;">✕</button>
+      </div>
+
+      <div class="modal-body-scroll" style="padding:16px;">
+        <p style="font-size:11px; color:var(--text-muted); margin-bottom:14px; line-height:1.4;">
+          Personalizza ogni singolo aspetto di sintesi macroeconomica, filtri di rischio, mercati abilitati e regole di stop per il <b>Quant Bot Autonomo</b> (Coding-Kitties & OpenAlgo Engine).
+        </p>
+
+        <!-- SEZIONE 1: REGIME MACRO DI MERCATO -->
+        <div class="macro-form-group">
+          <label class="macro-group-lbl">1. Regime Macro di Mercato (Macro Bias):</label>
+          <div class="macro-bias-selector">
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="risk_on">
+              <div class="bias-content">
+                <span class="bias-title">🚀 Risk-On (Aggressivo)</span>
+                <span class="bias-desc">Massimizza l'esposizione su crypto ad alto beta, azioni tech NASDAQ ed energetici.</span>
+              </div>
+            </label>
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="neutral" checked>
+              <div class="bias-content">
+                <span class="bias-title">⚖️ Neutro (All-Weather)</span>
+                <span class="bias-desc">Approccio bilanciato Dalio/Simons. Ripartizione del rischio paritaria tra azioni, crypto e materie prime.</span>
+              </div>
+            </label>
+            <label class="macro-bias-card">
+              <input type="radio" name="macro-bias" value="risk_off">
+              <div class="bias-content">
+                <span class="bias-title">🛡️ Risk-Off (Conservativo)</span>
+                <span class="bias-desc">Priorità a preservazione capitale, oro, metalli difensivi, titoli utility FTSE MIB e forex safe-haven.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- SEZIONE 2: SOGLIA MINIMA CONFLUENZA & RISCHIO -->
+        <div class="macro-form-grid-2">
+          <div class="macro-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="macro-group-lbl">2. Soglia Min. Confluenza:</label>
+              <span class="macro-val-badge" id="m-val-minscore">82%</span>
+            </div>
+            <input type="range" min="70" max="95" value="82" class="lev-slider" id="m-input-minscore" oninput="document.getElementById('m-val-minscore').innerText = this.value + '%'">
+            <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">Il bot esegue solo se lo score quant supera questo valore.</div>
+          </div>
+
+          <div class="macro-form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label class="macro-group-lbl">3. Rischio Massimo per Trade:</label>
+              <span class="macro-val-badge" id="m-val-risk">1.5%</span>
+            </div>
+            <input type="range" min="0.5" max="5.0" step="0.5" value="1.5" class="lev-slider" id="m-input-risk" oninput="document.getElementById('m-val-risk').innerText = parseFloat(this.value).toFixed(1) + '%'">
+            <div style="font-size:9px; color:var(--text-muted); margin-top:2px;">Percentuale del capitale netto a rischio per singola operazione.</div>
+          </div>
+        </div>
+
+        <!-- SEZIONE 3: CAPITALE, TRADES CONTEMPORANEI & CIRCUIT BREAKER -->
+        <div class="macro-form-grid-3">
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">4. Capitale Allocato ($):</label>
+            <input type="number" class="terminal-input" id="m-input-cap" value="25000">
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">5. Max Operazioni Aperte:</label>
+            <select class="terminal-input" id="m-input-trades">
+              <option value="1">1 Posizione</option>
+              <option value="2">2 Posizioni</option>
+              <option value="3" selected>3 Posizioni</option>
+              <option value="5">5 Posizioni</option>
+              <option value="10">10 Posizioni</option>
+            </select>
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">6. Daily Circuit Breaker:</label>
+            <select class="terminal-input" id="m-input-cb">
+              <option value="-2.0">-2.0% Stop Giornaliero</option>
+              <option value="-3.0">-3.0% Stop Giornaliero</option>
+              <option value="-4.0" selected>-4.0% Stop Istituzionale</option>
+              <option value="-6.0">-6.0% Stop Estremo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SEZIONE 4: ASSET CLASS E MERCATI ABILITATI -->
+        <div class="macro-form-group" style="margin-top:12px;">
+          <label class="macro-group-lbl">7. Mercati e Asset Class Abilitati per il Bot:</label>
+          <div class="macro-checkbox-grid">
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="crypto" checked>
+              <span>🪙 Criptovalute (OKX / Bybit Linear)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="italy" checked>
+              <span>🇮🇹 Borsa Italiana (FTSE MIB & Mid Cap)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="us" checked>
+              <span>🇺🇸 Wall Street (NASDAQ-100 & S&P 500)</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="forex" checked>
+              <span>💱 Forex Majors & Crosses</span>
+            </label>
+            <label class="macro-cb-item">
+              <input type="checkbox" class="macro-sector-cb" value="commodities" checked>
+              <span>🛢️ Materie Prime (Metalli, Energia, CME)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- SEZIONE 5: TRAILING STOP PROTECTION -->
+        <div class="macro-form-grid-2" style="margin-top:12px;">
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">8. Trailing Stop Automatico:</label>
+            <label class="switch" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="m-cb-trailing" checked>
+              <span class="slider-toggle"></span>
+              <span style="font-size:11px; color:#fff; font-weight:700;">Attiva Trailing Dinamico</span>
+            </label>
+          </div>
+          <div class="macro-form-group">
+            <label class="macro-group-lbl">Tipo Trailing Stop:</label>
+            <select class="terminal-input" id="m-select-trailing">
+              <option value="sar" selected>Parabolic SAR (Wilder AF 0.02)</option>
+              <option value="atr">Volatilità Dinamica 1.5x ATR</option>
+              <option value="ema">Trailing su Media Mobile EMA 21</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FOOTER ACTIONS -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:12px; border-top:1px solid var(--border);">
+          <button type="button" class="btn btn-secondary" onclick="TradingEngine.resetMacroSettingsToDefault()">
+            🔄 Ripristina Default
+          </button>
+          <button type="button" class="btn-action-primary" style="width:auto; padding:10px 24px; font-weight:800; background:var(--buy); color:#000;" onclick="TradingEngine.saveMacroSettingsFromModal()">
+            💾 Salva Parametri Macro
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1488,6 +1661,10 @@
     <button class="m-bottom-nav-item active" onclick="switchMainTab('tab-terminal', this)">
       <span class="icon">📈</span>
       <span>Terminale</span>
+    </button>
+    <button class="m-bottom-nav-item" onclick="switchMainTab('tab-scanner', this); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
+      <span class="icon">🎯</span>
+      <span>Radar</span>
     </button>
     <button class="m-bottom-nav-item" onclick="switchMainTab('tab-consensus', this)">
       <span class="icon">🧠</span>
@@ -1508,20 +1685,21 @@
   </div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/auth.js?v=2.5.0"></script>
-  <script src="js/market_assets.js?v=2.5.0"></script>
-  <script src="js/workspace_engine.js?v=2.5.0"></script>
-  <script src="js/api_manager.js?v=2.5.0"></script>
-  <script src="js/chart.js?v=2.5.0"></script>
-  <script src="js/bybit_engine.js?v=2.5.0"></script>
-  <script src="js/quant_engines.js?v=2.5.0"></script>
-  <script src="js/sector_rotation.js?v=2.5.0"></script>
-  <script src="js/optimal_engine.js?v=2.5.0"></script>
-  <script src="js/skills.js?v=2.5.0"></script>
-  <script src="js/trading.js?v=2.5.0"></script>
-  <script src="js/journal.js?v=2.5.0"></script>
-  <script src="js/alerts.js?v=2.5.0"></script>
-  <script src="js/app.js?v=2.5.0"></script>
+  <script src="js/auth.js?v=2.6.0"></script>
+  <script src="js/market_assets.js?v=2.6.0"></script>
+  <script src="js/workspace_engine.js?v=2.6.0"></script>
+  <script src="js/api_manager.js?v=2.6.0"></script>
+  <script src="js/chart.js?v=2.6.0"></script>
+  <script src="js/bybit_engine.js?v=2.6.0"></script>
+  <script src="js/quant_engines.js?v=2.6.0"></script>
+  <script src="js/sector_rotation.js?v=2.6.0"></script>
+  <script src="js/optimal_engine.js?v=2.6.0"></script>
+  <script src="js/opportunity_scanner.js?v=2.6.0"></script>
+  <script src="js/skills.js?v=2.6.0"></script>
+  <script src="js/trading.js?v=2.6.0"></script>
+  <script src="js/journal.js?v=2.6.0"></script>
+  <script src="js/alerts.js?v=2.6.0"></script>
+  <script src="js/app.js?v=2.6.0"></script>
 
   <script>
     // Bybit Subtabs Switcher (Grafico, Panoramica, Dati, Alimentazione)

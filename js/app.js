@@ -186,6 +186,10 @@ async function selectAsset(symbol) {
     window.OptimalEngine.recalculateOptimalPosition();
     window.OptimalEngine.calculateLocalVolumeProfile();
   }
+
+  if (window.TradingEngine && window.TradingEngine.executionMode === 'assisted') {
+    window.TradingEngine.refreshAssistedView();
+  }
 }
 
 async function pollActiveQuote() {
