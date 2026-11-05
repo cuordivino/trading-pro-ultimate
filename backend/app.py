@@ -269,6 +269,33 @@ def handle_settings():
     
     return jsonify(get_settings())
 
+# ==========================================
+# CASARIO QUANTITATIVE TOP-DOWN ENGINE APIS
+# ==========================================
+from casario_quant_service import casario_quant_service
+
+@app.route('/api/quant/casario/macro-regime', methods=['GET'])
+def get_casario_macro():
+    return jsonify(casario_quant_service.get_macro_regime_summary())
+
+@app.route('/api/quant/casario/evaluate/<symbol>', methods=['GET'])
+def evaluate_casario_symbol(symbol):
+    return jsonify(casario_quant_service.evaluate_symbol(symbol))
+
+@app.route('/api/quant/casario/screener', methods=['GET'])
+def get_casario_screener():
+    tf = request.args.get('timeframe', '15m')
+    risk = request.args.get('risk', 'moderate')
+    return jsonify(casario_quant_service.rank_universe(tf, risk))
+
+@app.route('/api/quant/casario/order-proposal', methods=['POST'])
+def create_casario_proposal():
+    data = request.json or {}
+    sym = data.get('symbol', 'BTCUSDT')
+    side = data.get('side', 'LONG')
+    tf = data.get('timeframe', '15m')
+    return jsonify(casario_quant_service.create_order_proposal(sym, side, tf))
+
 @app.route('/api/telegram/test', methods=['POST'])
 def test_telegram():
     settings = get_settings()

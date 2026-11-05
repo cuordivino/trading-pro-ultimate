@@ -167,6 +167,9 @@
       <button class="tab-nav-btn ai-glow" data-tab="tab-consensus" onclick="switchMainTab('tab-consensus', this)">
         <span>🧠</span> Comitato Investitori
       </button>
+      <button class="tab-nav-btn ai-glow" data-tab="tab-casario-quant" onclick="switchMainTab('tab-casario-quant', this); if(window.CasarioQuantEngine) CasarioQuantEngine.renderUI();">
+        <span>⚡</span> Quant Casario 4Q
+      </button>
       <button class="tab-nav-btn" data-tab="tab-quant" onclick="switchMainTab('tab-quant', this); if(window.QuantEngines) QuantEngines.renderQuantEnginesTab();">
         <span>🤖</span> Motori Quant (4)
       </button>
@@ -750,6 +753,7 @@
                   <div class="form-field">
                     <label>Strategia Mentor</label>
                     <select class="terminal-input" id="trade-skill-tag" style="cursor:pointer">
+                      <option value="Casario Quant 4Q">Casario Quant (Top-Down Macro)</option>
                       <option value="Minervini VCP">Minervini VCP</option>
                       <option value="Buffett Value">Buffett Value</option>
                       <option value="Dalio All-Weather">Dalio All-Weather</option>
@@ -992,6 +996,13 @@
     <!-- ====================================================================
          VIEW QUANT: THE 4 QUANTITATIVE ENGINES (FREQTRADE, HUMMINGBOT, NAUTILUS, OPENBB)
          ==================================================================== -->
+    <!-- ====================================================================
+         VIEW CASARIO QUANT: TOP-DOWN MACRO, 4-QUADRANTS & FRACTAL RANKER
+         ==================================================================== -->
+    <div id="tab-casario-quant" class="view-panel">
+      <!-- Injected via casario_quant_engine.js -->
+    </div>
+
     <div id="tab-quant" class="view-panel">
       <div id="quant-engines-view-container">
         <!-- Injected via quant_engines.js -->

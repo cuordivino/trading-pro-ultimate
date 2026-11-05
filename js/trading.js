@@ -1006,3 +1006,76 @@ function dispatchActiveOrderToTelegram() {
 document.addEventListener('DOMContentLoaded', () => {
   TradingEngine.init();
 });
+
+
+// ==========================================
+// CASARIO QUANTITATIVE TOP-DOWN INTEGRATION
+// ==========================================
+function applyCasarioQuantMentor() {
+  const entryInput = document.getElementById('t-entry');
+  const slInput = document.getElementById('t-sl');
+  const tpInput = document.getElementById('t-tp');
+
+  const curPrice = parseFloat(entryInput?.value) || 80500.0;
+  let atr = curPrice * 0.015;
+
+  if (window.currentCandles && window.currentCandles.length > 14) {
+    const c = window.currentCandles;
+    let trSum = 0;
+    for (let i = c.length - 14; i < c.length; i++) {
+      trSum += Math.max(c[i].high - c[i].low, Math.abs(c[i].high - c[i-1].close), Math.abs(c[i].low - c[i-1].close));
+    }
+    atr = trSum / 14;
+  }
+
+  const stopDist = Math.max(atr * 1.8, curPrice * 0.008);
+  if (currentTradeSide === 'LONG') {
+    if (slInput) slInput.value = +(curPrice - stopDist).toFixed(2);
+    if (tpInput) tpInput.value = +(curPrice + stopDist * 2.0).toFixed(2);
+  } else {
+    if (slInput) slInput.value = +(curPrice + stopDist).toFixed(2);
+    if (tpInput) tpInput.value = +(curPrice - stopDist * 2.0).toFixed(2);
+  }
+
+  if (window.recalcPosition) window.recalcPosition();
+  if (window.showToast) {
+    window.showToast('⚡ Parametri Casario Quant 4Q applicati: Stop Frattale 1.8x ATR, Target R:R 1:2.0', 'info');
+  }
+}
+
+// Global Order Execution Dispatcher for Semi-Automatic Approvals
+window.executeOrderDirectly = async function(p) {
+  if (!p) return;
+  const sym = p.symbol || window.currentSymbol || 'BTCUSDT';
+  if (p.side) setTradeSide(p.side.toUpperCase());
+  if (p.entryPrice) {
+    const e = document.getElementById('t-entry');
+    if (e) e.value = p.entryPrice;
+  }
+  if (p.stopLoss) {
+    const s = document.getElementById('t-sl');
+    if (s) s.value = p.stopLoss;
+  }
+  if (p.takeProfit) {
+    const t = document.getElementById('t-tp');
+    if (t) t.value = p.takeProfit;
+  }
+  const st = document.getElementById('trade-skill-tag');
+  if (st) st.value = 'Casario Quant 4Q';
+
+  if (window.recalcPosition) window.recalcPosition();
+
+  await executeTrade();
+};
+
+// Listen for Strategy Mentor change
+document.addEventListener('DOMContentLoaded', () => {
+  const skillSelect = document.getElementById('trade-skill-tag');
+  if (skillSelect) {
+    skillSelect.addEventListener('change', function() {
+      if (this.value === 'Casario Quant 4Q') {
+        applyCasarioQuantMentor();
+      }
+    });
+  }
+});
