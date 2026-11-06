@@ -6128,3 +6128,231 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   border-radius: 4px;
   border-left: 2px solid var(--accent);
 }
+
+
+/* ==========================================================================
+   RESPONSIVE CASARIO QUANT & PORTFOLIO GRIDS (MOBILE, TABLET, PC)
+   Zero overflow, full responsiveness in both Portrait and Landscape
+   ========================================================================== */
+.qc-portfolio-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-generator-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  gap: 10px;
+  align-items: flex-end;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-portfolio-details-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-kpi-5-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-kpi-4-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-macro-hero-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-top-setups-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-dossier-split-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qc-trend-levels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet & Smaller Screens (<= 1024px) */
+@media (max-width: 1024px) {
+  .qc-portfolio-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .qc-portfolio-details-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .qc-portfolio-details-layout > div:first-child {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  .qc-kpi-5-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .qc-generator-filter-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .qc-macro-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .qc-top-setups-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .qc-dossier-split-grid {
+    grid-template-columns: 1fr;
+  }
+  .qc-trend-levels-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile Screens (<= 768px in Portrait OR Landscape) */
+@media (max-width: 768px) {
+  .qc-portfolio-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+  }
+  .qc-portfolio-cards-grid .qc-panel-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .qc-kpi-5-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .qc-kpi-4-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .qc-generator-filter-bar {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .qc-top-setups-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .qc-kpi-3-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .qc-macro-overview-3col,
+  .qc-sector-perf-3col,
+  .qc-split-2col {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .mobile-bottom-nav {
+    grid-template-columns: repeat(6, 1fr) !important;
+    height: 52px !important;
+  }
+  .m-bottom-nav-item {
+    font-size: 8.5px !important;
+    padding: 2px 1px !important;
+  }
+  .m-bottom-nav-item .icon {
+    font-size: 15px !important;
+  }
+}
+
+/* TPU Modal Overlay & Cards (Report Email & Subscribers) */
+.tpu-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(4, 7, 15, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.tpu-modal-overlay.open {
+  display: flex !important;
+}
+.tpu-modal-card {
+  background: #0c101c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+}
+.tpu-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tpu-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+.tpu-modal-close:hover {
+  color: #fff;
+}
+.tpu-modal-body {
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}

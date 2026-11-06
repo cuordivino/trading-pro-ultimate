@@ -3556,7 +3556,7 @@ window.CasarioQuantEngine = {
       </div>
 
       <!-- TOP 2 HERO CARDS: REGIME ECONOMICO PREDOMINANTE & SMART QUANT SENTIMENT -->
-      <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:16px; margin-bottom:20px;">
+      <div class="qc-macro-hero-grid">
         
         <!-- CARD 1: REGIME ECONOMICO PREDOMINANTE -->
         <div class="qc-panel-card" style="padding:18px; background:#0c101c; border:1px solid #1e2638; border-radius:10px;">
@@ -3630,7 +3630,7 @@ window.CasarioQuantEngine = {
           ` : ''}
 
           <!-- 4 Regional Mini Cards Below: Europa, Canada, Cina, Australia -->
-          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+          <div class="qc-kpi-4-grid" style="gap:8px;">
             ${[
               { flag: '🇪🇺', name: 'Europa', regime: 'STAGFLAZIONE', rClass: 'orange', score: 72 },
               { flag: '🇨🇦', name: 'Canada', regime: 'REFLAZIONE', rClass: 'green', score: 78 },
@@ -3724,7 +3724,7 @@ window.CasarioQuantEngine = {
           </div>
 
           <!-- 3 Bottom Summary Pill Cards: Sell 41%, Hold 20%, Buy 39% -->
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px;">
+          <div class="qc-kpi-3-grid" style="margin-top:14px;">
             <div style="background:rgba(239,68,68,0.10); border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:8px; text-align:center;">
               <div style="font-size:9px; font-weight:800; color:#94a3b8;">Sell</div>
               <div style="font-size:16px; font-weight:900; color:#ef4444; font-family:var(--font-mono); margin-top:2px;">
@@ -3760,7 +3760,7 @@ window.CasarioQuantEngine = {
           <span class="qc-live-tag">● AGGIORNATE OGGI · CONFLUENZA MULTIFATTORIALE</span>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;">
+        <div class="qc-top-setups-grid">
           ${this.topDailySetups.map(setup => {
             const isLong = setup.bias.includes('BUY');
             const sparkPoints = setup.sparkline.map((val, idx) => {
@@ -4353,7 +4353,7 @@ window.CasarioQuantEngine = {
         </div>
 
         <!-- Row 1: Ricerca | Tipo | Direzione -->
-        <div style="display:grid; grid-template-columns: 1.2fr 1.6fr 1.2fr; gap:14px; margin-bottom:14px;">
+        <div class="qc-macro-overview-3col">
           
           <!-- Ricerca Input -->
           <div>
@@ -4427,7 +4427,7 @@ window.CasarioQuantEngine = {
         </div>
 
         <!-- Row 2: Settore | Paese | Stato Trade -->
-        <div style="display:grid; grid-template-columns: 1.4fr 1.4fr 1.2fr; gap:14px; margin-bottom:14px;">
+        <div class="qc-sector-perf-3col">
           <!-- Settore -->
           <div>
             <label style="font-size:10px; font-weight:800; color:#94a3b8; display:block; margin-bottom:5px;">Settore</label>
@@ -4677,7 +4677,7 @@ window.CasarioQuantEngine = {
 
     return `
       <!-- TOP SPLIT: CHART WITH FORECAST CONE & SMART QUANT RATING CARD -->
-      <div style="display:grid; grid-template-columns: 2.2fr 1fr; gap:16px; margin-bottom:20px;">
+      <div class="qc-dossier-split-grid">
         
         <!-- CHART WITH FORECAST CONE TOGGLE (SCREENSHOT e2cc5bcf & e2fc3b15) -->
         <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:10px; padding:16px;">
@@ -4794,7 +4794,7 @@ window.CasarioQuantEngine = {
 
       <!-- 5 PILLARS ROW (SCREENSHOTS e2cc5bcf & bc326ecf) WITH REAL BANK RATINGS & ATTACHMENTS -->
       <div style="margin-bottom:20px;">
-        <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px;">
+        <div class="qc-kpi-5-grid" style="gap:12px;">
           
           <!-- Pillar 1: MACRO -->
           <div style="background:#0c101c; border:1px solid #1e2638; border-top:2px solid #f59e0b; border-radius:8px; padding:14px;">
@@ -4918,7 +4918,7 @@ window.CasarioQuantEngine = {
       </div>
 
       <!-- TREND & LIVELLI DI ATTENZIONE (SCREENSHOT bc326ecf) -->
-      <div style="display:grid; grid-template-columns: 1fr 1.3fr; gap:16px; margin-bottom:20px;">
+      <div class="qc-trend-levels-grid">
         
         <!-- CARD 1: TREND -->
         <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:8px; padding:16px;">
@@ -5120,7 +5120,7 @@ window.CasarioQuantEngine = {
         </div>
 
         <!-- Metric Cards: Entrata/Uscita & Durata -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div class="qc-split-2col" style="gap:12px; margin-bottom:12px;">
           <div style="background:#080c14; border:1px solid #1a2233; border-radius:6px; padding:10px;">
             <div style="font-size:9px; color:#64748b; font-weight:800;">📅 Entrata / Uscita</div>
             <div style="font-size:13px; font-weight:900; color:#fff; font-family:monospace; margin-top:2px;">
@@ -5264,7 +5264,7 @@ window.CasarioQuantEngine = {
         </div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="qc-split-2col" style="gap:16px;">
         
         <!-- CARD 1: RICAVI PER AREA GEOGRAFICA (DONUT CHART) -->
         <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:10px; padding:18px;">
@@ -5480,7 +5480,7 @@ window.CasarioQuantEngine = {
           <span style="font-size:9px; color:var(--text-dim); font-weight:700;">(Suggeriti dall'IA Quant o personalizzati)</span>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(4, 1fr) auto; gap:10px; align-items:flex-end;">
+        <div class="qc-generator-filter-bar">
           <div>
             <label style="font-size:9px; font-weight:800; color:#94a3b8; display:block; margin-bottom:4px;">PROFILO RISCHIO</label>
             <select class="terminal-input" style="font-size:10px; padding:6px 8px; width:100%;">
@@ -5527,7 +5527,7 @@ window.CasarioQuantEngine = {
       </div>
 
       <!-- THE 3 MAIN PORTFOLIO CARDS: CONSERVATIVO | BILANCIATO | CRESCITA (SCREENSHOT 0c786ba6) -->
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+      <div class="qc-portfolio-cards-grid">
         
         <!-- CARD 1: CONSERVATIVO -->
         <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between;">
@@ -5906,7 +5906,7 @@ window.CasarioQuantEngine = {
         <span style="font-size:11px; color:#64748b;">Modalità Monitoraggio Istituzionale Attivo</span>
       </div>
 
-      <div style="display:grid; grid-template-columns: 200px 1fr; gap:16px;">
+      <div class="qc-portfolio-details-layout">
         
         <!-- LEFT SIDEBAR: SEZIONI (SCREENSHOT 6369d00a) -->
         <div style="background:#0c101c; border:1px solid #1e2638; border-radius:10px; padding:14px; height:fit-content;">
@@ -6026,7 +6026,7 @@ window.CasarioQuantEngine = {
             <div style="margin-bottom:16px;">
               
               <!-- 4 Top KPI Cards for Portafoglio Attuale -->
-              <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:16px;">
+              <div class="qc-kpi-4-grid">
                 <div style="background:#0c101c; border:1px solid #1e2638; border-radius:8px; padding:12px;">
                   <div style="font-size:9px; color:#64748b; font-weight:800;">VALORE TOTALE</div>
                   <div style="font-size:20px; font-weight:900; color:#fff; font-family:monospace; margin-top:2px;">
@@ -6060,7 +6060,7 @@ window.CasarioQuantEngine = {
                   <div style="font-size:10px; color:#64748b;">Distribuzione percentuale del capitale per categoria</div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:center;">
+                <div class="qc-split-2col" style="gap:20px; align-items:center;">
                   <!-- Pie / Donut SVG -->
                   <div style="position:relative; width:200px; height:200px; margin:0 auto;">
                     <svg viewBox="0 0 42 42" style="width:100%; height:100%; transform:rotate(-90deg);">
@@ -6665,7 +6665,7 @@ window.CasarioQuantEngine = {
     return `
 <!-- SUBTAB: PANORAMICA (SCREENSHOT 6369d00a & 1e3c46a0) -->
             <!-- 5 KPI Cards -->
-            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:10px; margin-bottom:16px;">
+            <div class="qc-kpi-5-grid">
               <div style="background:#0c101c; border:1px solid #1e2638; border-left:3px solid #10b981; border-radius:6px; padding:12px;">
                 <div style="font-size:9px; color:#64748b; font-weight:800;">VALORE TOTALE</div>
                 <div style="font-size:18px; font-weight:900; color:#fff; font-family:monospace; margin-top:2px;">13.652,35 €</div>
@@ -6868,7 +6868,7 @@ window.CasarioQuantEngine = {
         </div>
 
         <!-- 4 KPI Drawdown Cards -->
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:16px;">
+        <div class="qc-kpi-4-grid">
           <div style="background:#080c14; border:1px solid #1e2638; border-radius:8px; padding:12px;">
             <div style="font-size:9px; color:#64748b; font-weight:800;">MAX DRAWDOWN</div>
             <div style="font-size:18px; font-weight:900; color:#f87171; font-family:monospace; margin-top:2px;">-15,25%</div>

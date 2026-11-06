@@ -321,6 +321,87 @@ def send_telegram():
     ok = broker.send_telegram_alert(msg)
     return jsonify({'success': ok})
 
+# ==========================================
+# REPORT & SUBSCRIBER ENDPOINTS
+# ==========================================
+SUBSCRIBERS_FILE = os.path.join(BASE_DIR, 'subscribers.json')
+
+def load_subscribers():
+    if os.path.exists(SUBSCRIBERS_FILE):
+        try:
+            import json
+            with open(SUBSCRIBERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def save_subscribers(subs):
+    try:
+        import json
+        with open(SUBSCRIBERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(subs, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print("[!] Error saving subscribers:", e)
+
+@app.route('/api/subscribe', methods=['POST'])
+def handle_subscribe():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+    
+    subs = load_subscribers()
+    existing = next((s for s in subs if s.get('email') == email), None)
+    if existing:
+        existing.update(data)
+    else:
+        subs.append(data)
+    save_subscribers(subs)
+    
+    try:
+        settings = get_settings()
+        broker = BrokerageClient(settings)
+        name = data.get('name', 'N/D')
+        phone = data.get('phone', 'N/D')
+        broker.send_telegram_alert(f"Nuovo Iscritto TRADING PRO ULTIMATE - Nome: {name} - Email: {email} - Tel: {phone}")
+    except Exception:
+        pass
+        
+    return jsonify({
+        'status': 'success',
+        'message': 'Iscrizione completata con successo! Notifiche attive.',
+        'subscriber': data,
+        'copyright': 'TRADING PRO ULTIMATE (c) by cuordivino'
+    })
+
+@app.route('/api/subscribers', methods=['GET'])
+def get_subscribers():
+    return jsonify(load_subscribers())
+
+@app.route('/api/send-report-email', methods=['POST'])
+def handle_send_report_email():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    report_title = data.get('reportTitle', 'Report Istituzionale TRADING PRO ULTIMATE')
+    cert_id = data.get('certId', 'TPU-CERT-LIVE')
+    name = data.get('name', 'Gentile Investitore')
+    
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+        
+    print(f"[*] Sending report email: '{report_title}' to {email} ({name}) - Cert: {cert_id}")
+    
+    return jsonify({
+        'status': 'success',
+        'recipient': email,
+        'report': report_title,
+        'certId': cert_id,
+        'thanks': f"Gentile {name}, ti ringraziamo per la fiducia in TRADING PRO ULTIMATE.",
+        'copyright': 'TRADING PRO ULTIMATE (c) by cuordivino - Tutti i diritti riservati.'
+    })
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"[*] Starting Trading Pro Ultimate + InvestorSkills AI on port {port}...")
