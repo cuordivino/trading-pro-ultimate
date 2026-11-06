@@ -737,24 +737,29 @@ function changeTimeframe(tf, btnElem) {
 // ==========================================
 // Curated Global Top Assets for Ticker Tape
 const TICKER_TAPE_CATALOG = [
-  { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', curr: '$', basePrice: 80359.90, chg: 2.25, prec: 2 },
-  { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', curr: '$', basePrice: 2640.50, chg: 1.40, prec: 2 },
-  { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', curr: '$', basePrice: 194.20, chg: 3.80, prec: 2 },
-  { symbol: 'NVDA', name: 'Nvidia', cat: 'us_stock', curr: '$', basePrice: 142.50, chg: 2.10, prec: 2 },
-  { symbol: 'AAPL', name: 'Apple', cat: 'us_stock', curr: '$', basePrice: 228.30, chg: 0.75, prec: 2 },
-  { symbol: 'TSLA', name: 'Tesla', cat: 'us_stock', curr: '$', basePrice: 248.80, chg: -1.20, prec: 2 },
-  { symbol: 'SPY', name: 'S&P 500', cat: 'us_stock', curr: '$', basePrice: 585.40, chg: 0.45, prec: 2 },
-  { symbol: 'ENEL.MI', name: 'Enel', cat: 'eu_stock', curr: '€', basePrice: 7.15, chg: 0.35, prec: 3 },
-  { symbol: 'ENI.MI', name: 'Eni', cat: 'eu_stock', curr: '€', basePrice: 14.38, chg: 1.10, prec: 3 },
-  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', curr: '€', basePrice: 3.86, chg: 0.60, prec: 3 },
-  { symbol: 'RACE.MI', name: 'Ferrari', cat: 'eu_stock', curr: '€', basePrice: 422.50, chg: 1.25, prec: 2 },
-  { symbol: 'UCG.MI', name: 'UniCredit', cat: 'eu_stock', curr: '€', basePrice: 40.85, chg: 1.80, prec: 3 },
-  { symbol: 'GC', name: 'Oro (Gold)', cat: 'forex', curr: '$', basePrice: 2746.50, chg: 0.65, prec: 2 },
-  { symbol: 'SI', name: 'Argento', cat: 'forex', curr: '$', basePrice: 32.84, chg: 1.15, prec: 2 },
-  { symbol: 'CL', name: 'Petrolio WTI', cat: 'forex', curr: '$', basePrice: 71.40, chg: -0.45, prec: 2 },
-  { symbol: 'BRN', name: 'Brent Crude', cat: 'forex', curr: '$', basePrice: 75.10, chg: -0.30, prec: 2 },
-  { symbol: 'EURUSD', name: 'EUR / USD', cat: 'forex', curr: '', basePrice: 1.0854, chg: 0.12, prec: 4 },
-  { symbol: 'GBPUSD', name: 'GBP / USD', cat: 'forex', curr: '', basePrice: 1.2980, chg: -0.18, prec: 4 }
+  { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', curr: '$', basePrice: 75780.00, chg: -5.48, prec: 2 },
+  { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', curr: '$', basePrice: 2235.50, chg: -4.20, prec: 2 },
+  { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', curr: '$', basePrice: 89.40, chg: -6.15, prec: 2 },
+  { symbol: 'NVDA', name: 'Nvidia', cat: 'us_stock', curr: '$', basePrice: 181.60, chg: -9.26, prec: 2 },
+  { symbol: 'AAPL', name: 'Apple', cat: 'us_stock', curr: '$', basePrice: 344.17, chg: -1.53, prec: 2 },
+  { symbol: 'TSLA', name: 'Tesla', cat: 'us_stock', curr: '$', basePrice: 343.69, chg: -10.77, prec: 2 },
+  { symbol: 'SPY', name: 'S&P 500', cat: 'us_stock', curr: '$', basePrice: 733.00, chg: -4.41, prec: 2 },
+  { symbol: 'MSFT', name: 'Microsoft', cat: 'us_stock', curr: '$', basePrice: 535.93, chg: -3.58, prec: 2 },
+  { symbol: 'AMD', name: 'AMD', cat: 'us_stock', curr: '$', basePrice: 404.40, chg: -17.26, prec: 2 },
+  { symbol: 'ENEL.MI', name: 'Enel', cat: 'eu_stock', curr: '€', basePrice: 9.77, chg: 0.92, prec: 3 },
+  { symbol: 'ENI.MI', name: 'Eni', cat: 'eu_stock', curr: '€', basePrice: 25.35, chg: -0.72, prec: 3 },
+  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', curr: '€', basePrice: 6.26, chg: -0.27, prec: 3 },
+  { symbol: 'UCG.MI', name: 'UniCredit', cat: 'eu_stock', curr: '€', basePrice: 77.18, chg: -1.45, prec: 2 },
+  { symbol: 'RACE.MI', name: 'Ferrari', cat: 'eu_stock', curr: '€', basePrice: 377.30, chg: -1.37, prec: 2 },
+  { symbol: 'STLAM.MI', name: 'Stellantis', cat: 'eu_stock', curr: '€', basePrice: 3.97, chg: -4.49, prec: 3 },
+  { symbol: 'TIT.MI', name: 'Telecom Italia', cat: 'eu_stock', curr: '€', basePrice: 5.76, chg: -1.00, prec: 3 },
+  { symbol: 'GC', name: 'Oro (Gold)', cat: 'forex', curr: '$', basePrice: 4056.00, chg: 0.45, prec: 2 },
+  { symbol: 'SI', name: 'Argento', cat: 'forex', curr: '$', basePrice: 51.65, chg: 1.10, prec: 2 },
+  { symbol: 'CL', name: 'Petrolio WTI', cat: 'forex', curr: '$', basePrice: 91.20, chg: -0.85, prec: 2 },
+  { symbol: 'BRN', name: 'Brent Crude', cat: 'forex', curr: '$', basePrice: 99.20, chg: -0.75, prec: 2 },
+  { symbol: 'EURUSD', name: 'EUR / USD', cat: 'forex', curr: '', basePrice: 1.1177, chg: -0.36, prec: 4 },
+  { symbol: 'GBPUSD', name: 'GBP / USD', cat: 'forex', curr: '', basePrice: 1.3405, chg: -0.33, prec: 4 },
+  { symbol: 'USDJPY', name: 'USD / JPY', cat: 'forex', curr: '¥', basePrice: 157.91, chg: 0.15, prec: 2 }
 ];
 
 async function initCuratedAssets() {
