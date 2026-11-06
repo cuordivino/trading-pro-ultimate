@@ -65,6 +65,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg);
@@ -74,7 +81,6 @@ body {
   color: var(--text-main);
   line-height: 1.45;
   min-height: 100vh;
-  overflow-x: hidden;
   font-size: 13px;
 }
 
@@ -97,6 +103,16 @@ body {
   padding: 0 16px;
   font-family: var(--font-mono);
   font-size: 11px;
+  max-width: 100vw;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.top-telemetry-bar::-webkit-scrollbar {
+  display: none;
 }
 .telemetry-left {
   display: flex;
@@ -192,11 +208,17 @@ body {
   top: 0;
   z-index: 1000;
   backdrop-filter: blur(16px);
+  max-width: 100vw;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  gap: 12px;
 }
 .brand-box {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 .brand-title {
   font-size: 16px;
@@ -205,6 +227,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 .brand-title .accent-pro { color: var(--accent); }
 .brand-badge {
@@ -226,7 +249,19 @@ body {
   padding: 3px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  gap: 2px;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-sizing: border-box;
+}
+.nav-tabs-container::-webkit-scrollbar {
+  display: none;
 }
 .tab-nav-btn {
   background: transparent;
@@ -241,6 +276,7 @@ body {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .tab-nav-btn:hover {
@@ -263,7 +299,8 @@ body {
 .header-right-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .telegram-header-btn {
   display: flex;
@@ -502,6 +539,9 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
+  max-width: 100vw;
+  width: 100%;
+  box-sizing: border-box;
 }
 .asset-core-group {
   display: flex;
@@ -1985,14 +2025,19 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   gap: 20px;
   overflow-x: auto;
   white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
   font-size: 11px;
   scrollbar-width: none;
+  max-width: 100vw;
+  width: 100%;
+  box-sizing: border-box;
 }
 .bybit-telemetry-strip::-webkit-scrollbar { display: none; }
 .bb-tele-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex-shrink: 0;
 }
 .bb-tele-item .k {
   font-size: 10px;
@@ -2317,41 +2362,46 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   html, body {
     overflow-x: hidden !important;
     width: 100% !important;
+    max-width: 100vw !important;
   }
   body {
-    padding-top: max(env(safe-area-inset-top, 0px), 50px) !important;
-    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
     box-sizing: border-box !important;
   }
 
-  /* Ticker Marquee Ribbon with safe spacing below iPhone status bar */
+  /* Ticker Marquee Ribbon with safe spacing */
   .ticker-tape-wrapper {
-    height: 32px !important;
-    margin-top: 6px !important;
+    height: 30px !important;
+    margin-top: 0 !important;
     box-sizing: border-box !important;
+    max-width: 100vw !important;
+    overflow: hidden !important;
   }
 
-  /* 2. Top Telemetry Bar (Hidden on Mobile for screen space) */
-  .top-telemetry-bar {
-    display: none !important;
-  }
-
-  /* 3. Terminal Header: Natural document flow, NO overlapping sticky collisions */
-  .terminal-header {
-    height: auto !important;
-    min-height: unset !important;
-    position: relative !important;
-    top: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 10px 12px 6px 12px !important;
-    gap: 8px !important;
-    background: #080c16 !important;
-    backdrop-filter: none !important;
-    border-bottom: 1px solid var(--border) !important;
-    z-index: 100 !important;
-    box-sizing: border-box !important;
+  /* Portrait mode specific padding & vertical stacking */
+  @media (orientation: portrait) {
+    body {
+      padding-top: max(env(safe-area-inset-top, 0px), 50px) !important;
+      padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    .top-telemetry-bar {
+      display: none !important;
+    }
+    .terminal-header {
+      height: auto !important;
+      min-height: unset !important;
+      position: relative !important;
+      top: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      padding: 10px 12px 6px 12px !important;
+      gap: 8px !important;
+      background: #080c16 !important;
+      backdrop-filter: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      z-index: 100 !important;
+      box-sizing: border-box !important;
+    }
   }
 
   .brand-box {
@@ -5132,45 +5182,272 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 
 /* ==========================================================================
    LANDSCAPE & MOBILE RESPONSIVE OPTIMIZATIONS (IPHONE & IPAD 90-DEG ROTATION)
+   Zero horizontal blowout; all PC metrics (telemetry, ticker, order book, ticket) visible
    ========================================================================== */
-@media (orientation: landscape) and (max-height: 550px) {
-  /* Brand text wrapping fix: hide legal subtext so it never vertically overlaps */
-  .brand-subtitle,
-  .brand-box div[style*="font-mono"],
-  .terminal-header .brand-box > div:last-child {
+@media (orientation: landscape) and (max-height: 600px) {
+  /* 1. Global Safe Area & Layout Reset */
+  html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body {
+    padding-top: 0 !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px) !important;
+    padding-left: env(safe-area-inset-left, 0px) !important;
+    padding-right: env(safe-area-inset-right, 0px) !important;
+  }
+
+  /* Mobile Bottom Navigation is hidden in landscape to preserve vertical height */
+  .mobile-bottom-nav {
     display: none !important;
+  }
+
+  /* 2. Top Institutional Telemetry Bar: Restored & Fully Visible as Sleek Ribbon */
+  .top-telemetry-bar {
+    display: flex !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    padding: 0 8px !important;
+    font-size: 9.5px !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #050811 !important;
+    border-bottom: 1px solid var(--border) !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 10px !important;
+    z-index: 999 !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .top-telemetry-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .top-telemetry-bar .tele-metric {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    font-size: 9.5px !important;
+    flex-shrink: 0 !important;
+  }
+  .telemetry-left, .telemetry-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 3. Ticker Marquee Ribbon */
+  .ticker-tape-wrapper {
+    height: 22px !important;
+    min-height: 22px !important;
+    font-size: 10px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 4. Terminal Navigation Header (Single Row, No Wrap, No Blowout) */
+  .terminal-header {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 8px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    position: relative !important;
+    top: auto !important;
+    background: rgba(10, 15, 29, 0.95) !important;
+    gap: 6px !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
   .brand-box {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
     flex-shrink: 0 !important;
-    gap: 4px !important;
   }
-  .terminal-header {
-    height: 48px !important;
-    padding: 0 10px !important;
+  .brand-title {
+    font-size: 12px !important;
+    white-space: nowrap !important;
   }
-}
-
-@media (orientation: landscape) and (max-height: 520px) {
-  /* Ultra-sleek landscape layout for iPhone */
-  .telemetry-bar {
+  .brand-subtitle,
+  .brand-author-badge {
     display: none !important;
   }
-  .ticker-tape-wrapper {
-    height: 24px !important;
-    font-size: 10px !important;
+  .nav-tabs-container {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 28px !important;
+    padding: 2px !important;
+    gap: 3px !important;
+    box-sizing: border-box !important;
   }
-  .terminal-header {
-    height: 42px !important;
-    padding: 2px 10px !important;
+  .nav-tabs-container::-webkit-scrollbar {
+    display: none !important;
   }
   .tab-nav-btn {
-    padding: 3px 7px !important;
-    font-size: 10px !important;
+    font-size: 9.5px !important;
+    padding: 3px 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .header-right-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .header-right-actions .btn,
+  .btn-lock-terminal {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+    white-space: nowrap !important;
+  }
+  .engine-status-pill {
+    font-size: 8.5px !important;
+    padding: 2px 5px !important;
+    white-space: nowrap !important;
   }
 
-  /* Quick radar row: scroll horizontally instead of stacking tall */
+  /* 5. Active Asset Bar */
+  .active-asset-bar {
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 8px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .active-asset-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .asset-core-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .dropdown-trigger {
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+  }
+  .live-price-box {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+  .pct-chg-pill {
+    font-size: 9.5px !important;
+    padding: 1px 5px !important;
+  }
+  .asset-stat-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  .asset-stat-group .stat-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 3px !important;
+    font-size: 9px !important;
+  }
+  .asset-stat-group .lbl {
+    font-size: 8.5px !important;
+    color: var(--text-muted) !important;
+  }
+  .asset-stat-group .val {
+    font-size: 9px !important;
+    font-weight: 700 !important;
+  }
+
+  /* 6. Bybit Official Telemetry Strip: All 11 metrics visible via horizontal touch swipe */
+  .bybit-telemetry-strip {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 2px 8px !important;
+    height: 26px !important;
+    min-height: 26px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    background: #080c16 !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .bybit-telemetry-strip::-webkit-scrollbar {
+    display: none !important;
+  }
+  .bb-tele-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .bb-tele-item .k {
+    font-size: 8px !important;
+    color: var(--text-muted) !important;
+  }
+  .bb-tele-item .v {
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+  }
+
+  /* 7. Mobile View Switcher */
+  .mobile-view-switcher {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+    margin: 2px 0 !important;
+    padding: 2px 4px !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .m-view-btn {
+    padding: 4px 2px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    border-radius: 4px !important;
+  }
+
+  /* 8. Quick Radar Dock */
   .terminal-quick-radar {
-    padding: 4px 8px !important;
+    padding: 3px 6px !important;
   }
   .qr-pill-grid {
     display: flex !important;
@@ -5183,33 +5460,147 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     display: none !important;
   }
   .qr-pill-card {
-    min-width: 165px !important;
-    max-width: 185px !important;
+    min-width: 155px !important;
+    max-width: 175px !important;
     flex-shrink: 0 !important;
-    padding: 4px 6px !important;
+    padding: 3px 5px !important;
   }
 
-  /* Mobile view switcher for landscape */
-  .mobile-view-switcher {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 4px !important;
-    margin: 4px 0 !important;
-  }
-  .m-view-btn {
-    padding: 4px 2px !important;
-    font-size: 10px !important;
-  }
-
-  /* Responsive chart height */
+  /* 9. Terminal Pro Views */
   .chart-viewport-wrapper {
-    height: calc(100vh - 145px) !important;
+    height: calc(100vh - 120px) !important;
     min-height: 220px !important;
   }
   .bybit-terminal-grid {
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  #bb-col-book, #bb-col-order, #bb-col-positions {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 10. Top Chapter Drawer: 100% Viewport Bound, Zero Blowout */
+  .top-chapter-drawer {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    max-height: calc(100vh - 42px) !important;
+  }
+  .drawer-header-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 3px 8px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .drawer-header-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .drawer-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .drawer-chapter-title {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+  }
+  .drawer-live-chip {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+  .drawer-header-center {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .drawer-quick-select {
+    font-size: 9.5px !important;
+    padding: 2px 4px !important;
+    max-width: 200px !important;
+  }
+  .drawer-header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+  .btn-drawer-action {
+    padding: 2px 5px !important;
+    font-size: 11px !important;
+  }
+  .btn-drawer-close {
+    padding: 2px 7px !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+  }
+  .top-drawer-content {
+    max-height: calc(100vh - 80px) !important;
+    padding: 6px 8px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .radar-results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .opp-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .quant-casario-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .qc-top-header {
+    padding: 4px 6px !important;
+    gap: 4px !important;
+  }
+  .qi-subnav-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 3px !important;
+    padding: 3px 0 !important;
+  }
+  .qi-subnav-btn {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 }
 
@@ -5373,11 +5764,13 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 .top-chapter-drawer {
   position: relative;
   width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
   background: rgba(10, 15, 29, 0.98);
   border-bottom: 2px solid #2962ff;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9);
   z-index: 950;
-  overflow: hidden;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -5413,6 +5806,9 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   flex-shrink: 0;
   gap: 12px;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .drawer-header-left {
@@ -5499,8 +5895,12 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 .top-drawer-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 16px;
   max-height: calc(85vh - 50px);
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .top-drawer-content .view-panel {

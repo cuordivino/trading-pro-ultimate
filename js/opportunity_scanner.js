@@ -782,7 +782,7 @@ window.OpportunityScanner = {
     }
 
     // On mobile devices, ensure the mobile switcher view is set to 'chart'
-    if (window.innerWidth <= 860 && window.switchMobileTerminalView) {
+    if ((window.innerWidth <= 1024 || window.innerHeight <= 550) && window.switchMobileTerminalView) {
       const chartBtn = document.querySelector('.m-view-btn');
       window.switchMobileTerminalView('chart', chartBtn);
     }
@@ -840,7 +840,7 @@ window.OpportunityScanner = {
     }
 
     // 6. On mobile screen, switch mobile view to 'order' so user sees the order form!
-    if (window.innerWidth <= 860 && window.switchMobileTerminalView) {
+    if ((window.innerWidth <= 1024 || window.innerHeight <= 550) && window.switchMobileTerminalView) {
       const orderBtns = document.querySelectorAll('.m-view-btn');
       if (orderBtns && orderBtns[2]) {
         window.switchMobileTerminalView('order', orderBtns[2]);
