@@ -321,6 +321,17 @@ function initMainChart() {
         });
       }
     });
+    chartMainContainer.addEventListener('touchmove', () => {
+      requestAnimationFrame(() => {
+        if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
+          OrderFlowEngine.renderForecastCone();
+        }
+        if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+          OptimalEngine.renderVolumeProfileOverlay();
+        }
+      });
+    }, { passive: true });
+
     chartMainContainer.addEventListener('wheel', () => {
       requestAnimationFrame(() => {
         if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {

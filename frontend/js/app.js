@@ -118,6 +118,8 @@ function toggleDrawer(id) {
 // ==========================================================================
 const CHAPTER_META = {
   'tab-terminal': { icon: '📈', title: 'Terminale Pro (Grafico Candele & Ordini)' },
+  'tab-model-portfolios': { icon: '💼', title: 'Portafogli Modello & Gestiti (IA) — Conservativo, Bilanciato, Crescita' },
+  'tab-macro-radar': { icon: '🌐', title: 'Panoramica Macro e Mercati (Regimi, Sentiment, Radar a Tendine)' },
   'tab-scanner': { icon: '🎯', title: 'Radar Opportunità' },
   'tab-consensus': { icon: '🧠', title: 'Comitato Investitori' },
   'tab-casario-quant': { icon: '⚡', title: 'Quant Intelligence & Macro Radar' },
@@ -136,6 +138,17 @@ let currentOpenChapterTab = null;
 
 function switchMainTab(tabId, btnElem) {
   const drawer = document.getElementById('top-chapter-drawer');
+
+  // Handle alias subtabs for Casario Quant Suite
+  if (tabId === 'tab-model-portfolios') {
+    if (window.CasarioQuantEngine) {
+      CasarioQuantEngine.activeSubTab = 'model-portfolios';
+    }
+  } else if (tabId === 'tab-macro-radar') {
+    if (window.CasarioQuantEngine) {
+      CasarioQuantEngine.activeSubTab = 'macro-overview';
+    }
+  }
   const drawerContent = document.getElementById('top-drawer-content');
   const titleEl = document.getElementById('drawer-active-title');
   const iconEl = document.getElementById('drawer-active-icon');
@@ -175,7 +188,8 @@ function switchMainTab(tabId, btnElem) {
   if (quickSelect) quickSelect.value = tabId;
 
   // Mount active panel inside drawer
-  const target = document.getElementById(tabId);
+  const effectiveTabId = (tabId === 'tab-model-portfolios' || tabId === 'tab-macro-radar') ? 'tab-casario-quant' : tabId;
+  const target = document.getElementById(effectiveTabId);
   if (target && drawerContent) {
     if (target.parentElement !== drawerContent) {
       drawerContent.appendChild(target);
@@ -185,7 +199,7 @@ function switchMainTab(tabId, btnElem) {
   }
 
   // Trigger chapter renders
-  if (tabId === 'tab-casario-quant' && window.CasarioQuantEngine) {
+  if ((tabId === 'tab-casario-quant' || tabId === 'tab-model-portfolios' || tabId === 'tab-macro-radar') && window.CasarioQuantEngine) {
     CasarioQuantEngine.renderUI();
   } else if (tabId === 'tab-scanner' && window.OpportunityScanner) {
     OpportunityScanner.renderScannerTab();

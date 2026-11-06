@@ -358,70 +358,112 @@ const OrderFlowEngine = {
     if (!chart || !series || !data || data.length === 0) return;
 
     const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const targetW = Math.round(rect.width * dpr);
+    const targetH = Math.round(rect.height * dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+
     const ctx = canvas.getContext('2d');
+    ctx.save();
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
     const lastIdx = data.length - 1;
     const lastCandle = data[lastIdx];
-    const lastClose = lastCandle.close !== undefined ? lastCandle.close : (lastCandle.c || window.currentLivePrice || 76000);
+    const lastClose = (lastCandle && lastCandle.close !== undefined) ? lastCandle.close : (window.currentLivePrice || 75780);
 
-    // EXACT start anchor point: locked to last candle close & time/logical position
+    // EXACT vertical anchor: locked to real last candle close via series price coordinate
     let startY = series.priceToCoordinate(lastClose);
-    let startX = null;
-    if (chart.timeScale().logicalToCoordinate) {
-      startX = chart.timeScale().logicalToCoordinate(lastIdx);
-    }
-    if (startX === null || isNaN(startX)) {
-      startX = chart.timeScale().timeToCoordinate(lastCandle.time);
-    }
-
     if (startY === null || isNaN(startY)) {
       startY = rect.height * 0.5;
     }
 
-    // If candle is far off-screen to the right (> width), return
-    if (startX !== null && startX > rect.width) return;
+    // EXACT horizontal anchor & dynamic bar spacing derived directly from chart coordinates
+    let startX = null;
+    let barSpacing = 16;
 
-    // Projection horizon: 22 bars into the future
-    const projectionBars = 22;
-    let targetX = null;
     if (chart.timeScale().logicalToCoordinate) {
-      targetX = chart.timeScale().logicalToCoordinate(lastIdx + projectionBars);
-    }
-    if (targetX === null || isNaN(targetX) || (startX !== null && targetX <= startX)) {
-      const opt = chart.timeScale().options ? chart.timeScale().options() : {};
-      const barSpacing = (opt && opt.barSpacing) || 16;
-      targetX = (startX || (rect.width * 0.65)) + (projectionBars * barSpacing);
+      startX = chart.timeScale().logicalToCoordinate(lastIdx);
+      const prevX = chart.timeScale().logicalToCoordinate(lastIdx - 1);
+      if (startX !== null && prevX !== null && !isNaN(startX) && !isNaN(prevX)) {
+        const d = Math.abs(startX - prevX);
+        if (d >= 1 && d <= 250) barSpacing = d;
+      }
     }
 
     if (startX === null || isNaN(startX)) {
-      startX = targetX - (projectionBars * 16);
+      startX = chart.timeScale().timeToCoordinate(lastCandle.time);
     }
 
-    targetX = Math.min(rect.width - 105, targetX);
-    if (targetX <= startX + 15) return;
+    if (startX === null || isNaN(startX)) {
+      const vRange = chart.timeScale().getVisibleLogicalRange ? chart.timeScale().getVisibleLogicalRange() : null;
+      if (vRange && vRange.to > vRange.from) {
+        barSpacing = Math.max(2, rect.width / (vRange.to - vRange.from));
+        startX = (lastIdx - vRange.from) * barSpacing;
+      } else {
+        startX = rect.width * 0.65;
+      }
+    }
 
-    // Price targets
-    const upperTarget = lastClose * 1.085;
-    const medianTarget = lastClose * 1.042;
-    const lowerSupport = lastClose * 0.945;
+    // If candle is completely off-screen to the right (> rect.width + 40), do not render
+    if (startX > rect.width + 40) {
+      ctx.restore();
+      return;
+    }
+
+    // 20 bars forward in chart coordinate space - locked 1:1 with candle displacement!
+    const projectionBars = 20;
+    const rawTargetX = startX + (projectionBars * barSpacing);
+
+    // If whole cone is scrolled off-screen to the left, return
+    if (rawTargetX < -40) {
+      ctx.restore();
+      return;
+    }
+
+    // Safe right boundary: respect right volume profile if anchored to right
+    let maxSafeRight = rect.width - 65; // Price scale width margin
+    if (window.OptimalEngine && OptimalEngine.volumeProfileVisible && OptimalEngine.volumeProfileStyle === 'right') {
+      const vpWidth = OptimalEngine.volumeProfileWidth || 220;
+      maxSafeRight = Math.max(120, rect.width - vpWidth - 15);
+    }
+
+    // Lock targetX: natural projection when space is available, safe boundary clamp if reaching right edge
+    const targetX = Math.min(rawTargetX, maxSafeRight);
+    if (targetX <= startX + 8) {
+      ctx.restore();
+      return;
+    }
+
+    // Dynamic completion ratio if approaching the right panel
+    const progressRatio = Math.max(0.15, Math.min(1.0, (targetX - startX) / Math.max(1, (rawTargetX - startX))));
+
+    // Forecast percentages dynamically interpolated based on actual horizontal reach
+    const targetGainPct = 0.085 * progressRatio;
+    const medianGainPct = 0.042 * progressRatio;
+    const supportLossPct = 0.055 * progressRatio;
+
+    const upperTarget = lastClose * (1 + targetGainPct);
+    const medianTarget = lastClose * (1 + medianGainPct);
+    const lowerSupport = lastClose * (1 - supportLossPct);
 
     let upperY = series.priceToCoordinate(upperTarget);
     let medianY = series.priceToCoordinate(medianTarget);
     let lowerY = series.priceToCoordinate(lowerSupport);
 
-    if (upperY === null || isNaN(upperY)) upperY = startY - 70;
-    if (medianY === null || isNaN(medianY)) medianY = startY - 35;
-    if (lowerY === null || isNaN(lowerY)) lowerY = startY + 60;
+    if (upperY === null || isNaN(upperY)) upperY = startY - (70 * progressRatio);
+    if (medianY === null || isNaN(medianY)) medianY = startY - (35 * progressRatio);
+    if (lowerY === null || isNaN(lowerY)) lowerY = startY + (60 * progressRatio);
 
-    // 1. Shaded Cone Area (Gradient Fill following the path)
+    // 1. Shaded Cone Area (Gradient Fill following smooth Bezier curve)
     const coneGrad = ctx.createLinearGradient(startX, startY, targetX, startY);
-    coneGrad.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
-    coneGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
+    coneGrad.addColorStop(0, 'rgba(56, 189, 248, 0.03)');
+    coneGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.10)');
     coneGrad.addColorStop(1, 'rgba(56, 189, 248, 0.20)');
 
     ctx.beginPath();
@@ -477,37 +519,48 @@ const OrderFlowEngine = {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 5. Origin Dot on Last Candle
+    // 5. Origin Dot Locked to Last Candle Close
     ctx.fillStyle = '#10b981';
     ctx.beginPath();
-    ctx.arc(startX, startY, 3.5, 0, Math.PI * 2);
+    ctx.arc(startX, startY, 4, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
 
-    // 6. Target Badges & Labels
+    // 6. Target Badges & Labels (Auto-clamped to prevent right-edge or volume profile overlap)
     const renderBadge = (x, y, text, sub, color) => {
+      const badgeW = 104;
+      const badgeH = 26;
+      const badgeX = Math.min(rect.width - badgeW - 6, x + 4);
       const clampedY = Math.max(16, Math.min(rect.height - 18, y));
+
       ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      const w = 100;
-      const h = 24;
+      ctx.lineWidth = 1.2;
       const r = 4;
       ctx.beginPath();
-      ctx.roundRect(x + 4, clampedY - 12, w, h, r);
+      if (ctx.roundRect) {
+        ctx.roundRect(badgeX, clampedY - 13, badgeW, badgeH, r);
+      } else {
+        ctx.rect(badgeX, clampedY - 13, badgeW, badgeH);
+      }
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = color;
       ctx.font = 'bold 9px Inter, monospace';
-      ctx.fillText(text, x + 8, clampedY - 1);
+      ctx.fillText(text, badgeX + 6, clampedY - 1);
       ctx.fillStyle = '#94a3b8';
       ctx.font = '8px Inter, sans-serif';
-      ctx.fillText(sub, x + 8, clampedY + 8);
+      ctx.fillText(sub, badgeX + 6, clampedY + 9);
     };
 
-    renderBadge(targetX, upperY, `Target $${upperTarget.toFixed(2)}`, '+8.5% Fan Target', '#38bdf8');
-    renderBadge(targetX, medianY, `Consenso $${medianTarget.toFixed(2)}`, '+4.2% Expected', '#10b981');
-    renderBadge(targetX, lowerY, `Supporto $${lowerSupport.toFixed(2)}`, '-5.5% Max Risk', '#f97316');
+    renderBadge(targetX, upperY, `Target $${upperTarget.toFixed(2)}`, `+${(targetGainPct * 100).toFixed(1)}% Fan Target`, '#38bdf8');
+    renderBadge(targetX, medianY, `Consenso $${medianTarget.toFixed(2)}`, `+${(medianGainPct * 100).toFixed(1)}% Expected`, '#10b981');
+    renderBadge(targetX, lowerY, `Supporto $${lowerSupport.toFixed(2)}`, `-${(supportLossPct * 100).toFixed(1)}% Max Risk`, '#f97316');
+
+    ctx.restore();
   }
 };
 

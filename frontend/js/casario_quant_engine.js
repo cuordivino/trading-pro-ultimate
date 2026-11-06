@@ -5424,10 +5424,42 @@ window.CasarioQuantEngine = {
    * 4. SUB-VIEW: MODEL PORTFOLIOS & DETTAGLI (SCEGLI IL TUO PORTAFOGLIO & MONITORAGGIO)
    * ======================================================================= */
   buildModelPortfoliosHTML() {
+    const isSummary = this.portfolioActiveView === 'summary';
+    const isDetails = this.portfolioActiveView === 'details';
+    const curTab = this.portfolioDetailsTab || 'panoramica';
+
+    const topQuickNav = `
+      <!-- SUB-NAVIGATION BAR FOR MANAGED & MODEL PORTFOLIOS (QUANTASTE PAGES 16-22) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px; background:linear-gradient(90deg, #0f172a 0%, #0c101c 100%); padding:10px 16px; border:1px solid #1e293b; border-left:4px solid #38bdf8; border-radius:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-sm ${isSummary ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px; font-weight:800; padding:6px 14px;" onclick="CasarioQuantEngine.portfolioActiveView = 'summary'; CasarioQuantEngine.renderUI();">
+            <span>📊</span> 1. Scegli Modello & Confronto (pp. 16-18)
+          </button>
+          <button class="btn btn-sm ${isDetails && curTab === 'panoramica' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px; font-weight:800; padding:6px 14px;" onclick="CasarioQuantEngine.openPortfolioDetails('bilanciato', 'panoramica')">
+            <span>📈</span> 2. Dettagli Performance & Countdown (p. 19)
+          </button>
+          <button class="btn btn-sm ${isDetails && curTab === 'attuale' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px; font-weight:800; padding:6px 14px;" onclick="CasarioQuantEngine.openPortfolioDetails('bilanciato', 'attuale')">
+            <span>💼</span> 3. Portafoglio Attuale & Donut Allocation (p. 22)
+          </button>
+          <button class="btn btn-sm ${isDetails && curTab === 'ribilanciamenti' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px; font-weight:800; padding:6px 14px;" onclick="CasarioQuantEngine.openPortfolioDetails('bilanciato', 'ribilanciamenti')">
+            <span>⏱</span> 4. Storico Ribilanciamenti (p. 21)
+          </button>
+          <button class="btn btn-sm ${isDetails && curTab === 'drawdown' ? 'btn-primary' : 'btn-secondary'}" style="font-size:11px; font-weight:800; padding:6px 14px;" onclick="CasarioQuantEngine.openPortfolioDetails('bilanciato', 'drawdown')">
+            <span>📉</span> 5. Comparativa Drawdown (p. 20)
+          </button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="CasarioQuantEngine.exportGuidePDF()" style="border-color:#38bdf8; color:#38bdf8; font-weight:800; font-size:11px;" title="Esporta Guida Completa ai Portafogli Modello in PDF (p. 7)">
+            <span>📄</span> Esporta Guida PDF
+          </button>
+        </div>
+      </div>
+    `;
+
     if (this.portfolioActiveView === 'details') {
-      return this.buildPortfolioDetailsHTML();
+      return topQuickNav + this.buildPortfolioDetailsHTML();
     }
-    return this.buildPortfolioSummaryHTML();
+    return topQuickNav + this.buildPortfolioSummaryHTML();
   },
 
   buildPortfolioSummaryHTML() {
@@ -7621,6 +7653,22 @@ window.CasarioQuantEngine = {
     if (window.showToast) {
       window.showToast(`Dossier Quant caricato: ${sym}`, 'info');
     }
+  },
+
+  openPortfolioDetails(id, tab) {
+    this.portfolioActiveView = 'details';
+    if (id) this.portfolioSelectedId = id;
+    if (tab) this.portfolioDetailsTab = tab;
+    this.renderUI();
+  },
+
+  exportGuidePDF() {
+    if (window.showToast) {
+      window.showToast('Preparazione stampa/esportazione PDF Guida Portafogli...', 'info');
+    }
+    setTimeout(() => {
+      window.print();
+    }, 300);
   },
 
   viewPortfolioDetails(id) {
