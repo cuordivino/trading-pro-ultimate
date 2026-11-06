@@ -268,6 +268,8 @@ async function selectAsset(symbol) {
   window.activeSymbol = symbol;
   closeAllDropdowns();
 
+  const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
+
   const symElem = document.getElementById('active-sym-title');
   const triggerSym = document.getElementById('active-asset-trigger-sym');
   if (symElem) symElem.innerText = symbol;
@@ -278,29 +280,50 @@ async function selectAsset(symbol) {
     chatTitle.innerText = `Conversazione attiva con ${window.currentPersonaSlug.replace('-', ' ').toUpperCase()} su ${symbol}`;
   }
 
-  await pollActiveQuote();
-  await loadCandleHistory();
-  loadCommitteeConsensus(symbol);
-
-  if (window.QuantEngines) {
-    window.QuantEngines.renderQuantEnginesTab();
+  // Pre-sync BybitEngine immediately so telemetry never retains stale crypto symbol
+  if (window.BybitEngine) {
+    window.BybitEngine.currentSymbol = symbol;
+    window.BybitEngine.activeAsset = asset;
+    try {
+      window.BybitEngine.init(symbol);
+    } catch(e) {
+      console.error('Error in BybitEngine.init:', e);
+    }
   }
 
-  if (window.BybitEngine) {
-    window.BybitEngine.init(symbol);
+  try {
+    await pollActiveQuote();
+  } catch(e) {
+    console.error('Error in pollActiveQuote:', e);
+  }
+
+  try {
+    await loadCandleHistory();
+  } catch(e) {
+    console.error('Error in loadCandleHistory:', e);
+  }
+
+  try {
+    loadCommitteeConsensus(symbol);
+  } catch(e) {}
+
+  if (window.QuantEngines) {
+    try { window.QuantEngines.renderQuantEnginesTab(); } catch(e) {}
   }
 
   if (window.SectorRotation) {
-    window.SectorRotation.renderSectorRotationTab();
+    try { window.SectorRotation.renderSectorRotationTab(); } catch(e) {}
   }
 
   if (window.OptimalEngine) {
-    window.OptimalEngine.recalculateOptimalPosition();
-    window.OptimalEngine.calculateLocalVolumeProfile();
+    try {
+      window.OptimalEngine.recalculateOptimalPosition();
+      window.OptimalEngine.calculateLocalVolumeProfile();
+    } catch(e) {}
   }
 
   if (window.TradingEngine && window.TradingEngine.executionMode === 'assisted') {
-    window.TradingEngine.refreshAssistedView();
+    try { window.TradingEngine.refreshAssistedView(); } catch(e) {}
   }
 }
 
@@ -371,7 +394,7 @@ async function pollActiveQuote() {
             high: bd.high || +(bd.price * 1.018).toFixed(prec),
             low: bd.low || +(bd.price * 0.982).toFixed(prec),
             volume: bd.volume || (asset ? asset.volume24h : 24500000),
-            currency: bd.currency === 'EUR' ? '€' : (asset ? asset.currency : '$')
+            currency: (bd.currency === 'EUR' || bd.currency === '€' || sym.endsWith('.MI')) ? '€' : ((asset && asset.currency) ? asset.currency : '$')
           };
         }
       }
@@ -399,7 +422,7 @@ async function pollActiveQuote() {
               high: meta.regularMarketDayHigh || +(p * 1.015).toFixed(prec),
               low: meta.regularMarketDayLow || +(p * 0.985).toFixed(prec),
               volume: meta.regularMarketVolume || (asset ? asset.volume24h : 2500000),
-              currency: meta.currency === 'EUR' ? '€' : '$'
+              currency: (meta.currency === 'EUR' || sym.endsWith('.MI')) ? '€' : ((asset && asset.currency) ? asset.currency : '$')
             };
           }
         }
@@ -432,26 +455,17 @@ async function pollActiveQuote() {
   window.activeSymbol = sym;
   window.activeCurrency = q.currency || '$';
 
-  // Synchronize telemetry with exact precision across all widgets
-  if (window.BybitEngine) {
-    window.BybitEngine.tickerData.lastPrice = q.price;
-    window.BybitEngine.tickerData.markPrice = q.price;
-    window.BybitEngine.tickerData.indexPrice = q.price;
-    window.BybitEngine.tickerData.price24hPcnt = (q.change / 100);
-    window.BybitEngine.renderBybitTelemetry();
-  }
+  const defaultCurr = (sym.endsWith('.MI') || (asset && asset.cat === 'eu_stock')) ? '€' : ((asset && asset.currency) ? asset.currency : '$');
+  const curr = q.currency || defaultCurr;
+  const prec = window.getDynamicPrecision ? window.getDynamicPrecision(q.price, sym) : (asset ? (asset.precision || 2) : 2);
 
-  const latElem = document.getElementById('tele-latency-val');
-  if (latElem) latElem.innerText = `${tLatency}ms`;
-
+  // 1. Immediately update hero banner elements FIRST
   const priceElem = document.getElementById('active-live-price');
   const chgBadge = document.getElementById('active-chg-badge');
   const highElem = document.getElementById('active-metric-high');
   const lowElem = document.getElementById('active-metric-low');
   const volElem = document.getElementById('active-metric-vol');
-
-  const curr = q.currency || '$';
-  const prec = window.getDynamicPrecision ? window.getDynamicPrecision(q.price, sym) : (asset ? (asset.precision || 2) : 2);
+  const latElem = document.getElementById('tele-latency-val');
 
   if (priceElem) priceElem.innerText = `${curr}${q.price.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (chgBadge) {
@@ -461,6 +475,22 @@ async function pollActiveQuote() {
   if (highElem) highElem.innerText = `${curr}${q.high.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (lowElem) lowElem.innerText = `${curr}${q.low.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
   if (volElem) volElem.innerText = q.volume.toLocaleString();
+  if (latElem) latElem.innerText = `${tLatency}ms`;
+
+  // 2. Synchronize BybitEngine telemetry with active symbol
+  if (window.BybitEngine) {
+    window.BybitEngine.currentSymbol = sym;
+    window.BybitEngine.activeAsset = asset;
+    window.BybitEngine.tickerData.lastPrice = q.price;
+    window.BybitEngine.tickerData.markPrice = q.price;
+    window.BybitEngine.tickerData.indexPrice = q.price;
+    window.BybitEngine.tickerData.price24hPcnt = (q.change / 100);
+    try {
+      window.BybitEngine.renderBybitTelemetry();
+    } catch(e) {
+      console.error('Error in renderBybitTelemetry:', e);
+    }
+  }
 
   const entryInput = document.getElementById('t-entry');
   if (entryInput) {

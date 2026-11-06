@@ -46,7 +46,12 @@ window.BybitEngine = {
     } else {
       // Non-crypto asset (FTSE MIB, US Stock, Forex)
       if (this.ws) {
-        try { this.ws.close(); } catch(e) {}
+        try {
+          this.ws.onmessage = null;
+          this.ws.onclose = null;
+          this.ws.onerror = null;
+          this.ws.close();
+        } catch(e) {}
         this.ws = null;
       }
       this.initNonCryptoAsset(asset);
@@ -63,11 +68,12 @@ window.BybitEngine = {
     }, 3000);
 
     // Update Funding Countdown every second
-    setInterval(() => this.updateFundingCountdown(), 1000);
+    if (this.fundingTimer) clearInterval(this.fundingTimer);
+    this.fundingTimer = setInterval(() => this.updateFundingCountdown(), 1000);
   },
 
   initNonCryptoAsset: function(asset) {
-    const base = asset ? asset.basePrice : (window.activePrice || 100);
+    const base = (window.activePrice && window.activeSymbol === this.currentSymbol) ? window.activePrice : (asset ? asset.basePrice : 100);
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
     const f = Math.pow(10, prec);
     const chgPct = (asset && asset.change24h !== undefined) ? (asset.change24h / 100) : 0.0125;
@@ -92,15 +98,15 @@ window.BybitEngine = {
   },
 
   updateNonCryptoTick: function() {
-    if (!this.activeAsset) return;
-    const base = this.activeAsset.basePrice;
+    if (!this.activeAsset && !window.currentSymbol) return;
+    const base = this.tickerData.lastPrice || (this.activeAsset ? this.activeAsset.basePrice : (window.activePrice || 100));
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
     const f = Math.pow(10, prec);
     const minStep = Math.pow(10, -prec);
 
     // Subtle micro-tick aligned with dynamic precision (e.g. 0.0001 or 0.01)
     const tickSteps = (Math.floor(Math.random() * 3) - 1) * minStep;
-    const newPrice = Math.round((base + tickSteps) * f) / f;
+    const newPrice = Math.max(minStep, Math.round((base + tickSteps) * f) / f);
 
     this.tickerData.lastPrice = newPrice;
     this.tickerData.markPrice = newPrice;
@@ -222,7 +228,13 @@ window.BybitEngine = {
   initWebSocket: function() {
     try {
       if (this.ws) {
-        this.ws.close();
+        try {
+          this.ws.onmessage = null;
+          this.ws.onclose = null;
+          this.ws.onerror = null;
+          this.ws.close();
+        } catch(e) {}
+        this.ws = null;
       }
       this.ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
       
@@ -234,13 +246,19 @@ window.BybitEngine = {
             `publicTrade.${this.currentSymbol}`
           ]
         };
-        this.ws.send(JSON.stringify(subMsg));
+        if (this.ws && typeof this.ws.send === "function") { try { this.ws.send(JSON.stringify(subMsg)); } catch(e) {} }
       };
 
       this.ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+          const isCurrentCrypto = this.currentSymbol && (this.activeAsset ? this.activeAsset.cat === 'crypto' : this.currentSymbol.endsWith('USDT'));
+          if (!isCurrentCrypto) return; // Strict guard: never process crypto ticks on non-crypto assets!
+
           if (msg.topic && msg.topic.startsWith('tickers') && msg.data) {
+            const topicSym = msg.topic.split('.')[1];
+            if (topicSym && topicSym !== this.currentSymbol) return;
+
             const d = msg.data;
             if (d.lastPrice) this.tickerData.lastPrice = parseFloat(d.lastPrice);
             if (d.markPrice) this.tickerData.markPrice = parseFloat(d.markPrice);
@@ -248,6 +266,9 @@ window.BybitEngine = {
             if (d.fundingRate) this.tickerData.fundingRate = parseFloat(d.fundingRate);
             this.renderBybitTelemetry();
           } else if (msg.topic && msg.topic.startsWith('publicTrade') && msg.data) {
+            const topicSym = msg.topic.split('.')[1];
+            if (topicSym && topicSym !== this.currentSymbol) return;
+
             const newTrades = msg.data.map(tr => ({
               id: tr.i || Math.random(),
               price: parseFloat(tr.p),
@@ -610,6 +631,8 @@ window.BybitEngine = {
 
   // CALCULATE BYBIT LIQUIDATION PRICE & ORDER COST
   recalcBybitOrderMetrics: function() {
+    const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
+    const curr = (asset && asset.currency) ? asset.currency : (this.currentSymbol && this.currentSymbol.endsWith('.MI') ? '€' : '$');
     const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || 80000) : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice || 80000);
     const qty = parseFloat(document.getElementById('bb-order-qty')?.value) || 0.1;
     const lev = this.currentLeverage || 10;
@@ -636,19 +659,19 @@ window.BybitEngine = {
     const feeElem = document.getElementById('bb-fee-val');
     const sumLevElem = document.getElementById('bb-summary-lev');
 
-    if (costElem) costElem.innerText = `$${initialMargin.toFixed(2)}`;
-    if (nominalElem) nominalElem.innerText = `$${nominalValue.toFixed(2)}`;
-    if (liqElem) liqElem.innerText = `$${Math.max(0, liqPrice).toFixed(2)} (-${liqDistPct.toFixed(1)}%)`;
-    if (feeElem) feeElem.innerText = `$${estFee.toFixed(2)}`;
-    if (sumLevElem) sumLev.innerText = `${lev}x`;
+    if (costElem) costElem.innerText = `${curr}${initialMargin.toFixed(2)}`;
+    if (nominalElem) nominalElem.innerText = `${curr}${nominalValue.toFixed(2)}`;
+    if (liqElem) liqElem.innerText = `${curr}${Math.max(0, liqPrice).toFixed(2)} (-${liqDistPct.toFixed(1)}%)`;
+    if (feeElem) feeElem.innerText = `${curr}${estFee.toFixed(2)}`;
+    if (sumLevElem) sumLevElem.innerText = `${lev}x`;
 
     // Sync with main position sizing displays
     const posResUnits = document.getElementById('pos-res-units');
     const posResMargin = document.getElementById('pos-res-margin');
     const posResLiq = document.getElementById('pos-res-liq');
     if (posResUnits) posResUnits.innerText = qty.toFixed(qty < 1 ? 4 : 2);
-    if (posResMargin) posResMargin.innerText = `$${initialMargin.toFixed(2)}`;
-    if (posResLiq) posResLiq.innerText = `$${Math.max(0, liqPrice).toFixed(2)}`;
+    if (posResMargin) posResMargin.innerText = `${curr}${initialMargin.toFixed(2)}`;
+    if (posResLiq) posResLiq.innerText = `${curr}${Math.max(0, liqPrice).toFixed(2)}`;
 
     // Update Execution Button text with live margin
     const execBtn = document.getElementById('btn-execute-order');
