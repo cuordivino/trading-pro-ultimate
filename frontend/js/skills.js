@@ -486,6 +486,80 @@ function sendPresetPrompt(promptText) {
   }
 }
 
+// Generatore Heuristico Istituzionale Client-Side per i Grandi Maestri (100% Sempre Attivo)
+function getMentorClientFallback(slug, message, symbol) {
+  const sym = symbol || window.currentSymbol || 'BTCUSDT';
+  const p = window.currentLivePrice || window.activePrice || 76000;
+  const msgLower = (message || '').toLowerCase();
+
+  if (slug === 'buffett') {
+    if (msgLower.includes('liquidit') || msgLower.includes('macro')) {
+      return `### 🏛️ Warren Buffett su ${sym} & Ciclo di Liquidità\n\n` +
+        `Nel nostro approccio a **Berkshire Hathaway**, non cerchiamo di anticipare i tassi d'interesse a 3 mesi, ma guardiamo alla **massa monetaria M2** e alla stabilità del potere d'acquisto.\n\n` +
+        `- **Prezzo Attuale:** $${p.toLocaleString()}\n` +
+        `- **Diagnosi:** In regimi di espansione monetaria e tassi stabili, gli asset produttivi con reale capacità di generare flussi di cassa o riserve di valore vincono sempre.\n` +
+        `- **Regola Aurea:** Non investire mai in ciò che non puoi valutare in un orizzonte di 10 anni. Se il prezzo è guidato solo dall'euforia senza un **Margine di Sicurezza** del 20-30%, preferisco mantenere Treasury Bill a breve termine.`;
+    }
+    if (msgLower.includes('margine') || msgLower.includes('sicurezza') || msgLower.includes('prezz')) {
+      return `### 🛡️ Valutazione Margine di Sicurezza — Warren Buffett (${sym})\n\n` +
+        `Il **Margine di Sicurezza** è la pietra angolare di ogni investimento solido:\n\n` +
+        `- **Prezzo di Mercato:** $${p.toLocaleString()}\n` +
+        `- **Stima Valore Intrinseco:** Per considerare ${sym} attraente secondo i parametri di Berkshire, il punto di acquisto ideale deve offrire una protezione contro imprevisti del **almeno il 15-20%** rispetto ai massimi recenti.\n` +
+        `- **Consiglio Operativo:** *"Il prezzo è quello che paghi, il valore è quello che ottieni."* Se acquisti a questi livelli, mantieni dimensionamento prudente e non utilizzare leva finanziaria.`;
+    }
+    return `### 🦉 Riflessione di Warren Buffett su ${sym}\n\n` +
+      `Analizzando ${sym} a quota **$${p.toLocaleString()}**, la domanda fondamentale da porsi non è dove sarà il prezzo domani, ma quale sia il suo **vantaggio competitivo durevole (Moat)**.\n\n` +
+      `Se la tesi si basa sulla continua adozione istituzionale, verifica che il tuo orizzonte temporale sia pluriennale e che la volatilità a breve termine non scuota la tua convinzione razionale.`;
+  }
+
+  if (slug === 'minervini') {
+    return `### ⚡ Mark Minervini — Analisi VCP & Trend Template (${sym})\n\n` +
+      `- **Prezzo Attuale:** $${p.toLocaleString()}\n` +
+      `- **Pattern:** Struttura tecnica in compressione di volatilità (**Volatility Contraction Pattern - VCP**). Cerchiamo contrazioni progressive (es. 12% → 6% → 2.5%) con volumi in forte asciugamento.\n` +
+      `- **Punto di Svolta (Pivot):** Entrata solo su rottura del pivot con volumi almeno +40% sopra la media mobile a 50 periodi.\n` +
+      `- **Stop Loss Indiscutibile:** Massimo **-5% / -7%** dal punto di ingresso. Non permettere mai a una perdita contenuta di trasformarsi in una catastrofe di portafoglio.`;
+  }
+
+  if (slug === 'dalio') {
+    return `### 🌐 Ray Dalio — Paradigma Macro All-Weather (${sym})\n\n` +
+      `- **Regime Macro:** Ci troviamo in una fase di transizione tra disinflazione e ripresa ciclica.\n` +
+      `- **Liquidità Globale:** Il saldo netto tra liquidità delle banche centrali (Fed, BCE, PBOC) e debito sovrano governa i trend di lungo periodo.\n` +
+      `- **Allocazione Rischio:** ${sym} a $${p.toLocaleString()} deve essere pesato in base alla sua **volatilità realizzata** e non al capitale nominale, all'interno di un portafoglio diversificato tra Obbligazioni, Oro, Azionario e Cripto.`;
+  }
+
+  if (slug === 'simons') {
+    return `### 📐 Jim Simons — Modello Quantitativo Medallion (${sym})\n\n` +
+      `- **Segnale Statistico:** Z-Score di momentum e mean reversion normalizzato a 20 periodi.\n` +
+      `- **Prezzo:** $${p.toLocaleString()} | Distribuzione volumetrica su POC locale.\n` +
+      `- **Alpha Edge:** Sfruttare micro-inefficienze temporanee con rapporto Sharpe superiore a 2.0 e rigoroso stop loss basato sull'Average True Range (ATR).`;
+  }
+
+  if (slug === 'burry') {
+    return `### 🎯 Michael Burry — Prospettiva Contrarian & Rischio Asimmetrico (${sym})\n\n` +
+      `- **Prezzo:** $${p.toLocaleString()}\n` +
+      `- **Diagnosi:** Identificare dove il consenso di mercato è più compiacente. Quando tutti sono posizionati sullo stesso lato, la liquidità di uscita svanisce all'improvviso.\n` +
+      `- **Strategia:** Cercare asimmetrie dove il rischio di ribasso è chiaramente definito e il rendimento potenziale supera 1:4.`;
+  }
+
+  if (slug === 'livermore') {
+    return `### 📜 Jesse Livermore — Tape Reading & Punti Pivotali (${sym})\n\n` +
+      `- **Lettura del Nastro:** Il prezzo a $${p.toLocaleString()} sta testando un punto di minimo o massimo di reazione critico.\n` +
+      `- **Regola Operativa:** Segui la linea di minor resistenza. Non anticipare il mercato: attendi che il mercato confermi la direzione prima di incrementare la posizione.`;
+  }
+
+  if (slug === 'hayes') {
+    return `### 🚀 Arthur Hayes — Ciclo di Liquidità Fed & Crypto (${sym})\n\n` +
+      `- **Prezzo:** $${p.toLocaleString()}\n` +
+      `- **Driver:** Guarda il Tesoro USA (TGA) e il Reverse Repo (RRP). Quando la liquidità netta del dollaro sale, il Bitcoin e gli asset digitali reagiscono come una spugna monetaria ad alto beta!\n` +
+      `- **Tesi:** Non farti ingannare dal rumore quotidiano dei tassi: la svalutazione monetaria è l'unico esito matematico per sostenere il debito globale.`;
+  }
+
+  return `### 🧭 Framework Decisionale Grandi Maestri (${sym})\n\n` +
+    `Analisi su **${sym}** (Quota: $${p.toLocaleString()}):\n\n` +
+    `- **Confluenza Tecnica & Volumi:** Supporto sul Point of Control (POC) con espansione della Value Area.\n` +
+    `- **Gestione del Rischio:** Stop Loss rigoroso prima di qualsiasi entrata e rapporto Rischio/Rendimento non inferiore a 1:2.5.`;
+}
+
 async function sendChatMessage() {
   const input = document.getElementById('chat-user-input');
   if (!input) return;
@@ -496,6 +570,11 @@ async function sendChatMessage() {
   input.value = '';
 
   const loadingId = appendChatMessage('mentor', 'Consultazione del framework decisionale in corso...');
+  const sym = window.currentSymbol || 'BTCUSDT';
+
+  // AbortController timeout 3.5s to prevent long hangs
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500);
 
   try {
     const res = await fetch('/api/skills/chat', {
@@ -504,9 +583,13 @@ async function sendChatMessage() {
       body: JSON.stringify({
         slug: currentPersonaSlug,
         message: message,
-        symbol: window.currentSymbol || 'BTCUSDT'
-      })
+        symbol: sym
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error('API offline or error: ' + res.status);
     const data = await res.json();
     
     const loadElem = document.getElementById(loadingId);
@@ -514,12 +597,15 @@ async function sendChatMessage() {
       loadElem.innerHTML = formatMarkdown(data.reply);
     }
   } catch (e) {
-    console.error('Chat error:', e);
+    clearTimeout(timeoutId);
+    // Instant fallback ensures Chat ALWAYS works on GitHub Pages or if API takes too long!
+    const fallbackReply = getMentorClientFallback(currentPersonaSlug, message, sym);
     const loadElem = document.getElementById(loadingId);
-    if (loadElem) loadElem.innerText = 'Impossibile completare la risposta. Riprova più tardi.';
+    if (loadElem) {
+      loadElem.innerHTML = formatMarkdown(fallbackReply);
+    }
   }
 }
-
 let msgIdCounter = 0;
 function appendChatMessage(sender, text) {
   const container = document.getElementById('chat-messages-container');

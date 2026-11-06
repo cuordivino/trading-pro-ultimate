@@ -345,10 +345,16 @@ const OrderFlowEngine = {
 
   renderForecastCone() {
     const canvas = document.getElementById('forecast-cone-canvas');
-    if (!canvas || !this.forecastConeVisible) return;
+    if (!canvas) return;
+    if (!this.forecastConeVisible) {
+      canvas.style.display = 'none';
+      return;
+    }
+    canvas.style.display = 'block';
+
     const chart = window.mainChartInstance;
     const series = window.mainCandleSeries;
-    const data = window.currentChartCandles;
+    const data = window.currentChartCandles || window.currentCandles || [];
     if (!chart || !series || !data || data.length === 0) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -359,40 +365,76 @@ const OrderFlowEngine = {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    const lastCandle = data[data.length - 1];
-    const lastClose = lastCandle.close !== undefined ? lastCandle.close : lastCandle.c;
-    const startY = series.priceToCoordinate(lastClose);
-    const startX = chart.timeScale().timeToCoordinate(lastCandle.time);
-    if (startY === null || startX === null || isNaN(startY) || isNaN(startX)) return;
+    const lastIdx = data.length - 1;
+    const lastCandle = data[lastIdx];
+    const lastClose = lastCandle.close !== undefined ? lastCandle.close : (lastCandle.c || window.currentLivePrice || 76000);
 
-    // Target projection range
-    const targetX = Math.min(rect.width - 110, startX + 160);
+    // EXACT start anchor point: locked to last candle close & time/logical position
+    let startY = series.priceToCoordinate(lastClose);
+    let startX = null;
+    if (chart.timeScale().logicalToCoordinate) {
+      startX = chart.timeScale().logicalToCoordinate(lastIdx);
+    }
+    if (startX === null || isNaN(startX)) {
+      startX = chart.timeScale().timeToCoordinate(lastCandle.time);
+    }
 
+    if (startY === null || isNaN(startY)) {
+      startY = rect.height * 0.5;
+    }
+
+    // If candle is far off-screen to the right (> width), return
+    if (startX !== null && startX > rect.width) return;
+
+    // Projection horizon: 22 bars into the future
+    const projectionBars = 22;
+    let targetX = null;
+    if (chart.timeScale().logicalToCoordinate) {
+      targetX = chart.timeScale().logicalToCoordinate(lastIdx + projectionBars);
+    }
+    if (targetX === null || isNaN(targetX) || (startX !== null && targetX <= startX)) {
+      const opt = chart.timeScale().options ? chart.timeScale().options() : {};
+      const barSpacing = (opt && opt.barSpacing) || 16;
+      targetX = (startX || (rect.width * 0.65)) + (projectionBars * barSpacing);
+    }
+
+    if (startX === null || isNaN(startX)) {
+      startX = targetX - (projectionBars * 16);
+    }
+
+    targetX = Math.min(rect.width - 105, targetX);
+    if (targetX <= startX + 15) return;
+
+    // Price targets
     const upperTarget = lastClose * 1.085;
     const medianTarget = lastClose * 1.042;
     const lowerSupport = lastClose * 0.945;
 
-    const upperY = series.priceToCoordinate(upperTarget) || (startY - 60);
-    const medianY = series.priceToCoordinate(medianTarget) || (startY - 30);
-    const lowerY = series.priceToCoordinate(lowerSupport) || (startY + 50);
+    let upperY = series.priceToCoordinate(upperTarget);
+    let medianY = series.priceToCoordinate(medianTarget);
+    let lowerY = series.priceToCoordinate(lowerSupport);
 
-    // 1. Shaded Cone Area (Gradient Fill)
+    if (upperY === null || isNaN(upperY)) upperY = startY - 70;
+    if (medianY === null || isNaN(medianY)) medianY = startY - 35;
+    if (lowerY === null || isNaN(lowerY)) lowerY = startY + 60;
+
+    // 1. Shaded Cone Area (Gradient Fill following the path)
     const coneGrad = ctx.createLinearGradient(startX, startY, targetX, startY);
-    coneGrad.addColorStop(0, 'rgba(56, 189, 248, 0.02)');
-    coneGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.09)');
-    coneGrad.addColorStop(1, 'rgba(56, 189, 248, 0.16)');
+    coneGrad.addColorStop(0, 'rgba(56, 189, 248, 0.04)');
+    coneGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
+    coneGrad.addColorStop(1, 'rgba(56, 189, 248, 0.20)');
 
     ctx.beginPath();
     ctx.moveTo(startX, startY);
     ctx.bezierCurveTo(
-      startX + (targetX - startX) * 0.4, startY + (upperY - startY) * 0.2,
-      startX + (targetX - startX) * 0.7, upperY,
+      startX + (targetX - startX) * 0.45, startY + (upperY - startY) * 0.2,
+      startX + (targetX - startX) * 0.75, upperY,
       targetX, upperY
     );
     ctx.lineTo(targetX, lowerY);
     ctx.bezierCurveTo(
-      startX + (targetX - startX) * 0.7, lowerY,
-      startX + (targetX - startX) * 0.4, startY + (lowerY - startY) * 0.2,
+      startX + (targetX - startX) * 0.75, lowerY,
+      startX + (targetX - startX) * 0.45, startY + (lowerY - startY) * 0.2,
       startX, startY
     );
     ctx.closePath();
@@ -406,8 +448,8 @@ const OrderFlowEngine = {
     ctx.lineWidth = 1.8;
     ctx.moveTo(startX, startY);
     ctx.bezierCurveTo(
-      startX + (targetX - startX) * 0.4, startY + (upperY - startY) * 0.2,
-      startX + (targetX - startX) * 0.7, upperY,
+      startX + (targetX - startX) * 0.45, startY + (upperY - startY) * 0.2,
+      startX + (targetX - startX) * 0.75, upperY,
       targetX, upperY
     );
     ctx.stroke();
@@ -416,7 +458,7 @@ const OrderFlowEngine = {
     ctx.beginPath();
     ctx.setLineDash([3, 3]);
     ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.6;
     ctx.moveTo(startX, startY);
     ctx.lineTo(targetX, medianY);
     ctx.stroke();
@@ -428,37 +470,44 @@ const OrderFlowEngine = {
     ctx.lineWidth = 1.8;
     ctx.moveTo(startX, startY);
     ctx.bezierCurveTo(
-      startX + (targetX - startX) * 0.4, startY + (lowerY - startY) * 0.2,
-      startX + (targetX - startX) * 0.7, lowerY,
+      startX + (targetX - startX) * 0.45, startY + (lowerY - startY) * 0.2,
+      startX + (targetX - startX) * 0.75, lowerY,
       targetX, lowerY
     );
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 5. Target Badges & Labels
-    const renderBadge = (x, y, text, sub, color, bg) => {
-      ctx.fillStyle = bg;
+    // 5. Origin Dot on Last Candle
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(startX, startY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Target Badges & Labels
+    const renderBadge = (x, y, text, sub, color) => {
+      const clampedY = Math.max(16, Math.min(rect.height - 18, y));
+      ctx.fillStyle = 'rgba(10, 15, 29, 0.94)';
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
       const w = 100;
       const h = 24;
       const r = 4;
       ctx.beginPath();
-      ctx.roundRect(x + 4, y - 12, w, h, r);
+      ctx.roundRect(x + 4, clampedY - 12, w, h, r);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = color;
       ctx.font = 'bold 9px Inter, monospace';
-      ctx.fillText(text, x + 8, y - 1);
+      ctx.fillText(text, x + 8, clampedY - 1);
       ctx.fillStyle = '#94a3b8';
       ctx.font = '8px Inter, sans-serif';
-      ctx.fillText(sub, x + 8, y + 8);
+      ctx.fillText(sub, x + 8, clampedY + 8);
     };
 
-    renderBadge(targetX, upperY, `Target $${upperTarget.toFixed(2)}`, '+8.5% Fan Target', '#38bdf8', 'rgba(12, 16, 28, 0.94)');
-    renderBadge(targetX, medianY, `Consenso $${medianTarget.toFixed(2)}`, '+4.2% Expected', '#10b981', 'rgba(12, 16, 28, 0.94)');
-    renderBadge(targetX, lowerY, `Supporto $${lowerSupport.toFixed(2)}`, '-5.5% Max Risk', '#f97316', 'rgba(12, 16, 28, 0.94)');
+    renderBadge(targetX, upperY, `Target $${upperTarget.toFixed(2)}`, '+8.5% Fan Target', '#38bdf8');
+    renderBadge(targetX, medianY, `Consenso $${medianTarget.toFixed(2)}`, '+4.2% Expected', '#10b981');
+    renderBadge(targetX, lowerY, `Supporto $${lowerSupport.toFixed(2)}`, '-5.5% Max Risk', '#f97316');
   }
 };
 

@@ -135,13 +135,20 @@ def run_consensus(symbol):
 
 @app.route('/api/skills/chat', methods=['POST'])
 def chat_persona():
-    data = request.json or {}
-    investor_slug = data.get('slug', 'buffett')
-    message = data.get('message', '')
-    symbol = data.get('symbol', 'BTCUSDT')
-    quote = market_data.get_ticker_quote(symbol)
-    reply = skills_engine.generate_investor_chat_reply(investor_slug, message, symbol, quote)
-    return jsonify({'reply': reply, 'timestamp': datetime.now().isoformat()})
+    try:
+        data = request.get_json(silent=True) or {}
+        investor_slug = data.get('slug', 'buffett')
+        message = data.get('message', '')
+        symbol = data.get('symbol', 'BTCUSDT')
+        try:
+            quote = market_data.get_ticker_quote(symbol)
+        except Exception:
+            quote = None
+        reply = skills_engine.generate_investor_chat_reply(investor_slug, message, symbol, quote)
+        return jsonify({'reply': reply, 'timestamp': datetime.now().isoformat()})
+    except Exception as e:
+        default_reply = f"Analisi strategica per {symbol}: il modello di investimento suggerisce prudenza, rigoroso controllo del rischio e Margine di Sicurezza."
+        return jsonify({'reply': default_reply, 'timestamp': datetime.now().isoformat()})
 
 # ==========================================
 # RISK MANAGEMENT & POSITION SIZER

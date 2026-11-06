@@ -87,10 +87,11 @@ function formatRomeTime(timestampSec, withSeconds = false) {
   return date.toLocaleTimeString('it-IT', opts);
 }
 
-// Timeframe-Aware Tick Mark Formatter for Lightweight Charts (Clean, regular, no 90m gaps!)
+// Timeframe-Aware Tick Mark Formatter for Lightweight Charts (Clean, regular, high-precision)
 function formatTimeScaleTick(time, tickMarkType, locale, forcedTf) {
   if (!time) return '';
-  const currentTf = (forcedTf || window.currentInterval || '15m').toLowerCase();
+  const tfRaw = (forcedTf || window.currentInterval || '15m');
+  const tfLower = tfRaw.toLowerCase();
 
   let date;
   if (typeof time === 'object' && time !== null) {
@@ -99,12 +100,14 @@ function formatTimeScaleTick(time, tickMarkType, locale, forcedTf) {
     date = new Date(time * 1000);
   }
 
-  const isSeconds = (currentTf === '1s');
-  const isDaily = ['1d', '1g'].includes(currentTf);
-  const isWeekly = ['1w', '1sett'].includes(currentTf);
-  const isMonthly = ['1m', '1mese', '1month'].includes(currentTf);
+  const isSeconds = (tfLower === '1s');
+  const is1Min = (tfLower === '1m');
+  const is5Min = (tfLower === '5m');
+  const isDaily = (tfLower === '1d' || tfLower === '1g');
+  const isWeekly = (tfLower === '1w' || tfLower === '1sett');
+  const isMonthly = (tfRaw === '1M' || tfLower === '1mese' || tfLower === '1month');
 
-  // 1. Seconds timeframe (1s) -> format HH:mm:ss
+  // 1. Seconds (1s) -> format HH:mm:ss
   if (isSeconds) {
     return date.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
@@ -120,8 +123,13 @@ function formatTimeScaleTick(time, tickMarkType, locale, forcedTf) {
     return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: 'short' });
   }
 
-  // 3. Intraday (1m, 5m, 15m, 30m, 1h, 4h) -> format HH:mm
+  // 3. Intraday: 1m, 5m, 15m, 30m, 1h, 4h
   const romeHourStr = date.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' });
+
+  // On 1m or 5m timeframe: ALWAYS show HH:mm (never show "nov 26" repeatedly!)
+  if (is1Min || is5Min) {
+    return romeHourStr;
+  }
 
   // On day boundaries (midnight 00:00 or DayOfMonth tick mark) show clean date
   if (tickMarkType === 2 || tickMarkType === 1 || tickMarkType === 0 || romeHourStr === '00:00') {
@@ -134,56 +142,61 @@ function formatTimeScaleTick(time, tickMarkType, locale, forcedTf) {
 // Dynamically optimize timeScale options and bar spacing per timeframe
 function applyTimeframeScaleOptions(tf) {
   if (!mainChart) return;
-  const t = (tf || window.currentInterval || '15m').toLowerCase();
-  const isSeconds = (t === '1s');
-  const isDaily = ['1d', '1g'].includes(t);
-  const isWeekly = ['1w', '1sett'].includes(t);
-  const isMonthly = ['1m', '1mese', '1month'].includes(t);
+  const tfRaw = (tf || window.currentInterval || '15m');
+  const tfLower = tfRaw.toLowerCase();
+  const isSeconds = (tfLower === '1s');
+  const is1Min = (tfLower === '1m');
+  const is5Min = (tfLower === '5m');
+  const isDaily = (tfLower === '1d' || tfLower === '1g');
+  const isWeekly = (tfLower === '1w' || tfLower === '1sett');
+  const isMonthly = (tfRaw === '1M' || tfLower === '1mese' || tfLower === '1month');
   const isHighTf = isDaily || isWeekly || isMonthly;
 
-  let optimalBarSpacing = 14;
+  let optimalBarSpacing = 16;
   let minBarSpacing = 8;
-  let visibleBars = 65;
+  let visibleBars = 60;
 
   if (isSeconds) {
-    optimalBarSpacing = 16;
+    optimalBarSpacing = 18;
     minBarSpacing = 10;
-    visibleBars = 70;
-  } else if (t === '1m') {
-    optimalBarSpacing = 14;
-    minBarSpacing = 8;
-    visibleBars = 65;
-  } else if (t === '5m') {
-    optimalBarSpacing = 14;
-    minBarSpacing = 8;
-    visibleBars = 65;
-  } else if (t === '15m') {
-    optimalBarSpacing = 12;
-    minBarSpacing = 7;
-    visibleBars = 75;
-  } else if (t === '30m') {
-    optimalBarSpacing = 12;
-    minBarSpacing = 6;
-    visibleBars = 70;
-  } else if (t === '1h') {
-    optimalBarSpacing = 11;
-    minBarSpacing = 6;
-    visibleBars = 70;
-  } else if (t === '4h') {
-    optimalBarSpacing = 10;
-    minBarSpacing = 5;
     visibleBars = 60;
-  } else if (isDaily) {
-    optimalBarSpacing = 11;
-    minBarSpacing = 5;
-    visibleBars = 70;
-  } else if (isWeekly) {
+  } else if (is1Min) {
+    // 1-minute: wide bars, tick marks every 1 or 2 minutes, crystal clear!
+    optimalBarSpacing = 20;
+    minBarSpacing = 12;
+    visibleBars = 50;
+  } else if (is5Min) {
+    // 5-minute: 22px bar spacing so ticks fall every 10-15 minutes, never 30m or 90m gaps!
+    optimalBarSpacing = 22;
+    minBarSpacing = 12;
+    visibleBars = 45;
+  } else if (tfLower === '15m') {
+    optimalBarSpacing = 14;
+    minBarSpacing = 8;
+    visibleBars = 65;
+  } else if (tfLower === '30m') {
+    optimalBarSpacing = 14;
+    minBarSpacing = 8;
+    visibleBars = 60;
+  } else if (tfLower === '1h') {
     optimalBarSpacing = 12;
     minBarSpacing = 6;
-    visibleBars = 52;
-  } else if (isMonthly) {
+    visibleBars = 65;
+  } else if (tfLower === '4h') {
+    optimalBarSpacing = 12;
+    minBarSpacing = 6;
+    visibleBars = 55;
+  } else if (isDaily) {
+    optimalBarSpacing = 12;
+    minBarSpacing = 5;
+    visibleBars = 65;
+  } else if (isWeekly) {
     optimalBarSpacing = 14;
-    minBarSpacing = 7;
+    minBarSpacing = 6;
+    visibleBars = 50;
+  } else if (isMonthly) {
+    optimalBarSpacing = 16;
+    minBarSpacing = 8;
     visibleBars = 36;
   }
 
@@ -193,10 +206,10 @@ function applyTimeframeScaleOptions(tf) {
     secondsVisible: isSeconds,
     barSpacing: optimalBarSpacing,
     minBarSpacing: minBarSpacing,
-    rightOffset: 12,
+    rightOffset: 14,
     fixLeftEdge: false,
     fixRightEdge: false,
-    tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale, t)
+    tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale, tfRaw)
   };
 
   try {
@@ -278,6 +291,48 @@ function initMainChart() {
   });
   window.mainCandleSeries = candleSeries;
   window.mainChartInstance = mainChart;
+
+  /* REAL-TIME DRAG & WHEEL SYNC FOR OVERLAYS */
+  const chartMainContainer = document.getElementById('main-chart');
+  if (chartMainContainer) {
+    let isChartDragging = false;
+    chartMainContainer.addEventListener('mousedown', () => { isChartDragging = true; });
+    window.addEventListener('mouseup', () => {
+      if (isChartDragging) {
+        isChartDragging = false;
+        if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+          OptimalEngine.calculateLocalVolumeProfile();
+          OptimalEngine.renderVolumeProfileOverlay();
+        }
+        if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
+          OrderFlowEngine.renderForecastCone();
+        }
+      }
+    });
+    chartMainContainer.addEventListener('mousemove', () => {
+      if (isChartDragging) {
+        requestAnimationFrame(() => {
+          if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
+            OrderFlowEngine.renderForecastCone();
+          }
+          if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+            OptimalEngine.renderVolumeProfileOverlay();
+          }
+        });
+      }
+    });
+    chartMainContainer.addEventListener('wheel', () => {
+      requestAnimationFrame(() => {
+        if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
+          OrderFlowEngine.renderForecastCone();
+        }
+        if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
+          OptimalEngine.calculateLocalVolumeProfile();
+          OptimalEngine.renderVolumeProfileOverlay();
+        }
+      });
+    }, { passive: true });
+  }
 
   mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
     if (window.OptimalEngine && OptimalEngine.volumeProfileVisible) {
