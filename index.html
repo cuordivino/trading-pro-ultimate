@@ -592,6 +592,18 @@
 
 
               <!-- Theme Quick Switcher -->
+              
+              <!-- BYBIT CHART SETTINGS & QUICK HEIGHT PRESETS -->
+              <div style="display:flex; align-items:center; gap:3px;">
+                <button type="button" class="btn-tune-macro" onclick="BybitChartSettings.openModal()" style="background:rgba(252,213,53,0.15); border-color:#fcd535; color:#fcd535; font-weight:800;" title="Impostazioni Grafico Stile Bybit con Slider Altezza Indipendente">
+                  <span>⚙️</span> Impostazioni Grafico
+                </button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(380)" title="Altezza 380px">380</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(520)" title="Altezza 520px">520</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(680)" title="Altezza 680px">680</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.toggleFullScreen()" title="Schermo Intero ⛶">⛶</button>
+              </div>
+
               <div class="dropdown" style="position:relative;">
                 <button class="theme-pill-btn" onclick="this.nextElementSibling.classList.toggle('open')" title="Cambia Tema (Notte / Giorno / Bloomberg / Wall St / Matrix)">
                   <span id="theme-trigger-icon">🌑</span>
@@ -2234,5 +2246,115 @@
   </script>
   <!-- MotionSites Cinematic Interaction Engine (Spotlight & Quantum Ambient) -->
   <script src="js/motionsites-effects.js?v=2" defer></script>
+
+  <!-- ===================================================================== -->
+  <!-- BYBIT CHART SETTINGS MODAL WITH DYNAMIC HEIGHT SLIDER -->
+  <!-- ===================================================================== -->
+  <div id="bybit-chart-settings-modal" class="bybit-settings-modal-overlay" onclick="if(event.target === this) BybitChartSettings.closeModal()">
+    <div class="bybit-settings-modal-dialog">
+      <div class="bybit-modal-header">
+        <div class="bybit-modal-title">Chart Settings</div>
+        <button class="bybit-modal-close" onclick="BybitChartSettings.closeModal()">✕</button>
+      </div>
+
+      <!-- Action Category Icons Row (Drawing, Indicators, Date, Others) -->
+      <div class="bybit-action-pills-row">
+        <button class="bybit-action-pill" onclick="if(window.DrawingEngine) DrawingEngine.toggleToolbar(); BybitChartSettings.closeModal();">
+          <span style="font-size:16px;">✏️</span>
+          <span>Drawing</span>
+        </button>
+        <button class="bybit-action-pill active" onclick="if(window.openAllIndicatorsModal) openAllIndicatorsModal(); BybitChartSettings.closeModal();">
+          <span style="font-size:16px;">📈</span>
+          <span>Indicators</span>
+        </button>
+        <button class="bybit-action-pill" onclick="promptCustomTimeframe(); BybitChartSettings.closeModal();">
+          <span style="font-size:16px;">📅</span>
+          <span>Date</span>
+        </button>
+        <button class="bybit-action-pill" onclick="if(window.ThemeManager) ThemeManager.toggleMenu(); BybitChartSettings.closeModal();">
+          <span style="font-size:16px;">⚙️</span>
+          <span>Others</span>
+        </button>
+      </div>
+
+      <div class="bybit-modal-body">
+        <!-- GROUP 1: CHART DISPLAY -->
+        <div class="bybit-setting-group-title">Chart Display</div>
+        <div class="bybit-checkbox-grid">
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked onchange="toggleBybitLegendLine('main', this.checked)"> Last Traded Price
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Mark Price
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Max Price
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked onchange="if(window.OrderFlowEngine) OrderFlowEngine.toggleTimeGrid(this.checked)"> Grid
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Min Price
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Countdown
+          </label>
+          <label class="bybit-checkbox-label" style="grid-column: span 2;">
+            <input type="checkbox" checked onclick="switchMainTab('tab-macro-radar'); BybitChartSettings.closeModal();"> Economic Calendar 🔴 &gt;
+          </label>
+        </div>
+
+        <!-- GROUP 2: ORDER DISPLAY -->
+        <div class="bybit-setting-group-title">Order Display</div>
+        <div class="bybit-checkbox-grid">
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Position Info 🔴 &gt;
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Current Orders
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Trade History
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Drag to Modify
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Liq. Price (Isolated Margin)
+          </label>
+          <label class="bybit-checkbox-label">
+            <input type="checkbox" checked> Breakeven
+          </label>
+        </div>
+
+        <!-- GROUP 3: CHART HEIGHT SLIDER (ALLARGA SPAZIO GRAFICO CELLULARE & DESKTOP) -->
+        <div class="bybit-slider-box">
+          <div class="bybit-slider-header">
+            <span>Chart Height (Altezza Indipendente Grafico)</span>
+            <span id="bybit-slider-val-lbl" class="bybit-slider-badge">460px</span>
+          </div>
+          <input type="range" id="bybit-chart-height-slider" class="bybit-range-input" min="260" max="850" step="10" value="460" oninput="BybitChartSettings.setHeight(this.value)">
+          <div class="bybit-preset-btn-group">
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(320)">320px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(420)">420px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(560)">560px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(720)">720px</button>
+            <button class="bybit-preset-btn" style="color:#fcd535; border-color:#fcd535;" onclick="BybitChartSettings.toggleFullScreen()">⛶ Schermo Intero</button>
+          </div>
+        </div>
+
+        <!-- GROUP 4: TIMEZONE & BUY/SELL MODE -->
+        <div class="bybit-setting-row-item">
+          <span>Time Zone</span>
+          <span class="bybit-setting-row-val">UTC+1 (Rome / CET) &gt;</span>
+        </div>
+        <div class="bybit-setting-row-item">
+          <span>Customize Buy/Sell Mode</span>
+          <span class="bybit-setting-row-val">Quick Trade &gt;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

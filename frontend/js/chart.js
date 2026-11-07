@@ -3117,3 +3117,99 @@ window.updateMomentumParam = function(param, val) {
 // Explicit Global Bindings for Legend Controls
 window.openIndicatorSettingsModal = typeof openIndicatorSettingsModal !== 'undefined' ? openIndicatorSettingsModal : function(id) { console.warn('openIndicatorSettingsModal:', id); };
 window.toggleIndicatorKey = typeof toggleIndicatorKey !== 'undefined' ? toggleIndicatorKey : function(key, val) { console.warn('toggleIndicatorKey:', key, val); };
+
+
+// =============================================================================
+// BYBIT CHART SETTINGS & DYNAMIC HEIGHT ENGINE
+// TRADING PRO ULTIMATE™ © by cuordivino - Tutti i diritti riservati
+// =============================================================================
+window.BybitChartSettings = {
+  currentHeight: 460,
+  minHeight: 260,
+  maxHeight: 880,
+  isFullScreen: false,
+
+  init() {
+    try {
+      const saved = localStorage.getItem('tpu_bybit_chart_height');
+      if (saved) {
+        this.currentHeight = parseInt(saved, 10) || 460;
+      } else {
+        this.currentHeight = (window.innerWidth < 768) ? 460 : 380;
+      }
+      this.applyHeight(this.currentHeight, false);
+    } catch (e) {
+      console.warn('[BybitChartSettings] Init fallback:', e);
+    }
+  },
+
+  setHeight(px, save = true) {
+    const val = Math.max(this.minHeight, Math.min(this.maxHeight, parseInt(px, 10) || 460));
+    this.currentHeight = val;
+    this.isFullScreen = false;
+    this.applyHeight(val, save);
+  },
+
+  toggleFullScreen() {
+    this.isFullScreen = !this.isFullScreen;
+    const vp = document.querySelector('.chart-viewport-wrapper');
+    if (!vp) return;
+
+    if (this.isFullScreen) {
+      const fullH = Math.max(480, window.innerHeight - (window.innerWidth < 768 ? 130 : 160));
+      vp.style.height = `${fullH}px`;
+      if (typeof window.resizeAllCharts === 'function') window.resizeAllCharts();
+      const lbl = document.getElementById('bybit-slider-val-lbl');
+      if (lbl) lbl.textContent = `${fullH}px (Full)`;
+      const slider = document.getElementById('bybit-chart-height-slider');
+      if (slider) slider.value = fullH;
+      if (window.showToastNotification) window.showToastNotification(`⛶ Grafico a Schermo Intero (${fullH}px)`);
+    } else {
+      this.applyHeight(this.currentHeight, true);
+      if (window.showToastNotification) window.showToastNotification(`Grafico reimpostato a ${this.currentHeight}px`);
+    }
+  },
+
+  applyHeight(px, save = true) {
+    const vp = document.querySelector('.chart-viewport-wrapper');
+    if (vp) {
+      vp.style.height = `${px}px`;
+      if (typeof window.resizeAllCharts === 'function') {
+        window.resizeAllCharts();
+      }
+    }
+    const lbl = document.getElementById('bybit-slider-val-lbl');
+    if (lbl) lbl.textContent = `${px}px`;
+    const slider = document.getElementById('bybit-chart-height-slider');
+    if (slider) slider.value = px;
+
+    if (save) {
+      try {
+        localStorage.setItem('tpu_bybit_chart_height', String(px));
+      } catch (e) {}
+    }
+  },
+
+  openModal() {
+    const modal = document.getElementById('bybit-chart-settings-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      const slider = document.getElementById('bybit-chart-height-slider');
+      if (slider) slider.value = this.currentHeight;
+      const lbl = document.getElementById('bybit-slider-val-lbl');
+      if (lbl) lbl.textContent = `${this.currentHeight}px`;
+    }
+  },
+
+  closeModal() {
+    const modal = document.getElementById('bybit-chart-settings-modal');
+    if (modal) modal.style.display = 'none';
+  }
+};
+
+// Auto-run on DOMContentLoaded or immediate
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => BybitChartSettings.init());
+} else {
+  BybitChartSettings.init();
+}

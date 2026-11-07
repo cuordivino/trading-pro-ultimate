@@ -7138,3 +7138,258 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     gap: 8px !important;
   }
 }
+
+
+/* =============================================================================
+   BYBIT CHART SETTINGS MODAL & ENHANCED MOBILE VIEWPORT
+   TRADING PRO ULTIMATE™ © by cuordivino - Tutti i diritti riservati
+   ============================================================================= */
+
+/* Bybit Chart Settings Modal Overlay */
+.bybit-settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(10px);
+  z-index: 999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.bybit-settings-modal-dialog {
+  background: #11141c;
+  border: 1px solid #232938;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 30px rgba(56, 189, 248, 0.15);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+.bybit-modal-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1e2638;
+}
+
+.bybit-modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #fff;
+}
+
+.bybit-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.bybit-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.bybit-action-pills-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 14px 16px;
+  background: #0c0f17;
+  border-bottom: 1px solid #1a2233;
+}
+
+.bybit-action-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.bybit-action-pill:hover,
+.bybit-action-pill.active {
+  color: #fcd535;
+  background: rgba(252, 213, 53, 0.1);
+}
+
+.bybit-modal-body {
+  padding: 16px 20px;
+}
+
+.bybit-setting-group-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.bybit-checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.bybit-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #e2e8f0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bybit-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #fcd535;
+  cursor: pointer;
+}
+
+.bybit-slider-box {
+  background: #090c13;
+  border: 1px solid #1e2638;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+
+.bybit-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.bybit-slider-header span:first-child {
+  font-size: 12px;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.bybit-slider-badge {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fcd535;
+  background: rgba(252, 213, 53, 0.15);
+  border: 1px solid rgba(252, 213, 53, 0.4);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.bybit-range-input {
+  width: 100%;
+  accent-color: #fcd535;
+  height: 6px;
+  cursor: pointer;
+  background: #1e293b;
+  border-radius: 3px;
+  margin-bottom: 12px;
+}
+
+.bybit-preset-btn-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bybit-preset-btn {
+  background: #182030;
+  border: 1px solid #2d3748;
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bybit-preset-btn:hover {
+  background: #232d42;
+  color: #fff;
+  border-color: #475569;
+}
+
+.bybit-setting-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid #1a2233;
+  font-size: 12.5px;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.bybit-setting-row-item:hover {
+  color: #fff;
+}
+
+.bybit-setting-row-val {
+  color: #94a3b8;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Enhanced mobile ribbon for 7 macro gauges */
+@media (max-width: 768px) {
+  .qc-macro-7-gauges {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    padding: 10px 4px !important;
+    justify-content: flex-start !important;
+  }
+  .qc-macro-7-gauges > div {
+    flex: 0 0 54px !important;
+  }
+
+  .nav-tabs-container {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    padding: 4px 8px !important;
+  }
+
+  .tab-nav-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}
