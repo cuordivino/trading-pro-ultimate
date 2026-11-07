@@ -759,6 +759,118 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
     this.openInstitutionalPDFWindow('REPORT COMPARATIVA DRAWDOWN & STRESS TEST', 'BENCHMARKING SCIENTIFICO E RESISTENZA NELLE CRISI STORICHE', content, `Report_Drawdown_Comparativo_${todayStr.replace(/ /g, '_')}.pdf`);
   },
 
+    // =========================================================================
+  // 🚀 APRI TRADE ISTITUZIONALE & RISK GATE ESECUTIVO CON PARAMETRI COMPLETI
+  // =========================================================================
+  openTradeExecutionModal(symbol) {
+    const item = this.universeData.find(x => x.symbol === symbol) || 
+                 this.topDailySetups.find(x => x.symbol === symbol) ||
+                 { symbol, name: symbol, price: 100, qScore: 85, currency: '$' };
+
+    let m = document.getElementById('qc-trade-exec-modal');
+    if (!m) {
+      m = document.createElement('div');
+      m.id = 'qc-trade-exec-modal';
+      m.className = 'modal-backdrop';
+      m.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); padding:20px;';
+      document.body.appendChild(m);
+    }
+
+    const price = item.price || 100;
+    const isLong = (item.bias || item.direction || 'BUY').includes('BUY');
+    const stopDistance = price * (item.symbol === 'CHFJPY' ? 0.0138 : item.symbol === 'SSEC' ? 0.0295 : 0.0431);
+    const stopLoss = isLong ? (price - stopDistance) : (price + stopDistance);
+    const takeProfit = isLong ? (price + (stopDistance * 2.0)) : (price - (stopDistance * 2.0));
+    const maxRiskUSD = 100.00; // 1% del capitale €10.000
+    const qty = Math.max(1, Math.round(maxRiskUSD / stopDistance));
+    const curr = item.currency || '$';
+
+    m.innerHTML = `
+      <div style="background:#0c1222; border:1px solid #38bdf8; border-radius:12px; max-width:620px; width:100%; padding:22px; box-shadow:0 25px 60px rgba(0,0,0,0.95); position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:10px; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:8px; background:#1e293b; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#38bdf8; border:1px solid #334155;">
+              ⚡
+            </div>
+            <div>
+              <div style="font-size:16px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+                <span>Ordine Istituzionale: <strong>${item.symbol}</strong></span>
+                <span class="badge" style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid #10b981; font-size:9.5px; padding:2px 8px; border-radius:4px;">Q-Score: ${item.qScore}/100</span>
+              </div>
+              <div style="font-size:10.5px; color:#94a3b8;">${item.name || item.symbol} · Confluenza Multifattoriale Attiva</div>
+            </div>
+          </div>
+          <button style="background:none; border:none; font-size:22px; color:#94a3b8; cursor:pointer;" onclick="document.getElementById('qc-trade-exec-modal').remove()">✕</button>
+        </div>
+
+        <!-- Parametri Completi di Rischio e Posizione -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div style="background:#080c14; border:1px solid #1e2638; border-radius:6px; padding:10px;">
+            <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase;">DIREZIONE STRATEGICA</div>
+            <div style="font-size:15px; font-weight:900; color:#10b981; margin-top:2px;">LONG / STRONG BUY</div>
+            <div style="font-size:8.5px; color:#94a3b8;">Breakout AVWAP + Stagionalità</div>
+          </div>
+          <div style="background:#080c14; border:1px solid #1e2638; border-radius:6px; padding:10px;">
+            <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase;">PREZZO INGRESSO (MARKET/LIMIT)</div>
+            <div style="font-size:15px; font-weight:900; color:#fff; font-family:monospace; margin-top:2px;">${curr}${price.toLocaleString('it-IT')}</div>
+            <div style="font-size:8.5px; color:#10b981;">Esecuzione immediata istituzionale</div>
+          </div>
+          <div style="background:#080c14; border:1px solid #ef4444; border-radius:6px; padding:10px;">
+            <div style="font-size:9px; color:#f87171; font-weight:800; text-transform:uppercase;">STOP LOSS PROTETTIVO</div>
+            <div style="font-size:15px; font-weight:900; color:#ef4444; font-family:monospace; margin-top:2px;">${curr}${stopLoss.toFixed(2)}</div>
+            <div style="font-size:8.5px; color:#64748b;">Rischio controllato: -${((stopDistance/price)*100).toFixed(2)}%</div>
+          </div>
+          <div style="background:#080c14; border:1px solid #10b981; border-radius:6px; padding:10px;">
+            <div style="font-size:9px; color:#34d399; font-weight:800; text-transform:uppercase;">TAKE PROFIT TARGET (R:R 1:2.00)</div>
+            <div style="font-size:15px; font-weight:900; color:#10b981; font-family:monospace; margin-top:2px;">${curr}${takeProfit.toFixed(2)}</div>
+            <div style="font-size:8.5px; color:#64748b;">Target asimmetrico: +${(((stopDistance*2.0)/price)*100).toFixed(2)}%</div>
+          </div>
+        </div>
+
+        <!-- Position Sizing & Capitale -->
+        <div style="background:#080c14; border:1px solid #1e2638; border-radius:6px; padding:12px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; font-weight:800; color:#cbd5e1;">Position Sizing (Kelly / Circuit Breaker 1%):</span>
+            <span style="font-size:12px; font-weight:900; color:#38bdf8; font-family:monospace;">${qty} Quote / Contratti</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#94a3b8;">
+            <span>Capitale Conto: <strong>€ 10.000,00</strong></span>
+            <span>Rischio Massimo Fissato: <strong style="color:#f87171;">$ 100,00 (1.00%)</strong></span>
+            <span>Esposizione Netta: <strong>${curr}${(qty * price).toLocaleString('it-IT')}</strong></span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('qc-trade-exec-modal').remove()">Annulla</button>
+          <button class="btn btn-sm" style="background:#0284c7; color:#fff; font-weight:800;" onclick="CasarioQuantEngine.openAssetDossier('${item.symbol}'); document.getElementById('qc-trade-exec-modal').remove();">
+            🔬 Apri Scheda Dettaglio Completa
+          </button>
+          <button class="btn btn-sm" style="background:#10b981; color:#fff; font-weight:900;" onclick="CasarioQuantEngine.executeTradeToTerminal('${item.symbol}', ${price}, ${stopLoss.toFixed(2)}, ${takeProfit.toFixed(2)}, ${qty});">
+            🚀 Esegui Trade su Terminale
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  executeTradeToTerminal(symbol, price, sl, tp, qty) {
+    const m = document.getElementById('qc-trade-exec-modal');
+    if (m) m.remove();
+
+    // Switch to Terminal Tab
+    if (typeof switchMainTab === 'function') {
+      const btn = document.querySelector('[data-tab="tab-terminal"]');
+      switchMainTab('tab-terminal', btn);
+    }
+
+    if (window.showToastNotification) {
+      window.showToastNotification(`🚀 Ordine per ${symbol} inviato al Terminale! Ingresso: ${price} | SL: ${sl} | TP: ${tp}`);
+    } else if (window.showToast) {
+      window.showToast(`Ordine ${symbol} inviato al Terminale Pro`, 'success');
+    }
+  },
+
     // Navigation State
   activeSubTab: 'macro-overview', // 'macro-overview' | 'radar-screener' | 'asset-dossier' | 'model-portfolios'
   selectedMacroRegion: 'usa',     // 'usa', 'europe', 'uk', 'asia', 'china', 'canada', 'australia'
@@ -1002,6 +1114,61 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
 
   // Comprehensive Asset Universe with Real Fundamentals, Bands, and Seasonality
   universeData: [
+    {
+      symbol: 'SSEC',
+      name: 'Shanghai Composite Index',
+      isin: 'CN000SSEC001',
+      type: 'Broad Market Index',
+      flag: '🇨🇳',
+      region: 'china',
+      assetClass: 'GLOBAL_INDEX',
+      sector: 'Indici Azionari Globali',
+      industry: 'China Core Benchmark',
+      price: 3380.00,
+      currency: '¥',
+      chg24: '+2.15%',
+      marketCap: '$7.8T Aggregate',
+      peRatio: 13.4,
+      qScore: 92,
+      direction: 'BUY',
+      bias: 'STRONG BUY',
+      pillars: { macro: 96, technical: 90, seasonal: 88, cot: 90, fundamentals: 94 },
+      description: 'Indice primario della borsa di Shanghai rappresentante tutte le azioni quotate (A-Shares e B-Shares). In forte espansione multifattoriale grazie alle iniezioni di liquidità monetaria della People\'s Bank of China (PBoC) e al programma di ripresa fiscale.',
+      analystRatings: {
+        consensus: 'STRONG BUY',
+        ratingScore: 94,
+        targetMean: 3800.00,
+        targetHigh: 4100.00,
+        targetLow: 3500.00,
+        upsidePct: '+12.43%',
+        institutions: [
+          { bank: 'China International Capital (CICC)', rating: 'Buy', target: '¥3900', date: '05 Nov 2026', report: 'CICC Equity: Fiscal Stimulus Multiplier & Liquidity Shock', pdf: 'CICC_SSEC_2026.pdf' },
+          { bank: 'JPMorgan APAC', rating: 'Overweight', target: '¥3750', date: '30 Ott 2026', report: 'JPM Asia: Valuation Gap vs US Markets & Fund Inflows', pdf: 'JPM_China_Rebound.pdf' }
+        ]
+      },
+      trendAnalysis: [
+        { horizon: 'Breve', type: 'Rialzista', duration: '14 Giorni', force: 'Molto Forte', typeColor: '#10b981', forceColor: '#10b981' },
+        { horizon: 'Medio', type: 'Rialzista', duration: '50 Giorni', force: 'Forte', typeColor: '#10b981', forceColor: '#10b981' },
+        { horizon: 'Lungo', type: 'Rialzista', duration: '180 Giorni', force: 'Forte', typeColor: '#10b981', forceColor: '#10b981' }
+      ],
+      attentionLevels: {
+        upper: { today: 3480.00, d1: '+2.96%', d15: '+6.10%', m1: '+11.40%', m3: '+24.50%' },
+        lower: { today: 3280.00, d1: '-2.95%', d15: '-4.20%', m1: '-6.10%', m3: '+8.90%' },
+        currentPrice: 3380.00,
+        riskPct: '2.95%',
+        rewardPct: '5.91%'
+      },
+      tradeSetup: {
+        direction: 'LONG',
+        entry: 3380.00,
+        stopLoss: 3280.00,
+        takeProfit: 3580.00,
+        rrRatio: '1 : 2.00',
+        suggestedShares: 2,
+        riskUSD: 98.00
+      }
+    },
+
     {
       symbol: 'ADCT',
       name: 'ADC Therapeutics SA',
@@ -4562,7 +4729,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
                   <button class="btn btn-secondary btn-sm" style="flex:1; font-size:10px; padding:5px;" onclick="CasarioQuantEngine.openAssetDossier('${setup.symbol}')">
                     🔬 Dettagli
                   </button>
-                  <button class="btn btn-primary btn-sm" style="flex:1; font-size:10px; padding:5px; background:#2563eb; color:#fff;" onclick="CasarioQuantEngine.selectAssetForProposal('${setup.symbol}')">
+                  <button class="btn btn-primary btn-sm" style="flex:1; font-size:10px; padding:5px; background:#2563eb; color:#fff; font-weight:800;" onclick="CasarioQuantEngine.openTradeExecutionModal('${setup.symbol}')">
                     ⚡ Apri Trade
                   </button>
                 </div>
@@ -5100,7 +5267,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
         </div>
 
         <!-- Row 1: Ricerca | Tipo | Direzione -->
-        <div class="qc-macro-overview-3col">
+        <div class="qc-macro-overview-3col" style="position:relative; z-index:10000;">
           
           <!-- Ricerca Input -->
           <div>
@@ -5126,7 +5293,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
 
             <!-- Dropdown Menu for Tipo -->
             ${this.radarOpenDropdown === 'tipo' ? `
-              <div style="position:absolute; top:calc(100% + 4px); left:0; width:240px; background:#080d1a !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
+              <div style="position:absolute; top:calc(100% + 4px); left:0; width:240px; background:#0b1120 !important; backdrop-filter:none !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
                 <input type="text" placeholder="Search..." style="width:100%; font-size:10px; padding:4px 8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px; margin-bottom:8px;">
                 <div style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; font-size:11px;">
                   <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;"><input type="checkbox"> (Select All)</label>
@@ -5158,7 +5325,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
 
             <!-- Dropdown for Direzione -->
             ${this.radarOpenDropdown === 'direzione' ? `
-              <div style="position:absolute; top:calc(100% + 4px); left:0; width:200px; background:#080d1a !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
+              <div style="position:absolute; top:calc(100% + 4px); left:0; width:200px; background:#0b1120 !important; backdrop-filter:none !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
                 <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
                   <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;"><input type="checkbox"> (Select All)</label>
                   <label style="display:flex; align-items:center; gap:6px; color:#fff; cursor:pointer;"><input type="checkbox" checked> BUY</label>
@@ -5174,7 +5341,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
         </div>
 
         <!-- Row 2: Settore | Paese | Stato Trade -->
-        <div class="qc-sector-perf-3col">
+        <div class="qc-sector-perf-3col" style="position:relative; z-index:5;">
           <!-- Settore -->
           <div>
             <label style="font-size:10px; font-weight:800; color:#94a3b8; display:block; margin-bottom:5px;">Settore</label>
@@ -6737,10 +6904,10 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
                   🗓 PROSSIMO RIBILANCIAMENTO: <span id="portfolio-live-countdown-lbl" style="color:#38bdf8; font-weight:900;">LUN 1 DIC (09:00 CET)</span>
                 </div>
                 <div id="portfolio-live-countdown-val" style="font-size:16px; font-weight:900; color:#10b981; font-family:monospace; letter-spacing:1.5px;">
-                  -- : -- : -- : --
+                  ${this.getRebalanceCountdown().days} : ${this.getRebalanceCountdown().hours} : ${this.getRebalanceCountdown().minutes} : ${this.getRebalanceCountdown().seconds}
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:7px; color:#64748b; margin-top:1px; padding:0 2px;">
-                  <span>G</span><span>H</span><span>M</span><span>S</span>
+                <div style="display:flex; justify-content:space-between; font-size:7.5px; color:#38bdf8; margin-top:2px; padding:0 4px; font-family:monospace; font-weight:800;">
+                  <span>${this.getRebalanceCountdown().days} GIORNI</span><span>${this.getRebalanceCountdown().hours} ORE</span><span>${this.getRebalanceCountdown().minutes} MIN</span><span>SEC</span>
                 </div>
               </div>
 
@@ -8525,3 +8692,7 @@ window.exportPortfolioOverviewPDF = function() { CasarioQuantEngine.exportPortfo
 window.exportAssetAllocationPDF = function() { CasarioQuantEngine.exportAssetAllocationPDF(); };
 window.exportComparativeDrawdownPDF = function() { CasarioQuantEngine.exportComparativeDrawdownPDF(); };
 window.autoSyncRecentData = function() { CasarioQuantEngine.autoSyncRecentData(true); };
+
+
+window.openTradeExecutionModal = function(sym) { CasarioQuantEngine.openTradeExecutionModal(sym); };
+window.openAssetDossier = function(sym) { CasarioQuantEngine.openAssetDossier(sym); };
