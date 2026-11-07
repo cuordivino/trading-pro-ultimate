@@ -73,7 +73,7 @@ window.BybitEngine = {
   },
 
   initNonCryptoAsset: function(asset) {
-    const base = (window.activePrice && window.activeSymbol === this.currentSymbol) ? window.activePrice : (asset ? asset.basePrice : 100);
+    const base = (asset && asset.basePrice) ? asset.basePrice : ((window.activePrice && window.activeSymbol === this.currentSymbol) ? window.activePrice : 100);
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
     const f = Math.pow(10, prec);
     const chgPct = (asset && asset.change24h !== undefined) ? (asset.change24h / 100) : 0.0125;
@@ -678,10 +678,10 @@ window.BybitEngine = {
     if (execBtn) {
       if (side === 'LONG') {
         execBtn.className = 'btn-action-primary btn-buy';
-        execBtn.innerText = `🟢 APRI POSIZIONE BUY / LONG · $${initialMargin.toFixed(2)} Margine`;
+        execBtn.innerText = `🟢 APRI POSIZIONE BUY / LONG · ${curr}${initialMargin.toFixed(2)} Margine`;
       } else {
         execBtn.className = 'btn-action-primary btn-sell';
-        execBtn.innerText = `🔴 APRI POSIZIONE SELL / SHORT · $${initialMargin.toFixed(2)} Margine`;
+        execBtn.innerText = `🔴 APRI POSIZIONE SELL / SHORT · ${curr}${initialMargin.toFixed(2)} Margine`;
       }
     }
   }

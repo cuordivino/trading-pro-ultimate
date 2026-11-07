@@ -274,6 +274,17 @@ async function selectAsset(symbol) {
   closeAllDropdowns();
 
   const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
+  const defaultCurr = (symbol.endsWith('.MI') || (asset && asset.cat === 'eu_stock')) ? '€' : ((asset && asset.currency) ? asset.currency : '$');
+
+  // Immediately clear stale prior price to guarantee strict asset pricing isolation
+  if (asset && asset.basePrice) {
+    window.activePrice = asset.basePrice;
+    window.currentLivePrice = asset.basePrice;
+  } else {
+    window.activePrice = null;
+    window.currentLivePrice = null;
+  }
+  window.activeCurrency = defaultCurr;
 
   const symElem = document.getElementById('active-sym-title');
   const triggerSym = document.getElementById('active-asset-trigger-sym');
