@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[*] Initializing Apex Terminal Pro V2...');
 
   initMainChart();
+  if (window.MarketQuantumEngine) MarketQuantumEngine.init();
+  
   setupDropdownSystem();
   await initCuratedAssets();
   await selectAsset('BTCUSDT');
@@ -117,6 +119,7 @@ function toggleDrawer(id) {
 // TOP CHAPTER DROPDOWN NAVIGATION ("APERTURA A TENDINA IN ALTO")
 // ==========================================================================
 const CHAPTER_META = {
+  'tab-market-quantum': { icon: '⚡', title: 'Market Quantum Co-Pilot (Multi-Agent & Risk)' },
   'tab-terminal': { icon: '📈', title: 'Terminale Pro (Grafico Candele & Ordini)' },
   'tab-model-portfolios': { icon: '💼', title: 'Portafogli Modello & Gestiti (IA) — Conservativo, Bilanciato, Crescita' },
   'tab-macro-radar': { icon: '🌐', title: 'Panoramica Macro e Mercati (Regimi, Sentiment, Radar a Tendine)' },
@@ -199,7 +202,9 @@ function switchMainTab(tabId, btnElem) {
   }
 
   // Trigger chapter renders
-  if ((tabId === 'tab-casario-quant' || tabId === 'tab-model-portfolios' || tabId === 'tab-macro-radar') && window.CasarioQuantEngine) {
+  if (tabId === 'tab-market-quantum' && window.MarketQuantumEngine) {
+    MarketQuantumEngine.renderCockpit();
+  } else if ((tabId === 'tab-casario-quant' || tabId === 'tab-model-portfolios' || tabId === 'tab-macro-radar') && window.CasarioQuantEngine) {
     CasarioQuantEngine.renderUI();
   } else if (tabId === 'tab-scanner' && window.OpportunityScanner) {
     OpportunityScanner.renderScannerTab();

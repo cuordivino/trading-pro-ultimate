@@ -3566,5 +3566,29 @@
       "posture": "evidence-first and risk-aware"
     },
     "skill_text": "---\nname: zhanglei-longterm-research-value\ndescription: \"Use when evaluating investments through Zhang Lei / Hillhouse Capital's long-term research-driven value lens: deep research, do time's friend, invest in great companies, and actively help them grow.\"\ninvest: ./invest.md\n---\n\n# Zhang Lei Long-Term Research Value\n\nUse this skill to apply Zhang Lei / 张磊 (Hillhouse Capital)-style judgment.\n\n## When To Use\n\nUse this skill when the user asks for:\n\n- Zhang Lei / Hillhouse-style analysis\n- whether a company is worth holding for a decade\n- deep research + active value-add investing\n- great company at fair price in China/Asia\n\nTrigger phrases include `张磊`, `Zhang Lei`, `高瓴资本`, `Hillhouse`, `做时间的朋友`, `价值投资`, `长期主义`.\n\n## Do Not Use When\n\n- Another skill fits better.\n- Critical data for this model is missing.\n- The user wants guaranteed returns or unbounded leverage.\n- The request is generic chatter with no decision.\n\n## Inputs Needed\n\n- Asset, sector, market, or macro context\n- Relevant financial, technical, policy, or sentiment data\n- Time horizon and risk constraints\n- Portfolio context if sizing is requested\n\n## Process\n\n1. Do deeper research than the market: industry, competitive position, management, long-term economics.\n2. Judge if this is a truly great company that can compound for decades.\n3. Check if valuation is acceptable for the quality.\n4. Decide to own long-term and hold through volatility.\n\n## Output Format\n\n```md\n# Zhang Lei Long-Term Research Value View: [Subject]\n\n## Verdict\nOwn Long-Term / Watch / Not Great / Too Expensive / Pass\n\n## Thesis\n\n## Evidence\n\n## Risks\n\n## Action Plan\n\n## Invalidation\n\n## Missing Data\n```\n\n## Guardrails\n\n- Follow the skill process; do not free-style.\n- Separate facts, assumptions, and judgment.\n- Define invalidation before sizing.\n- Not financial advice.\n\n## Questflow Use\n\nUse as a judgment module inside Questflow-style agent workflows. Reference readings/podcasts/videos after loading the skill.\n"
+  },
+  "market-quantum-copilot": {
+    "slug": "market-quantum-copilot",
+    "name": "Market Quantum Co-Pilot™",
+    "investor": "Market Quantum Autonomous Multi-Agent",
+    "style": "Multi-Agent Consensus, Volume Profile & Anti-Panic Execution",
+    "category": "quantitative_execution",
+    "timeHorizon": "Intraday & Swing (1h - Daily)",
+    "description": "Architettura ensemble a 4 agenti con soglia minima |S| >= 0.70, Volume Profile (POC/VAH/VAL), simulatore Monte Carlo 1.000 run e guardiano anti-panico con kill-switch -3% e regola dell'1% di rischio.",
+    "has_invest": true,
+    "has_skill": true,
+    "circleOfCompetence": [
+      "Multi-Agent Ensemble",
+      "Deterministic Fact-Checking",
+      "Volume Profile POC/VAH/VAL",
+      "Monte Carlo VaR 95%",
+      "Anti-Panic Sizing 1%",
+      "Behavioral Cooldown Guard"
+    ],
+    "marketRegime": {
+      "preferred": "Mercati ad alta e media liquidità (Crypto, FTSE MIB, US Equities, Commodities, Forex)",
+      "avoid": "Spread allargato > 0.30% o news macro ad alto impatto imminenti entro 15 minuti",
+      "posture": "Asimmetria convessa con rapporto R/R >= 1:2.5 e protezione rigida del capitale"
+    }
   }
 }

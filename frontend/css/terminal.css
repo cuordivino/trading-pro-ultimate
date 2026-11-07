@@ -6356,3 +6356,617 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   max-height: 80vh;
   overflow-y: auto;
 }
+
+
+
+/* ==========================================================================
+   MARKET QUANTUM CO-PILOT - COMMERCIAL SUITE STYLES
+   Autonomous Multi-Agent Ensemble, Volume Profile, Monte Carlo & Anti-Panic Guard
+   (c) TRADING PRO ULTIMATE by cuordivino - Tutti i diritti riservati
+   ========================================================================== */
+
+.mq-cockpit-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.mq-hero-header {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.mq-logo-badge {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mq-license-chip {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #38bdf8;
+  border-radius: 20px;
+}
+
+.mq-paternity-chip {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+  border-radius: 20px;
+}
+
+.mq-hero-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 680px;
+  line-height: 1.45;
+  margin-top: 6px;
+}
+
+.mq-safety-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mq-safety-item {
+  background: rgba(10, 15, 29, 0.8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+}
+
+.mq-safety-item .lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.mq-safety-item .val {
+  font-size: 13px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+
+.mq-control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+.mq-asset-select-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mq-ticker-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mq-ticker-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mq-ticker-btn:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: #06b6d4;
+  color: #fff;
+}
+
+.mq-ticker-btn.active {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: #06b6d4;
+  color: #06b6d4;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.35);
+}
+
+.mq-action-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mq-partition-nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: rgba(10, 15, 29, 0.95);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+
+.mq-partition-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mq-partition-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.mq-partition-tab.active {
+  background: rgba(6, 182, 212, 0.18);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+.mq-grid-split-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mq-card {
+  background: #0c101c;
+  border: 1px solid #1e2638;
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.mq-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mq-card-header .title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.mq-card-header .badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.mq-agents-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mq-agent-mini-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mq-agent-mini-card.highlight-border {
+  border-color: rgba(0, 242, 161, 0.35);
+  background: rgba(0, 242, 161, 0.04);
+}
+
+.mq-weight-pill {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  border-radius: 10px;
+}
+
+.mq-weight-pill.highlight {
+  background: rgba(0, 242, 161, 0.15);
+  color: #00f2a1;
+}
+
+.mq-agent-score-val {
+  font-size: 20px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  margin-top: 4px;
+}
+
+.mq-veto-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mq-veto-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+.mq-veto-row.veto-alert {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+}
+
+.mq-vp-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mq-vp-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.mq-vp-box.poc {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.mq-vp-box .lbl {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mq-vp-box .val {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  color: #fff;
+  margin: 4px 0 2px 0;
+}
+
+.mq-vp-box .sub {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.mq-vp-bars-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #080c16;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mq-vp-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.mq-vp-bar-row .price-lvl {
+  min-width: 60px;
+  color: var(--text-muted);
+}
+
+.mq-vp-bar-row .bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mq-vp-bar-row .bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.mq-vp-bar-row .bar-label {
+  min-width: 80px;
+  font-size: 9.5px;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.mq-mc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mq-mc-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.mq-mc-box .k {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.mq-mc-box .v {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--font-mono);
+  margin: 4px 0 2px 0;
+}
+
+.mq-mc-box .sub {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.mq-category-filter-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.mq-cat-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mq-cat-pill:hover,
+.mq-cat-pill.active {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: #06b6d4;
+  color: #fff;
+}
+
+.mq-history-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mq-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.mq-table th {
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mq-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+.mq-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mq-cat-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.mq-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.mq-badge.badge-green { background: rgba(0, 242, 161, 0.15); color: #00f2a1; }
+.mq-badge.badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.mq-badge.badge-orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+.mq-didactic-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mq-didactic-item {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mq-didactic-item .header {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.mq-didactic-item .body {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.mq-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mq-guide-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.mq-guide-box .term {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #38bdf8;
+  margin-bottom: 4px;
+}
+
+.mq-guide-box .desc {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.mq-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mq-input {
+  width: 100%;
+  background: #080c16;
+  border: 1px solid var(--border);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  box-sizing: border-box;
+}
+
+.mq-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 1024px) {
+  .mq-grid-split-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mq-hero-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .mq-safety-bar {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .mq-agents-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .mq-vp-hero-metrics,
+  .mq-mc-metrics-grid,
+  .mq-guide-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .mq-control-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .mq-action-tools {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+  .mq-action-tools .btn {
+    flex: 1 !important;
+  }
+}

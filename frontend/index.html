@@ -164,7 +164,10 @@
       <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
         <span>📈</span> Terminale
       </button>
-      <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-model-portfolios" onclick="switchMainTab('tab-model-portfolios', this)" style="border-color:#38bdf8; color:#38bdf8; font-weight:800; background:rgba(56, 189, 248, 0.12); box-shadow:0 0 12px rgba(56, 189, 248, 0.35);">
+            <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-market-quantum" onclick="switchMainTab('tab-market-quantum', this); if(window.MarketQuantumEngine) MarketQuantumEngine.renderCockpit();" style="border-color:#06b6d4; color:#06b6d4; font-weight:800; background:rgba(6, 182, 212, 0.12); box-shadow:0 0 12px rgba(6, 182, 212, 0.35);">
+        <span>⚡</span> Market Quantum Co-Pilot
+      </button>
+<button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-model-portfolios" onclick="switchMainTab('tab-model-portfolios', this)" style="border-color:#38bdf8; color:#38bdf8; font-weight:800; background:rgba(56, 189, 248, 0.12); box-shadow:0 0 12px rgba(56, 189, 248, 0.35);">
         <span>💼</span> Portafogli Gestiti & Modello (IA)
       </button>
       <button class="tab-nav-btn ai-glow" data-tab="tab-macro-radar" onclick="switchMainTab('tab-macro-radar', this)" style="border-color:#00f2a1; color:#00f2a1; font-weight:800;">
@@ -238,7 +241,8 @@
         <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Capitolo:</span>
         <select id="drawer-chapter-quick-select" class="drawer-quick-select" onchange="switchMainTab(this.value)">
           <option value="tab-terminal">📈 Terminale Pro (Grafico Candele & Ordini)</option>
-          <option value="tab-model-portfolios">💼 Portafogli Modello & Gestiti (IA)</option>
+                    <option value="tab-market-quantum">⚡ Market Quantum Co-Pilot (Multi-Agent & Risk)</option>
+<option value="tab-model-portfolios">💼 Portafogli Modello & Gestiti (IA)</option>
           <option value="tab-macro-radar">🌐 Panoramica Macro & Radar Screener</option>
           <option value="tab-scanner">🎯 Radar Opportunità</option>
           <option value="tab-consensus">🧠 Comitato Investitori</option>
@@ -326,6 +330,11 @@
     <!-- ====================================================================
          VIEW 1: TERMINAL PRO (BYBIT PERPETUAL INTERFACE × 100% RESPONSIVE)
          ==================================================================== -->
+        <!-- TAB: MARKET QUANTUM CO-PILOT (COMMERCIAL MULTI-AGENT QUANTUM SUITE) -->
+    <div id="tab-market-quantum" class="view-panel">
+      <div id="market-quantum-container"></div>
+    </div>
+
     <div id="tab-terminal" class="view-panel active">
 
       <!-- BYBIT OFFICIAL PERPETUAL TELEMETRY STRIP -->
@@ -2042,6 +2051,7 @@
   <script src="js/bybit_engine.js?v=2.9.0"></script>
   <script src="js/lib/jspdf.umd.min.js"></script>
   <script src="js/report_engine.js?v=2.9.5"></script>
+  <script src="js/market_quantum_engine.js?v=2.9.5"></script>
   <script src="js/casario_quant_engine.js?v=2.9.5"></script>
   <script src="js/quant_engines.js?v=2.9.0"></script>
   <script src="js/sector_rotation.js?v=2.9.0"></script>

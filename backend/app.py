@@ -402,6 +402,94 @@ def handle_send_report_email():
     })
 
 
+
+
+# =========================================================================
+# MARKET QUANTUM CO-PILOT - COMMERCIAL MULTI-AGENT QUANT ENGINE API
+# (c) TRADING PRO ULTIMATE by cuordivino - Tutti i diritti riservati
+# =========================================================================
+try:
+    from backend.market_quantum_service import QuantumServiceInstance
+except Exception as e:
+    print("[!] Warning: Could not import QuantumServiceInstance:", e)
+    QuantumServiceInstance = None
+
+@app.route('/api/quantum-copilot/overview', methods=['GET'])
+def get_quantum_overview():
+    if not QuantumServiceInstance:
+        return jsonify({'error': 'Market Quantum Service not initialized'}), 500
+    try:
+        overview = QuantumServiceInstance.get_service_overview()
+        return jsonify(overview)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/quantum-copilot/evaluate', methods=['POST'])
+def evaluate_quantum_asset():
+    if not QuantumServiceInstance:
+        return jsonify({'error': 'Market Quantum Service not initialized'}), 500
+    try:
+        data = request.json or {}
+        symbol = data.get('symbol', 'BTCUSDT')
+        live_quote = data.get('quote', None)
+        result = QuantumServiceInstance.evaluate_live_asset(symbol, live_quote)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/quantum-copilot/history/<category>', methods=['GET'])
+def get_quantum_history(category):
+    if not QuantumServiceInstance:
+        return jsonify({'error': 'Market Quantum Service not initialized'}), 500
+    try:
+        records = QuantumServiceInstance.get_category_history(category)
+        return jsonify({'category': category, 'count': len(records), 'records': records})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/quantum-copilot/monte-carlo', methods=['POST'])
+def run_quantum_monte_carlo():
+    try:
+        from backend.market_quantum.core.monte_carlo_simulator import MonteCarloSimulator
+        data = request.json or {}
+        entry = float(data.get('entry', 100.0))
+        stop = float(data.get('stop', 98.0))
+        target = float(data.get('target', 106.0))
+        win_rate = float(data.get('win_rate', 0.58))
+        res = MonteCarloSimulator.run_simulation(entry, stop, target, win_rate)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/quantum-copilot/volume-profile', methods=['POST'])
+def calculate_quantum_volume_profile():
+    try:
+        from backend.market_quantum.core.volume_profile_engine import VolumeProfileEngine
+        data = request.json or {}
+        trades = data.get('trades', [])
+        num_bins = int(data.get('num_bins', 40))
+        if not trades:
+            base_p = float(data.get('base_price', 100.0))
+            import random
+            trades = [{"price": base_p + (random.random() - 0.48) * (base_p * 0.02), "volume": random.uniform(10, 500)} for _ in range(30)]
+        res = VolumeProfileEngine.calculate_profile(trades, num_bins)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/quantum-copilot/anti-panic/calculate-size', methods=['POST'])
+def calculate_quantum_size():
+    if not QuantumServiceInstance:
+        return jsonify({'error': 'Market Quantum Service not initialized'}), 500
+    try:
+        data = request.json or {}
+        entry = float(data.get('entry', 100.0))
+        stop = float(data.get('stop', 98.0))
+        res = QuantumServiceInstance.guard.calculate_position(entry, stop)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"[*] Starting Trading Pro Ultimate + InvestorSkills AI on port {port}...")

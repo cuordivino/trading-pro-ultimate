@@ -1,0 +1,13 @@
+{
+  "markets": {
+    "crypto": "wss://stream.binance.com:9443/ws",
+    "us_equities": "Finnhub / SEC EDGAR",
+    "europe": "Yahoo Finance (FTSEMIB.MI, DAX)",
+    "commodities": "FRED / EIA API (Free)"
+  },
+  "safety": {
+    "max_risk_pct": 1.0,
+    "kill_switch_drawdown_pct": 3.0,
+    "cooldown_minutes": 60
+  }
+}
