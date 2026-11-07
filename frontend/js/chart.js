@@ -3112,3 +3112,8 @@ window.updateMomentumParam = function(param, val) {
     renderChartIndicators(window.rawCandleHistory);
   }
 };
+
+
+// Explicit Global Bindings for Legend Controls
+window.openIndicatorSettingsModal = typeof openIndicatorSettingsModal !== 'undefined' ? openIndicatorSettingsModal : function(id) { console.warn('openIndicatorSettingsModal:', id); };
+window.toggleIndicatorKey = typeof toggleIndicatorKey !== 'undefined' ? toggleIndicatorKey : function(key, val) { console.warn('toggleIndicatorKey:', key, val); };

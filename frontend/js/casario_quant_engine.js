@@ -4036,7 +4036,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
         </div>
 
         <!-- TABLE 1: REGIONAL / PAESI -->
-        <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:8px; padding:14px; margin-bottom:16px;">
+        <div class="qc-panel-card" style="background:#0c101c; border:1px solid #1e2638; border-radius:8px; padding:14px; margin-bottom:16px; overflow:visible !important; position:relative; z-index:50;">
           <!-- Tabs for Table 1 -->
           <div style="display:flex; gap:6px; margin-bottom:12px; border-bottom:1px solid #1e2638; padding-bottom:8px;">
             ${['USA', 'Europa', 'Asia', 'Mercati Emergenti', 'Mercati Sviluppati'].map(t => `
@@ -4566,7 +4566,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
           </div>
 
           <!-- Tipo Multi-Select Chips with Dropdown -->
-          <div style="position:relative;">
+          <div style="position:relative; z-index: ${this.radarOpenDropdown === 'tipo' ? 99999 : 20};">
             <label style="font-size:10px; font-weight:800; color:#94a3b8; display:block; margin-bottom:5px;">Tipo</label>
             <div style="display:flex; align-items:center; justify-content:space-between; background:#080c14; border:1px solid #1e2638; border-radius:6px; padding:4px 8px; min-height:34px; cursor:pointer;" onclick="CasarioQuantEngine.toggleRadarDropdown('tipo', event)">
               <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
@@ -4580,7 +4580,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
 
             <!-- Dropdown Menu for Tipo -->
             ${this.radarOpenDropdown === 'tipo' ? `
-              <div style="position:absolute; top:100%; left:0; width:220px; background:#0c101c; border:1px solid #334155; border-radius:6px; padding:10px; z-index:100; box-shadow:0 10px 25px rgba(0,0,0,0.8); margin-top:4px;">
+              <div style="position:absolute; top:calc(100% + 4px); left:0; width:240px; background:#080d1a !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
                 <input type="text" placeholder="Search..." style="width:100%; font-size:10px; padding:4px 8px; background:#1e293b; border:1px solid #475569; color:#fff; border-radius:4px; margin-bottom:8px;">
                 <div style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; font-size:11px;">
                   <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;"><input type="checkbox"> (Select All)</label>
@@ -4600,7 +4600,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
           </div>
 
           <!-- Direzione Multi-Select Chips with Dropdown -->
-          <div style="position:relative;">
+          <div style="position:relative; z-index: ${this.radarOpenDropdown === 'direzione' ? 99999 : 19};">
             <label style="font-size:10px; font-weight:800; color:#94a3b8; display:block; margin-bottom:5px;">Direzione</label>
             <div style="display:flex; align-items:center; justify-content:space-between; background:#080c14; border:1px solid #1e2638; border-radius:6px; padding:4px 8px; min-height:34px; cursor:pointer;" onclick="CasarioQuantEngine.toggleRadarDropdown('direzione', event)">
               <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
@@ -4612,7 +4612,7 @@ window.CasarioQuantEngine = {  // Temporal & Projection Parameters (Interactive 
 
             <!-- Dropdown for Direzione -->
             ${this.radarOpenDropdown === 'direzione' ? `
-              <div style="position:absolute; top:100%; left:0; width:180px; background:#0c101c; border:1px solid #334155; border-radius:6px; padding:10px; z-index:100; box-shadow:0 10px 25px rgba(0,0,0,0.8); margin-top:4px;">
+              <div style="position:absolute; top:calc(100% + 4px); left:0; width:200px; background:#080d1a !important; border:1px solid #38bdf8 !important; border-radius:8px; padding:12px; z-index:999999 !important; box-shadow:0 20px 50px rgba(0,0,0,0.98), 0 0 25px rgba(56,189,248,0.3) !important;">
                 <div style="display:flex; flex-direction:column; gap:6px; font-size:11px;">
                   <label style="display:flex; align-items:center; gap:6px; color:#cbd5e1; cursor:pointer;"><input type="checkbox"> (Select All)</label>
                   <label style="display:flex; align-items:center; gap:6px; color:#fff; cursor:pointer;"><input type="checkbox" checked> BUY</label>

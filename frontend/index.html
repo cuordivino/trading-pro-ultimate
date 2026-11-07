@@ -598,7 +598,8 @@
                   <span id="theme-trigger-name">Tema</span>
                   <span style="font-size:9px;">▾</span>
                 </button>
-                <div class="theme-menu-dropdown">
+                <div class="theme-menu-dropdown" style="min-width: 260px; max-height: 380px; overflow-y: auto;">
+                  <div style="padding: 6px 14px; font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Schemi di Colore & Temi</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('notte'); this.parentElement.classList.remove('open')">🌑 Notte OLED (Cyberpunk)</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('grigio_medio'); this.parentElement.classList.remove('open')">⚙️ Grigio Medio (Refinitiv Steel)</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('grigio_chiaro'); this.parentElement.classList.remove('open')">🌫️ Grigio Chiaro (Soft Slate & Silver)</div>
@@ -606,6 +607,16 @@
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('bloomberg'); this.parentElement.classList.remove('open')">🪙 Bloomberg Terminal (Amber)</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('navy'); this.parentElement.classList.remove('open')">🌊 Wall Street Navy</div>
                   <div class="theme-option-row" onclick="ThemeManager.applyTheme('matrix'); this.parentElement.classList.remove('open')">🔮 Cyber Matrix</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('emerald'); this.parentElement.classList.remove('open')">💚 Emerald Quant (Smeraldo Istituzionale)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('tokyo'); this.parentElement.classList.remove('open')">🌆 Tokyo Neon (Midnight Purple)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('crimson'); this.parentElement.classList.remove('open')">🩸 Crimson Predator (Ruby Red)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('solaris'); this.parentElement.classList.remove('open')">☀️ Solaris Gold (Oro Puro & Obsidian)</div>
+                  <div class="theme-option-row" onclick="ThemeManager.applyTheme('nordic'); this.parentElement.classList.remove('open')">❄️ Nordic Frost (Arctic Ice & Cobalt)</div>
+                  <div style="border-top: 1px solid var(--border); margin: 6px 0;"></div>
+                  <div class="theme-option-row" style="color: #10b981; font-weight: 800; display: flex; align-items: center; justify-content: space-between;" onclick="ThemeManager.lockCurrentPreferences(); this.parentElement.classList.remove('open')">
+                    <span>🔒 Blocca Preferenze Predefinite</span>
+                    <span style="font-size: 9px; background: rgba(16,185,129,0.2); border: 1px solid #10b981; padding: 2px 6px; border-radius: 4px;">LOCK</span>
+                  </div>
                 </div>
               </div>
 

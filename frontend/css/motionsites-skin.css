@@ -169,3 +169,30 @@ button:active,
   z-index: 0;
   opacity: 0.45;
 }
+
+
+/* 8. GLOBAL ATMOSPHERIC SPOTLIGHT FOLLOWING MOUSE EVERYWHERE */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none !important;
+  z-index: 1;
+  background: radial-gradient(
+    650px circle at var(--mouse-global-x, 50vw) var(--mouse-global-y, 50vh),
+    rgba(14, 165, 233, 0.11),
+    rgba(245, 158, 11, 0.035) 42%,
+    transparent 68%
+  );
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure chart wrappers never suffer pointer-events or click disruption */
+.chart-container,
+.tv-chart-wrapper,
+#tv-chart-container,
+#candlestick-chart-container,
+.bybit-legend-container {
+  transform: none !important;
+}

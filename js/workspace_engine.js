@@ -176,6 +176,142 @@ window.ThemeManager = {
         '--quantum-blue': '#2563eb'
       }
     },
+        // --- NEW THEME SCHEMES ---
+    emerald: {
+      id: 'emerald',
+      name: '💚 Emerald Quant (Smeraldo Istituzionale)',
+      icon: '💚',
+      chartBg: '#04130d',
+      paneBg: '#020b07',
+      gridColor: 'rgba(16, 185, 129, 0.05)',
+      borderColor: '#064e3b',
+      textColor: '#6ee7b7',
+      candleUp: '#10b981',
+      candleDown: '#f43f5e',
+      vars: {
+        '--bg': '#020b07',
+        '--bg-surface': '#062016',
+        '--bg-elevated': '#0b3524',
+        '--bg-card': 'rgba(6, 32, 22, 0.88)',
+        '--text-main': '#ecfdf5',
+        '--text-dim': '#6ee7b7',
+        '--text-muted': '#059669',
+        '--border': '#064e3b',
+        '--border-light': 'rgba(16, 185, 129, 0.15)',
+        '--accent': '#10b981',
+        '--buy': '#10b981',
+        '--sell': '#f43f5e',
+        '--quantum-blue': '#34d399'
+      }
+    },
+    tokyo: {
+      id: 'tokyo',
+      name: '🌆 Tokyo Neon (Midnight Purple & Violet)',
+      icon: '🌆',
+      chartBg: '#0f081d',
+      paneBg: '#090414',
+      gridColor: 'rgba(168, 85, 247, 0.06)',
+      borderColor: '#3b0764',
+      textColor: '#d8b4fe',
+      candleUp: '#06b6d4',
+      candleDown: '#f43f5e',
+      vars: {
+        '--bg': '#090414',
+        '--bg-surface': '#150a2a',
+        '--bg-elevated': '#221042',
+        '--bg-card': 'rgba(21, 10, 42, 0.88)',
+        '--text-main': '#faf5ff',
+        '--text-dim': '#d8b4fe',
+        '--text-muted': '#9333ea',
+        '--border': '#3b0764',
+        '--border-light': 'rgba(168, 85, 247, 0.15)',
+        '--accent': '#c084fc',
+        '--buy': '#06b6d4',
+        '--sell': '#f43f5e',
+        '--quantum-blue': '#a855f7'
+      }
+    },
+    crimson: {
+      id: 'crimson',
+      name: '🩸 Crimson Predator (Dark Ruby Red)',
+      icon: '🩸',
+      chartBg: '#140608',
+      paneBg: '#0c0304',
+      gridColor: 'rgba(239, 68, 68, 0.05)',
+      borderColor: '#450a0a',
+      textColor: '#fca5a5',
+      candleUp: '#22c55e',
+      candleDown: '#ef4444',
+      vars: {
+        '--bg': '#0c0304',
+        '--bg-surface': '#1c080b',
+        '--bg-elevated': '#2b0c11',
+        '--bg-card': 'rgba(28, 8, 11, 0.90)',
+        '--text-main': '#fff1f2',
+        '--text-dim': '#fca5a5',
+        '--text-muted': '#b91c1c',
+        '--border': '#450a0a',
+        '--border-light': 'rgba(239, 68, 68, 0.15)',
+        '--accent': '#f43f5e',
+        '--buy': '#22c55e',
+        '--sell': '#ef4444',
+        '--quantum-blue': '#fb7185'
+      }
+    },
+    solaris: {
+      id: 'solaris',
+      name: '☀️ Solaris Gold (Oro Puro & Obsidian)',
+      icon: '☀️',
+      chartBg: '#0d0b05',
+      paneBg: '#080602',
+      gridColor: 'rgba(245, 158, 11, 0.05)',
+      borderColor: '#451a03',
+      textColor: '#fde68a',
+      candleUp: '#fbbf24',
+      candleDown: '#ef4444',
+      vars: {
+        '--bg': '#080602',
+        '--bg-surface': '#161105',
+        '--bg-elevated': '#251c09',
+        '--bg-card': 'rgba(22, 17, 5, 0.92)',
+        '--text-main': '#fefce8',
+        '--text-dim': '#fde68a',
+        '--text-muted': '#b45309',
+        '--border': '#451a03',
+        '--border-light': 'rgba(245, 158, 11, 0.18)',
+        '--accent': '#f59e0b',
+        '--buy': '#fbbf24',
+        '--sell': '#ef4444',
+        '--quantum-blue': '#f59e0b'
+      }
+    },
+    nordic: {
+      id: 'nordic',
+      name: '❄️ Nordic Frost (Deep Arctic Ice & Cobalt)',
+      icon: '❄️',
+      chartBg: '#060f1e',
+      paneBg: '#030811',
+      gridColor: 'rgba(56, 189, 248, 0.05)',
+      borderColor: '#0c4a6e',
+      textColor: '#bae6fd',
+      candleUp: '#38bdf8',
+      candleDown: '#f87171',
+      vars: {
+        '--bg': '#030811',
+        '--bg-surface': '#08172e',
+        '--bg-elevated': '#0d2447',
+        '--bg-card': 'rgba(8, 23, 46, 0.88)',
+        '--text-main': '#f0f9ff',
+        '--text-dim': '#bae6fd',
+        '--text-muted': '#0284c7',
+        '--border': '#0c4a6e',
+        '--border-light': 'rgba(56, 189, 248, 0.16)',
+        '--accent': '#38bdf8',
+        '--buy': '#38bdf8',
+        '--sell': '#f87171',
+        '--quantum-blue': '#0284c7'
+      }
+    },
     grigio_medio: {
       id: 'grigio_medio',
       name: '⚙️ Grigio Medio (Refinitiv Graphite & Steel)',
@@ -215,6 +351,41 @@ window.ThemeManager = {
       }
     } catch(e) {}
     this.applyTheme(this.currentTheme, false);
+  },
+
+  
+  // 🔒 Lock / Save Preferences Permanently
+  lockCurrentPreferences: function() {
+    const currentTheme = localStorage.getItem(this.STORAGE_KEY) || 'notte';
+    const currentTf = window.currentInterval || '15m';
+    const lockedObj = {
+      theme: currentTheme,
+      timeframe: currentTf,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('tpu_locked_user_preferences', JSON.stringify(lockedObj));
+    localStorage.setItem('tpu_preferences_locked', 'true');
+
+    // Update UI badge
+    const trigName = document.getElementById('theme-trigger-name');
+    if (trigName) {
+      trigName.innerHTML = `${ThemeManager.themes[currentTheme]?.icon || '🌑'} ${ThemeManager.themes[currentTheme]?.name.split(' ')[1] || 'Tema'} <span style="color:#10b981; font-size:10px;">🔒</span>`;
+    }
+
+    if (window.showToastNotification) {
+      window.showToastNotification(`🔒 Preferenze BLOCCATE con successo! Lo schema [${ThemeManager.themes[currentTheme]?.name || currentTheme}] e il timeframe [${currentTf.toUpperCase()}] sono salvati come predefiniti.`);
+    } else {
+      alert(`🔒 Preferenze BLOCCATE con successo!
+Lo schema e il setup corrente saranno caricati automaticamente all'avvio.`);
+    }
+  },
+
+  unlockPreferences: function() {
+    localStorage.removeItem('tpu_locked_user_preferences');
+    localStorage.removeItem('tpu_preferences_locked');
+    if (window.showToastNotification) {
+      window.showToastNotification("🔓 Blocco preferenze rimosso.");
+    }
   },
 
   applyTheme: function(themeKey, notify = true) {

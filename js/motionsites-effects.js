@@ -17,9 +17,20 @@
     ".panel",
     ".terminal-panel",
     ".module-box",
+    ".qc-panel-card",
+    ".bybit-orderbook-container",
+    ".bybit-trades-container",
+    ".bybit-pos-container",
+    ".bybit-stats-bar",
+    ".market-radar-card",
+    ".dossier-card",
+    ".mq-module-card",
+    ".tab-pane",
+    ".modal-content",
     "[class*='card']",
     "[class*='panel']",
-    "[class*='widget']"
+    "[class*='widget']",
+    "[class*='module']"
   ].join(", ");
 
   function bindSpotlightCards() {
@@ -116,6 +127,17 @@
 
   function initMotionSitesUpgrade() {
     bindSpotlightCards();
+
+      // Global mouse coordinate tracking for site-wide tone
+      window.addEventListener(
+        "mousemove",
+        (e) => {
+          document.documentElement.style.setProperty("--mouse-global-x", `${e.clientX}px`);
+          document.documentElement.style.setProperty("--mouse-global-y", `${e.clientY}px`);
+        },
+        { passive: true }
+      );
+
     initAmbientQuantumCanvas();
 
     let debounceTimer = null;

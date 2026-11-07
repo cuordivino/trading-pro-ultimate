@@ -781,16 +781,35 @@ function roundPrec(val, prec) {
 
 function changeTimeframe(tf, btnElem) {
   window.currentInterval = tf;
-  document.querySelectorAll('.tf-pill').forEach(b => b.classList.remove('active'));
+  
+  // Highlight active button across top bar
+  document.querySelectorAll('.tf-pill').forEach(b => {
+    if (b.innerText.trim().toLowerCase() === tf.toLowerCase() || (tf === '1M' && b.innerText.trim().toLowerCase().includes('mese'))) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
   if (btnElem) btnElem.classList.add('active');
+
+  // Update right dropdown and legend display
   const triggerDisplay = document.getElementById('active-tf-trigger');
   if (triggerDisplay) triggerDisplay.innerText = tf.toUpperCase();
+  const legTf = document.getElementById('bybit-leg-tf');
+  if (legTf) legTf.innerText = tf.toUpperCase();
+
   closeAllDropdowns();
   if (window.applyTimeframeScaleOptions) {
     window.applyTimeframeScaleOptions(tf);
   }
   loadCandleHistory();
+
+  // Show quick subtle feedback
+  if (window.showToastNotification) {
+    window.showToastNotification(`⏱️ Timeframe impostato su ${tf.toUpperCase()}`);
+  }
 }
+window.changeTimeframe = changeTimeframe;
 
 // ==========================================
 // MEGA-DROPDOWN ASSET SELECTOR WITH FAVORITES & TYPOLOGIES
