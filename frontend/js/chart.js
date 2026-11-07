@@ -824,15 +824,21 @@ function renderChartData(candles) {
   }
 
   // 3. EMA Ribbon: Dynamic lengths & custom colors
+  const e9CfgMaster = getIndicatorConfig('ema9');
+  const lenFast = e9CfgMaster.inputs.len1 || e9CfgMaster.inputs.length || 9;
+  const lenMid = e9CfgMaster.inputs.len2 || 21;
+  const lenSlow = e9CfgMaster.inputs.len3 || 200;
+  const colFast = e9CfgMaster.style.color1 || e9CfgMaster.style.color || '#00f2a1';
+  const colMid = e9CfgMaster.style.color2 || '#38bdf8';
+  const colSlow = e9CfgMaster.style.color3 || '#ef4444';
+
   if (ema9Series) {
-    const e9 = getIndicatorConfig('ema9');
-    ema9Series.applyOptions({ color: e9.style.color || '#00f2a1', lineWidth: e9.style.lineWidth || 1.5 });
-    ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, e9.inputs.length || 9, prec) : []);
+    ema9Series.applyOptions({ color: colFast, lineWidth: e9CfgMaster.style.lineWidth || 1.8 });
+    ema9Series.setData(activeIndicators.ema9 ? calcEMAData(times, closes, lenFast, prec) : []);
   }
   if (ema21Series) {
-    const e21 = getIndicatorConfig('ema21');
-    ema21Series.applyOptions({ color: e21.style.color || '#38bdf8', lineWidth: e21.style.lineWidth || 1.5 });
-    ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, e21.inputs.length || 21, prec) : []);
+    ema21Series.applyOptions({ color: colMid, lineWidth: e9CfgMaster.style.lineWidth || 1.5 });
+    ema21Series.setData(activeIndicators.ema21 ? calcEMAData(times, closes, lenMid, prec) : []);
   }
   if (ema50Series) {
     const e50 = getIndicatorConfig('ema50');
@@ -840,9 +846,8 @@ function renderChartData(candles) {
     ema50Series.setData(activeIndicators.ema50 ? calcEMAData(times, closes, e50.inputs.length || 50, prec) : []);
   }
   if (ema200Series) {
-    const e200 = getIndicatorConfig('ema200');
-    ema200Series.applyOptions({ color: e200.style.color || '#ef4444', lineWidth: e200.style.lineWidth || 2 });
-    ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, e200.inputs.length || 200, prec) : []);
+    ema200Series.applyOptions({ color: colSlow, lineWidth: e9CfgMaster.style.lineWidth || 2 });
+    ema200Series.setData(activeIndicators.ema200 ? calcEMAData(times, closes, lenSlow, prec) : []);
   }
 
   // 4. ALMA (Arnaud Legoux Moving Average)
@@ -1259,7 +1264,13 @@ function updateChartLegend(candle, explicitPrec) {
     if (legEma) {
       if (activeIndicators.ema9 || activeIndicators.ema21 || activeIndicators.ema200) {
         legEma.style.display = 'block';
-        legEma.innerHTML = `<span class="leg-tag">EMA (${e9Cfg.inputs.length || 9}/21/200):</span> <span style="color:#00f2a1">${ema9Val.toFixed(prec)}</span> / <span style="color:#38bdf8">${ema21Val.toFixed(prec)}</span> / <span style="color:#ef4444">${ema200Val.toFixed(prec)}</span> <button class="leg-gear-btn" onclick="openIndicatorSettingsModal('ema9')" title="Regola parametri EMA Ribbon">⚙️</button> <button class="leg-gear-btn" onclick="toggleIndicatorKey('ema9', false); toggleIndicatorKey('ema21', false);" title="Rimuovi">✕</button>`;
+        const l1 = e9Cfg.inputs.len1 || e9Cfg.inputs.length || 9;
+        const l2 = e9Cfg.inputs.len2 || 21;
+        const l3 = e9Cfg.inputs.len3 || 200;
+        const c1 = e9Cfg.style.color1 || e9Cfg.style.color || '#00f2a1';
+        const c2 = e9Cfg.style.color2 || '#38bdf8';
+        const c3 = e9Cfg.style.color3 || '#ef4444';
+        legEma.innerHTML = `<span class="leg-tag">EMA (${l1}/${l2}/${l3}):</span> <span style="color:${c1}">${ema9Val.toFixed(prec)}</span> / <span style="color:${c2}">${ema21Val.toFixed(prec)}</span> / <span style="color:${c3}">${ema200Val.toFixed(prec)}</span> <button class="leg-gear-btn" onclick="openIndicatorSettingsModal('ema9')" title="Regola parametri EMA Ribbon">⚙️</button> <button class="leg-gear-btn" onclick="toggleIndicatorKey('ema9', false); toggleIndicatorKey('ema21', false);" title="Rimuovi">✕</button>`;
       } else {
         legEma.style.display = 'none';
       }
@@ -2513,10 +2524,10 @@ const DEFAULT_INDICATOR_CONFIGS = {
   },
   ema9: {
     id: 'ema9',
-    name: 'EMA 9 (Fast Trend)',
+    name: 'EMA Ribbon (Medie Mobili Esponenziali 9 / 21 / 200)',
     category: 'overlay',
-    inputs: { length: 9, source: 'close', offset: 0 },
-    style: { color: '#00f2a1', lineWidth: 1.5, lineStyle: 0, visible: true },
+    inputs: { len1: 9, len2: 21, len3: 200, source: 'close', offset: 0 },
+    style: { color1: '#00f2a1', color2: '#38bdf8', color3: '#ef4444', lineWidth: 1.8, lineStyle: 0, visible: true },
     visibility: { all: true }
   },
   ema21: {
@@ -2767,34 +2778,98 @@ function renderIndSettingsStyleTab(cfg) {
   const st = cfg.style || {};
   let rows = '';
 
-  // Main color & line width
-  const mainColor = st.color || st.upperColor || '#38bdf8';
-  const lineWidth = st.lineWidth || 2;
+  if (cfg.id === 'ema9') {
+    // Specialized multi-color picker for EMA Ribbon
+    const c1 = st.color1 || st.color || '#00f2a1';
+    const c2 = st.color2 || '#38bdf8';
+    const c3 = st.color3 || '#ef4444';
+    const lineWidth = st.lineWidth || 1.8;
 
-  rows += `
-    <div class="ind-setting-row">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" id="ind-style-visible" ${st.visible !== false ? 'checked' : ''}>
-        <label class="ind-setting-lbl" for="ind-style-visible" style="font-weight:700;">Visibile sul Grafico</label>
+    rows += `
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Colore Fast EMA (${cfg.inputs.len1 || 9})</label>
+        <input type="color" class="ind-color-picker" id="ind-style-color1" value="${c1}">
       </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="color" class="ind-color-picker" id="ind-style-color" value="${mainColor}">
-        <select class="ind-setting-select" id="ind-style-width" style="width:75px;">
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Colore Pullback EMA (${cfg.inputs.len2 || 21})</label>
+        <input type="color" class="ind-color-picker" id="ind-style-color2" value="${c2}">
+      </div>
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Colore Base EMA (${cfg.inputs.len3 || 200})</label>
+        <input type="color" class="ind-color-picker" id="ind-style-color3" value="${c3}">
+      </div>
+      <div class="ind-setting-row" style="margin-top:10px;">
+        <label class="ind-setting-lbl">Spessore Linee</label>
+        <select class="ind-setting-select" id="ind-style-width" style="width:120px;">
           <option value="1" ${lineWidth === 1 ? 'selected' : ''}>1px (Sottile)</option>
           <option value="1.5" ${lineWidth === 1.5 ? 'selected' : ''}>1.5px</option>
-          <option value="2" ${lineWidth === 2 ? 'selected' : ''}>2px (Medio)</option>
-          <option value="3" ${lineWidth === 3 ? 'selected' : ''}>3px (Spesso)</option>
+          <option value="1.8" ${lineWidth === 1.8 ? 'selected' : ''}>1.8px (Ottimale)</option>
+          <option value="2.5" ${lineWidth === 2.5 ? 'selected' : ''}>2.5px (Spesso)</option>
         </select>
       </div>
-    </div>
-    <div class="ind-setting-row" style="margin-top:14px;">
-      <label class="ind-setting-lbl">Stile Linea</label>
-      <select class="ind-setting-select" id="ind-style-linestyle">
-        <option value="0" ${st.lineStyle === 0 ? 'selected' : ''}>Continua (Solid)</option>
-        <option value="1" ${st.lineStyle === 1 ? 'selected' : ''}>Tratteggiata (Dotted)</option>
-        <option value="2" ${st.lineStyle === 2 ? 'selected' : ''}>Tratto Lungo (Dashed)</option>
-      </select>
-    </div>
+    `;
+  } else if (cfg.id === 'boll') {
+    // Specialized multi-color picker for Bollinger Bands
+    const upCol = st.upperColor || '#38bdf8';
+    const midCol = st.middleColor || '#f59e0b';
+    const lowCol = st.lowerColor || '#38bdf8';
+    const lineWidth = st.lineWidth || 1.5;
+
+    rows += `
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Banda Superiore (Upper Band)</label>
+        <input type="color" class="ind-color-picker" id="ind-style-upperColor" value="${upCol}">
+      </div>
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Banda Mediana (Basis SMA)</label>
+        <input type="color" class="ind-color-picker" id="ind-style-middleColor" value="${midCol}">
+      </div>
+      <div class="ind-setting-row">
+        <label class="ind-setting-lbl">Banda Inferiore (Lower Band)</label>
+        <input type="color" class="ind-color-picker" id="ind-style-lowerColor" value="${lowCol}">
+      </div>
+      <div class="ind-setting-row" style="margin-top:10px;">
+        <label class="ind-setting-lbl">Spessore Linee Bande</label>
+        <select class="ind-setting-select" id="ind-style-width" style="width:120px;">
+          <option value="1" ${lineWidth === 1 ? 'selected' : ''}>1px (Sottile)</option>
+          <option value="1.5" ${lineWidth === 1.5 ? 'selected' : ''}>1.5px (Medio)</option>
+          <option value="2" ${lineWidth === 2 ? 'selected' : ''}>2px (Spesso)</option>
+        </select>
+      </div>
+    `;
+  } else {
+    // General indicator color & style
+    const mainColor = st.color || st.upperColor || '#38bdf8';
+    const lineWidth = st.lineWidth || 2;
+
+    rows += `
+      <div class="ind-setting-row">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="ind-style-visible" ${st.visible !== false ? 'checked' : ''}>
+          <label class="ind-setting-lbl" for="ind-style-visible" style="font-weight:700;">Visibile sul Grafico</label>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="color" class="ind-color-picker" id="ind-style-color" value="${mainColor}">
+          <select class="ind-setting-select" id="ind-style-width" style="width:75px;">
+            <option value="1" ${lineWidth === 1 ? 'selected' : ''}>1px (Sottile)</option>
+            <option value="1.5" ${lineWidth === 1.5 ? 'selected' : ''}>1.5px</option>
+            <option value="2" ${lineWidth === 2 ? 'selected' : ''}>2px (Medio)</option>
+            <option value="3" ${lineWidth === 3 ? 'selected' : ''}>3px (Spesso)</option>
+          </select>
+        </div>
+      </div>
+      <div class="ind-setting-row" style="margin-top:14px;">
+        <label class="ind-setting-lbl">Stile Linea</label>
+        <select class="ind-setting-select" id="ind-style-linestyle">
+          <option value="0" ${st.lineStyle === 0 ? 'selected' : ''}>Continua (Solid)</option>
+          <option value="1" ${st.lineStyle === 1 ? 'selected' : ''}>Tratteggiata (Dotted)</option>
+          <option value="2" ${st.lineStyle === 2 ? 'selected' : ''}>Tratto Lungo (Dashed)</option>
+        </select>
+      </div>
+    `;
+  }
+
+  rows += `
     <div style="border-top:1px solid #2a2e39; margin:14px 0 10px;"></div>
     <div style="font-size:10px; font-weight:800; color:#787b86; text-transform:uppercase; margin-bottom:8px;">OUTPUT & SCALA</div>
     <div class="ind-setting-row">
@@ -2839,17 +2914,28 @@ function applyCurrentIndicatorSettings() {
 
   // 2. Gather Style
   const colEl = document.getElementById('ind-style-color');
+  const col1El = document.getElementById('ind-style-color1');
+  const col2El = document.getElementById('ind-style-color2');
+  const col3El = document.getElementById('ind-style-color3');
+  const upColEl = document.getElementById('ind-style-upperColor');
+  const midColEl = document.getElementById('ind-style-middleColor');
+  const lowColEl = document.getElementById('ind-style-lowerColor');
   const widthEl = document.getElementById('ind-style-width');
   const styleEl = document.getElementById('ind-style-linestyle');
   const visEl = document.getElementById('ind-style-visible');
   const labEl = document.getElementById('ind-style-labels');
   const valEl = document.getElementById('ind-style-values');
 
+  if (col1El) cfg.style.color1 = col1El.value;
+  if (col2El) cfg.style.color2 = col2El.value;
+  if (col3El) cfg.style.color3 = col3El.value;
+  if (upColEl) cfg.style.upperColor = upColEl.value;
+  if (midColEl) cfg.style.middleColor = midColEl.value;
+  if (lowColEl) cfg.style.lowerColor = lowColEl.value;
   if (colEl) {
     cfg.style.color = colEl.value;
-    if (cfg.style.upperColor) cfg.style.upperColor = colEl.value;
-    if (cfg.style.middleColor) cfg.style.middleColor = colEl.value;
   }
+
   if (widthEl) cfg.style.lineWidth = parseFloat(widthEl.value);
   if (styleEl) cfg.style.lineStyle = parseInt(styleEl.value);
   if (visEl) cfg.style.visible = visEl.checked;
@@ -2857,6 +2943,20 @@ function applyCurrentIndicatorSettings() {
   if (valEl) cfg.style.showValues = valEl.checked;
 
   saveIndicatorConfig(currentEditingIndicatorId, cfg);
+
+  // Synchronize secondary indicator configurations if master ribbon was edited
+  if (currentEditingIndicatorId === 'ema9') {
+    const e21 = getIndicatorConfig('ema21');
+    e21.inputs.length = cfg.inputs.len2 || 21;
+    if (cfg.style.color2) e21.style.color = cfg.style.color2;
+    saveIndicatorConfig('ema21', e21);
+
+    const e200 = getIndicatorConfig('ema200');
+    e200.inputs.length = cfg.inputs.len3 || 200;
+    if (cfg.style.color3) e200.style.color = cfg.style.color3;
+    saveIndicatorConfig('ema200', e200);
+  }
+
   closeIndicatorSettingsModal();
 
   // Re-render chart with new customized parameters immediately
@@ -2865,7 +2965,7 @@ function applyCurrentIndicatorSettings() {
   }
 
   if (window.showToast) {
-    window.showToast(`✓ Parametri di ${cfg.name} applicati con successo!`, 'success');
+    window.showToast(`✓ Parametri di ${cfg.name} registrati con successo!`, 'success');
   }
 }
 
@@ -2955,8 +3055,8 @@ function createIndicatorSettingsModalDom() {
           <button type="button" class="btn btn-secondary btn-sm" onclick="closeIndicatorSettingsModal()">
             Annulla
           </button>
-          <button type="button" class="btn-action-primary btn-sm" style="background:#2962ff; color:#fff; font-weight:800; padding:6px 16px;" onclick="applyCurrentIndicatorSettings()">
-            ✓ OK (Applica)
+          <button type="button" class="btn-action-primary btn-sm" style="background:#2563eb; color:#fff; font-weight:800; padding:6px 18px; border-radius:6px; box-shadow:0 0 10px rgba(37,99,235,0.4);" onclick="applyCurrentIndicatorSettings()">
+            💾 Salva & Registra Parametri
           </button>
         </div>
       </div>

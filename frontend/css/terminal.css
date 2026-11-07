@@ -653,9 +653,11 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 
 /* Main Layout Grid */
 .main-wrapper {
-  padding: 12px;
-  max-width: 1720px;
-  margin: 0 auto;
+  padding: 10px 16px;
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 .view-panel {
   display: none;
@@ -2057,6 +2059,9 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   grid-template-columns: 1fr 310px 340px;
   gap: 10px;
   margin-top: 10px;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Middle Column: Orderbook & Recent Trades */
