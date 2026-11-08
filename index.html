@@ -631,7 +631,9 @@
                 </button>
                 <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(380)" title="Altezza 380px">380</button>
                 <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(520)" title="Altezza 520px">520</button>
-                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(680)" title="Altezza 680px">680</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(750)" title="Altezza 750px">750</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(1000)" title="Altezza 1000px">1000</button>
+                <button type="button" class="tf-pill" onclick="BybitChartSettings.setHeight(1400)" title="Altezza 1400px">1400</button>
                 <button type="button" class="tf-pill" onclick="BybitChartSettings.toggleFullScreen()" title="Schermo Intero ⛶">⛶</button>
               </div>
 
@@ -749,8 +751,11 @@
                 <div class="pane-height-controls">
                   <span style="font-size:9px; color:var(--text-muted);">↕:</span>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('volume', -20)" title="Riduci">-</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 90)" title="90px">90px</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 140)" title="140px">140px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 60)" title="60px">60px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 120)" title="120px">120px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 200)" title="200px">200px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 350)" title="350px">350px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('volume', 600)" title="600px">600px</button>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('volume', +20)" title="Aumenta">+</button>
                 </div>
               </div>
@@ -796,8 +801,11 @@
                 <div class="pane-height-controls">
                   <span style="font-size:9px; color:var(--text-muted);">↕:</span>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('momentum', -20)" title="Riduci">-</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 115)" title="115px">115px</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 160)" title="160px">160px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 65)" title="65px">65px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 140)" title="140px">140px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 250)" title="250px">250px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 400)" title="400px">400px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('momentum', 600)" title="600px">600px</button>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('momentum', +20)" title="Aumenta">+</button>
                 </div>
               </div>
@@ -834,8 +842,10 @@
                   <span style="font-size:9px; color:var(--text-muted);">↕:</span>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('sub2', -20)" title="Riduci">-</button>
                   <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 65)" title="65px">65px</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 90)" title="90px">90px</button>
-                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 130)" title="130px">130px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 120)" title="120px">120px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 200)" title="200px">200px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 350)" title="350px">350px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 600)" title="600px">600px</button>
                   <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('sub2', +20)" title="Aumenta">+</button>
                 </div>
               </div>
@@ -2430,12 +2440,13 @@
             <span>Chart Height (Altezza Indipendente Grafico)</span>
             <span id="bybit-slider-val-lbl" class="bybit-slider-badge">460px</span>
           </div>
-          <input type="range" id="bybit-chart-height-slider" class="bybit-range-input" min="260" max="850" step="10" value="460" oninput="BybitChartSettings.setHeight(this.value)">
+          <input type="range" id="bybit-chart-height-slider" class="bybit-range-input" min="200" max="1600" step="10" value="460" oninput="BybitChartSettings.setHeight(this.value)">
           <div class="bybit-preset-btn-group">
-            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(320)">320px</button>
-            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(420)">420px</button>
-            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(560)">560px</button>
-            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(720)">720px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(380)">380px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(520)">520px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(750)">750px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(1000)">1000px</button>
+            <button class="bybit-preset-btn" onclick="BybitChartSettings.setHeight(1400)">1400px</button>
             <button class="bybit-preset-btn" style="color:#fcd535; border-color:#fcd535;" onclick="BybitChartSettings.toggleFullScreen()">⛶ Schermo Intero</button>
           </div>
         </div>

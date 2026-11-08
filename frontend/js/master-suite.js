@@ -368,19 +368,29 @@
             </button>
           </div>
 
-          <!-- Multimedia Audio Briefing Player Simulator -->
-          <div class="audio-briefing-player">
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <button class="audio-play-btn" id="audio-briefing-play-btn" onclick="window.MasterpieceSuite.toggleAudioBriefing()">▶</button>
+          <!-- Multimedia Audio Briefing Player (Web Speech API + Visualizer) -->
+          <div class="audio-briefing-player" style="flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 260px;">
+              <button class="audio-play-btn" id="audio-briefing-play-btn" onclick="window.MasterpieceSuite.toggleAudioBriefing()" title="Ascolta Alpha Daily Briefing Vocale IA">▶</button>
               <div>
-                <div style="font-size: 13px; font-weight: 800; color: #fff;">🎙️ Alpha Daily Briefing Vocale IA (Edizione 08:30 CET)</div>
+                <div style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                  <span>🎙️ Alpha Daily Briefing Vocale IA (Edizione 08:30 CET)</span>
+                  <span id="audio-status-pill" style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 900; border: 1px solid rgba(56, 189, 248, 0.4);">LIVE VOCE IA</span>
+                </div>
                 <div style="font-size: 10.5px; color: #94a3b8;">Sintesi vocale sintetizzata dei 5 Agenti: Focus CPI, Liquidità PBoC e Setup AMD/BTC</div>
               </div>
             </div>
-            <div class="audio-wave-track">
-              <div class="audio-wave-bar" id="audio-wave-progress"></div>
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1.2; min-width: 230px;">
+              <canvas id="audio-visualizer-canvas" width="130" height="26" style="border-radius: 4px; background: rgba(0,0,0,0.5); border: 1px solid rgba(56,189,248,0.25);"></canvas>
+              <div class="audio-wave-track" style="flex: 1;">
+                <div class="audio-wave-bar" id="audio-wave-progress"></div>
+              </div>
+              <span style="font-size: 11px; font-weight: 800; color: #38bdf8; font-family: monospace;" id="audio-time-lbl">00:00 / 01:10</span>
             </div>
-            <span style="font-size: 11px; font-weight: 800; color: #38bdf8; font-family: monospace;" id="audio-time-lbl">00:00 / 03:45</span>
+            <div id="audio-transcript-box" style="width: 100%; margin-top: 6px; padding: 6px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; font-size: 11px; color: #cbd5e1; display: none;">
+              <span style="color: #f59e0b; font-weight: 800; margin-right: 6px;">● SINTESI VOCALE ATTIVA:</span>
+              <span id="audio-transcript-text">Avvio sintesi vocale...</span>
+            </div>
           </div>
 
           <!-- News Items -->
@@ -611,27 +621,178 @@
 
     audioPlaying: false,
     audioInterval: null,
+    audioAnimFrame: null,
     audioSeconds: 0,
+    audioTotalSeconds: 70,
+
+    playAudioChime: function() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch(e) {}
+    },
+
+    startWaveformVisualizer: function() {
+      const cvs = document.getElementById("audio-visualizer-canvas");
+      if (!cvs) return;
+      const ctx = cvs.getContext("2d");
+      const w = cvs.width;
+      const h = cvs.height;
+      const bars = 16;
+      const barW = Math.floor(w / bars) - 2;
+
+      const renderWave = () => {
+        if (!this.audioPlaying) return;
+        ctx.clearRect(0, 0, w, h);
+        for (let i = 0; i < bars; i++) {
+          const barH = Math.max(3, Math.floor(Math.sin((Date.now() / 150) + i) * (h / 2.3) + (h / 2.3)));
+          const grad = ctx.createLinearGradient(0, h, 0, 0);
+          grad.addColorStop(0, '#38bdf8');
+          grad.addColorStop(1, '#a855f7');
+          ctx.fillStyle = grad;
+          ctx.fillRect(i * (barW + 2), h - barH, barW, barH);
+        }
+        this.audioAnimFrame = requestAnimationFrame(renderWave);
+      };
+      renderWave();
+    },
+
+    stopAudioBriefing: function() {
+      this.audioPlaying = false;
+      const btn = document.getElementById("audio-briefing-play-btn");
+      const pill = document.getElementById("audio-status-pill");
+      const transcriptBox = document.getElementById("audio-transcript-box");
+      if (btn) btn.innerText = "▶";
+      if (pill) {
+        pill.innerText = "PAUSA";
+        pill.style.color = "#94a3b8";
+        pill.style.borderColor = "#475569";
+      }
+      if (this.audioInterval) clearInterval(this.audioInterval);
+      if (this.audioAnimFrame) cancelAnimationFrame(this.audioAnimFrame);
+      if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+      }
+      const cvs = document.getElementById("audio-visualizer-canvas");
+      if (cvs) {
+        const ctx = cvs.getContext("2d");
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+      }
+    },
+
     toggleAudioBriefing: function() {
       const btn = document.getElementById("audio-briefing-play-btn");
       const prog = document.getElementById("audio-wave-progress");
       const lbl = document.getElementById("audio-time-lbl");
+      const pill = document.getElementById("audio-status-pill");
+      const transcriptBox = document.getElementById("audio-transcript-box");
+      const transcriptText = document.getElementById("audio-transcript-text");
 
       this.audioPlaying = !this.audioPlaying;
+
       if (this.audioPlaying) {
         if (btn) btn.innerText = "⏸";
+        if (pill) {
+          pill.innerText = "● IN TRASMISSIONE";
+          pill.style.color = "#00f2a1";
+          pill.style.borderColor = "#00f2a1";
+        }
+        if (transcriptBox) transcriptBox.style.display = "block";
         if (window.showToast) window.showToast("Riproduzione Alpha Briefing Audio avviata...", "info");
+
+        // Play intro acoustic chime
+        this.playAudioChime();
+
+        // Start live frequency canvas visualizer
+        this.startWaveformVisualizer();
+
+        // Financial briefing text in Italian
+        const scriptLines = [
+          "Buongiorno trader. Ecco l'Alpha Daily Briefing dei cinque agenti autonomi di Trading Pro Ultimate.",
+          "Analisi azionaria: Il comparto tecnologico registra un forte breakout volumetrico guidato da AMD a 148 dollari e 50 centesimi e dai semiconduttori.",
+          "Sul fronte macroeconomico, l'attenzione globale è focalizzata sul dato del CPI e sui non farm payrolls americani con regime di Stagflazione controllata.",
+          "L'Ensemble quantistico consiglia cautela su Bitcoin e rotazione tattica verso l'Argento e bond governativi decorrelati.",
+          "Sentiment sintetico difensivo al quarantuno per cento con tre proposte a confluente vantaggio statistico. Buon trading con Trading Pro Ultimate!"
+        ];
+        const fullScript = scriptLines.join(" ");
+
+        if (transcriptText) transcriptText.innerText = scriptLines[0];
+
+        // Synthesize Italian Voice via Web Speech API
+        if ('speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(fullScript);
+            utter.lang = 'it-IT';
+            utter.rate = 1.02;
+            utter.pitch = 1.0;
+
+            const voices = window.speechSynthesis.getVoices();
+            const itVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('it'));
+            if (itVoice) utter.voice = itVoice;
+
+            let currentLineIdx = 0;
+            utter.onboundary = (event) => {
+              const charIdx = event.charIndex || 0;
+              let accumulated = 0;
+              for (let i = 0; i < scriptLines.length; i++) {
+                accumulated += scriptLines[i].length + 1;
+                if (charIdx < accumulated) {
+                  if (currentLineIdx !== i) {
+                    currentLineIdx = i;
+                    if (transcriptText) transcriptText.innerText = scriptLines[i];
+                  }
+                  break;
+                }
+              }
+            };
+
+            utter.onend = () => {
+              this.stopAudioBriefing();
+              if (prog) prog.style.width = "100%";
+              if (lbl) lbl.innerText = "01:10 / 01:10";
+              if (transcriptText) transcriptText.innerText = "Briefing completato.";
+            };
+
+            utter.onerror = () => {
+              this.stopAudioBriefing();
+            };
+
+            window.speechSynthesis.speak(utter);
+          } catch(e) {
+            console.warn('[WebSpeech] Audio Briefing speak error:', e);
+          }
+        }
+
+        // Progress Timer
         this.audioInterval = setInterval(() => {
-          this.audioSeconds = (this.audioSeconds + 1) % 225;
-          const pct = (this.audioSeconds / 225) * 100;
+          this.audioSeconds = (this.audioSeconds + 1);
+          if (this.audioSeconds >= this.audioTotalSeconds) {
+            this.audioSeconds = 0;
+            this.stopAudioBriefing();
+            return;
+          }
+          const pct = (this.audioSeconds / this.audioTotalSeconds) * 100;
           if (prog) prog.style.width = `${pct}%`;
           const m = Math.floor(this.audioSeconds / 60).toString().padStart(2, "0");
           const s = (this.audioSeconds % 60).toString().padStart(2, "0");
-          if (lbl) lbl.innerText = `${m}:${s} / 03:45`;
+          if (lbl) lbl.innerText = `${m}:${s} / 01:10`;
         }, 1000);
+
       } else {
-        if (btn) btn.innerText = "▶";
-        if (this.audioInterval) clearInterval(this.audioInterval);
+        this.stopAudioBriefing();
       }
     }
   };

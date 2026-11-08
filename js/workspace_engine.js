@@ -595,6 +595,18 @@ window.PaneSplitterManager = {
     this.bindSplitterEvents('splitter-sub2-bottom', 'sub2');
   },
 
+    setHeights: function(main, vol, mom, mom2) {
+    if (main !== undefined && !isNaN(main)) this.heights.main = Math.max(180, Math.min(1600, parseInt(main, 10)));
+    if (vol !== undefined && !isNaN(vol)) this.heights.vol = Math.max(30, Math.min(600, parseInt(vol, 10)));
+    if (mom !== undefined && !isNaN(mom)) this.heights.mom = Math.max(30, Math.min(600, parseInt(mom, 10)));
+    if (mom2 !== undefined && !isNaN(mom2)) this.heights.mom2 = Math.max(30, Math.min(600, parseInt(mom2, 10)));
+
+    this.applyDomHeights();
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.heights));
+    } catch(e) {}
+  },
+
   getHeights: function() {
     return { ...this.heights };
   },
@@ -603,10 +615,10 @@ window.PaneSplitterManager = {
     const val = parseInt(px, 10);
     if (isNaN(val)) return;
 
-    if (pane === 'main') this.heights.main = Math.max(180, Math.min(850, val));
-    else if (pane === 'volume') this.heights.vol = Math.max(35, Math.min(300, val));
-    else if (pane === 'momentum') this.heights.mom = Math.max(35, Math.min(300, val));
-    else if (pane === 'sub2') this.heights.mom2 = Math.max(35, Math.min(300, val));
+    if (pane === 'main') this.heights.main = Math.max(180, Math.min(1600, val));
+    else if (pane === 'volume') this.heights.vol = Math.max(35, Math.min(600, val));
+    else if (pane === 'momentum') this.heights.mom = Math.max(35, Math.min(600, val));
+    else if (pane === 'sub2') this.heights.mom2 = Math.max(35, Math.min(600, val));
 
     this.applyDomHeights();
     try {
@@ -623,8 +635,8 @@ window.PaneSplitterManager = {
   },
 
   toggleMainFullscreen: function() {
-    const isBig = this.heights.main >= 680;
-    this.setPaneHeight('main', isBig ? 380 : 680);
+    const isBig = this.heights.main >= 1000;
+    this.setPaneHeight('main', isBig ? 380 : 1200);
   },
 
   applyDomHeights: function() {
@@ -682,13 +694,13 @@ window.PaneSplitterManager = {
 
       // INDEPENDENT NON-DESTRUCTIVE DRAG RESIZING
       if (type === 'main') {
-        this.heights.main = Math.max(180, Math.min(850, startMainH + delta));
+        this.heights.main = Math.max(180, Math.min(1600, startMainH + delta));
       } else if (type === 'volume') {
-        this.heights.vol = Math.max(35, Math.min(300, startVolH + delta));
+        this.heights.vol = Math.max(35, Math.min(600, startVolH + delta));
       } else if (type === 'momentum') {
-        this.heights.mom = Math.max(35, Math.min(300, startMomH + delta));
+        this.heights.mom = Math.max(35, Math.min(600, startMomH + delta));
       } else if (type === 'sub2') {
-        this.heights.mom2 = Math.max(35, Math.min(300, startSub2H + delta));
+        this.heights.mom2 = Math.max(35, Math.min(600, startSub2H + delta));
       }
 
       this.applyDomHeights();
@@ -757,3 +769,14 @@ window.adjustPaneHeight = function(pane, delta) {
 window.setPaneHeightPreset = function(pane, px) {
   if (window.PaneSplitterManager) window.PaneSplitterManager.setPaneHeight(pane, px);
 };
+
+// Auto-initialize PaneSplitterManager on load
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      if (window.PaneSplitterManager) window.PaneSplitterManager.init();
+    } catch(e) {
+      console.warn('[PaneSplitterManager] Auto-init:', e);
+    }
+  });
+}

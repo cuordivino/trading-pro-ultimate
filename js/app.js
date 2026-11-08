@@ -583,7 +583,16 @@ async function loadCandleHistory() {
   const interval = window.currentInterval || '15m';
   const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
   const isCrypto = asset ? asset.cat === 'crypto' : (symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(c => symbol.includes(c)));
-  const targetPrice = window.activePrice || (asset ? asset.basePrice : 100);
+  let targetPrice = (asset && asset.basePrice) ? asset.basePrice : 100;
+  if (window.activePrice && window.activePrice > 0) {
+    if (!isCrypto && asset && asset.basePrice) {
+      if (Math.abs(window.activePrice - asset.basePrice) / asset.basePrice < 0.6) {
+        targetPrice = window.activePrice;
+      }
+    } else {
+      targetPrice = window.activePrice;
+    }
+  }
 
   let candles = [];
 

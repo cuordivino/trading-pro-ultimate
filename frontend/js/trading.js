@@ -910,14 +910,15 @@ async function recalcPosition() {
     const riskVal = capital * (riskPct / 100);
     const units = dist > 0 ? (riskVal / dist) : 0;
     const nominal = units * entryVal;
-    const margin = nominal / currentLeverage;
-    const profit = tpVal > 0 ? units * Math.abs(tpVal - entryVal) : 0;
+    const margin = nominal / Math.max(1, currentLeverage);
     const rr = dist > 0 && tpVal > 0 ? (Math.abs(tpVal - entryVal) / dist) : 2.5;
 
     const rrElem = document.getElementById('pos-res-rr');
     if (rrElem) rrElem.innerText = `1 : ${rr.toFixed(2)}`;
-    const costElem = document.getElementById('bb-cost-val');
-    if (costElem) costElem.innerText = `$${margin.toFixed(2)}`;
+  }
+
+  if (window.BybitEngine && typeof window.BybitEngine.recalcBybitOrderMetrics === 'function') {
+    window.BybitEngine.recalcBybitOrderMetrics();
   }
 }
 

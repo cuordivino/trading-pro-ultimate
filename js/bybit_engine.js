@@ -201,7 +201,9 @@ window.BybitEngine = {
           this.renderOrderBook();
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      this.generateSyntheticOrderBook(this.tickerData.lastPrice || 75000);
+    }
   },
 
   // 3. RECENT TRADES
@@ -310,28 +312,6 @@ window.BybitEngine = {
     // Main hero quote
     const heroPrice = document.getElementById('active-live-price');
     const heroChg = document.getElementById('active-chg-badge');
-
-    // Dedicated Bybit Chart Top Header Elements (100% Synchronized)
-    const bybitTopSym = document.getElementById('bybit-top-sym');
-    const bybitTopName = document.getElementById('bybit-top-name');
-    const bybitTopPrice = document.getElementById('bybit-top-price');
-    const bybitTopMark = document.getElementById('bybit-top-mark');
-    const bybitTopHigh = document.getElementById('bybit-top-high');
-    const bybitTopLow = document.getElementById('bybit-top-low');
-    const bybitTopChg = document.getElementById('bybit-top-chg');
-    const bybitTopVol = document.getElementById('bybit-top-vol');
-
-    if (bybitTopSym) bybitTopSym.innerText = this.currentSymbol;
-    if (bybitTopName) bybitTopName.innerText = asset ? asset.name : (this.currentSymbol.endsWith('USDT') ? `${this.currentSymbol.replace('USDT', '')} Perpetual` : this.currentSymbol);
-    if (bybitTopPrice) bybitTopPrice.innerText = `${curr}${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
-    if (bybitTopMark) bybitTopMark.innerText = `Mark: ${curr}${t.markPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
-    if (bybitTopHigh) bybitTopHigh.innerText = `${curr}${t.highPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
-    if (bybitTopLow) bybitTopLow.innerText = `${curr}${t.lowPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
-    if (bybitTopChg) {
-      bybitTopChg.innerText = `${(t.price24hPcnt * 100) >= 0 ? '+' : ''}${(t.price24hPcnt * 100).toFixed(2)}%`;
-      bybitTopChg.className = `bybit-price-chg ${(t.price24hPcnt * 100) >= 0 ? 'text-green' : 'text-red'}`;
-    }
-    if (bybitTopVol) bybitTopVol.innerText = `${curr}${(t.turnover24h / 1e6).toFixed(2)}M`;
 
     // Dedicated Bybit Chart Top Header Elements (100% Synchronized)
     const bybitTopSym = document.getElementById('bybit-top-sym');
@@ -613,10 +593,22 @@ window.BybitEngine = {
   },
 
   onSlTpChanged: function() {
-    const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || 80000) : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice || 80000);
-    const qty = parseFloat(document.getElementById('bb-order-qty')?.value) || 0.1;
-    const sl = parseFloat(document.getElementById('t-sl')?.value) || 0;
-    const tp = parseFloat(document.getElementById('t-tp')?.value) || 0;
+    const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
+    const curr = (asset && asset.currency) ? asset.currency : '$';
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
+    const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || (asset ? asset.basePrice : 80000)) : (parseFloat(String(document.getElementById('t-entry')?.value || '').replace(',', '.')) || this.tickerData.lastPrice || 80000);
+    
+    let qty = 0.1;
+    if (this.sizingMode === 'amount') {
+      const amt = parseFloat(String(document.getElementById('bb-order-usdt')?.value || '1000').replace(',', '.')) || 1000;
+      qty = price > 0 ? (amt / price) : 0.1;
+    } else {
+      qty = parseFloat(String(document.getElementById('bb-order-qty')?.value || '0.1').replace(',', '.')) || 0.1;
+    }
+    const slRaw = document.getElementById('t-sl')?.value || '';
+    const tpRaw = document.getElementById('t-tp')?.value || '';
+    const sl = slRaw ? parseFloat(String(slRaw).replace(',', '.')) : 0;
+    const tp = tpRaw ? parseFloat(String(tpRaw).replace(',', '.')) : 0;
 
     const slPreview = document.getElementById('sl-loss-preview');
     if (slPreview) {
@@ -673,20 +665,51 @@ window.BybitEngine = {
     this.recalcBybitOrderMetrics();
   },
 
-  // CALCULATE BYBIT LIQUIDATION PRICE & ORDER COST
+  // CALCULATE BYBIT LIQUIDATION PRICE & ORDER COST (COHERENT SINGLE SOURCE OF TRUTH)
   recalcBybitOrderMetrics: function() {
     const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
     const curr = (asset && asset.currency) ? asset.currency : (this.currentSymbol && this.currentSymbol.endsWith('.MI') ? '€' : '$');
-    const price = this.orderType === 'Market' ? (this.tickerData.lastPrice || 80000) : (parseFloat(document.getElementById('t-entry')?.value) || this.tickerData.lastPrice || 80000);
-    const qty = parseFloat(document.getElementById('bb-order-qty')?.value) || 0.1;
-    const lev = this.currentLeverage || 10;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
+    
+    // 1. Entry Price
+    let price = this.tickerData.lastPrice || (asset ? asset.basePrice : 80000);
+    if (this.orderType !== 'Market') {
+      const rawEntry = document.getElementById('t-entry')?.value;
+      if (rawEntry) {
+        const parsedEntry = parseFloat(String(rawEntry).replace(',', '.'));
+        if (parsedEntry > 0) price = parsedEntry;
+      }
+    }
+
+    // 2. Leverage
+    const levInput = document.getElementById('leverage-input');
+    const lev = (levInput ? parseInt(levInput.value, 10) : null) || this.currentLeverage || 10;
+    this.currentLeverage = lev;
+
+    // 3. Sizing (Per Importo vs Per Quantità)
+    let nominalValue = 1000;
+    let qty = 0.0125;
+
+    if (this.sizingMode === 'amount') {
+      const rawAmt = document.getElementById('bb-order-usdt')?.value;
+      const amt = (rawAmt ? parseFloat(String(rawAmt).replace(',', '.')) : 1000) || 1000;
+      nominalValue = amt;
+      qty = price > 0 ? (nominalValue / price) : 0;
+      const qtyInput = document.getElementById('bb-order-qty');
+      if (qtyInput) qtyInput.value = qty.toFixed(qty < 1 ? 4 : 2);
+    } else {
+      const rawQty = document.getElementById('bb-order-qty')?.value;
+      qty = (rawQty ? parseFloat(String(rawQty).replace(',', '.')) : 0.1) || 0.1;
+      nominalValue = qty * price;
+      const amtInput = document.getElementById('bb-order-usdt');
+      if (amtInput) amtInput.value = nominalValue.toFixed(2);
+    }
+
+    const initialMargin = nominalValue / Math.max(1, lev);
+    const mmr = 0.005; // 0.5% Maintenance Margin Rate for Bybit Perpetual
     const side = window.currentTradeSide || 'LONG';
 
-    const nominalValue = qty * price;
-    const initialMargin = nominalValue / lev;
-    const mmr = 0.005; // 0.5% Maintenance Margin Rate for BTC on Bybit
-
-    // Bybit Liquidation Price Formula
+    // 4. Bybit Liquidation Price Formula
     let liqPrice = 0;
     if (side === 'LONG') {
       liqPrice = price * (1 - (1 / lev) + mmr);
@@ -696,36 +719,81 @@ window.BybitEngine = {
     const liqDistPct = price > 0 ? Math.abs((liqPrice - price) / price) * 100 : 0;
     const estFee = nominalValue * 0.00055;
 
-    // Update UI elements
+    // 5. Update UI elements (both primary and duplicate targets)
     const costElem = document.getElementById('bb-cost-val');
     const liqElem = document.getElementById('bb-liq-val');
-    const nominalElem = document.getElementById('bb-nominal-val');
     const feeElem = document.getElementById('bb-fee-val');
     const sumLevElem = document.getElementById('bb-summary-lev');
+    const nominalElems = [document.getElementById('bb-nominal-val'), document.getElementById('bb-nominal-val-dup')];
 
-    if (costElem) costElem.innerText = `${curr}${initialMargin.toFixed(2)}`;
-    if (nominalElem) nominalElem.innerText = `${curr}${nominalValue.toFixed(2)}`;
-    if (liqElem) liqElem.innerText = `${curr}${Math.max(0, liqPrice).toFixed(2)} (-${liqDistPct.toFixed(1)}%)`;
-    if (feeElem) feeElem.innerText = `${curr}${estFee.toFixed(2)}`;
+    const fmtNominal = `${curr}${nominalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const fmtMargin = `${curr}${initialMargin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const fmtLiq = `${curr}${Math.max(0, liqPrice).toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })} (${side === 'LONG' ? '-' : '+'}${liqDistPct.toFixed(1)}%)`;
+    const fmtFee = `${curr}${estFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    nominalElems.forEach(el => { if (el) el.innerText = fmtNominal; });
+    if (costElem) costElem.innerText = fmtMargin;
+    if (liqElem) liqElem.innerText = fmtLiq;
+    if (feeElem) feeElem.innerText = fmtFee;
     if (sumLevElem) sumLevElem.innerText = `${lev}x`;
 
-    // Sync with main position sizing displays
+    // 6. Stop Loss & Take Profit Previews and R:R
+    const slRaw = document.getElementById('t-sl')?.value || '';
+    const tpRaw = document.getElementById('t-tp')?.value || '';
+    const sl = slRaw ? parseFloat(String(slRaw).replace(',', '.')) : 0;
+    const tp = tpRaw ? parseFloat(String(tpRaw).replace(',', '.')) : 0;
+
+    const slPreview = document.getElementById('sl-loss-preview');
+    const tpPreview = document.getElementById('tp-gain-preview');
+    const rrElem = document.getElementById('pos-res-rr');
+
+    if (slPreview) {
+      if (sl > 0) {
+        const slDist = Math.abs(price - sl);
+        const slLoss = qty * slDist;
+        const slPct = (slDist / price) * 100;
+        slPreview.innerText = `-${curr}${slLoss.toFixed(2)} (-${slPct.toFixed(2)}%)`;
+      } else {
+        slPreview.innerText = `-${curr}0.00 (-0.0%)`;
+      }
+    }
+
+    if (tpPreview) {
+      if (tp > 0) {
+        const tpDist = Math.abs(tp - price);
+        const tpGain = qty * tpDist;
+        const tpPct = (tpDist / price) * 100;
+        tpPreview.innerText = `+${curr}${tpGain.toFixed(2)} (+${tpPct.toFixed(2)}%)`;
+      } else {
+        tpPreview.innerText = `+${curr}0.00 (+0.0%)`;
+      }
+    }
+
+    if (rrElem) {
+      if (sl > 0 && tp > 0 && Math.abs(price - sl) > 0) {
+        const rr = Math.abs(tp - price) / Math.abs(price - sl);
+        rrElem.innerText = `1 : ${rr.toFixed(2)}`;
+        rrElem.style.color = rr >= 2 ? 'var(--buy)' : (rr >= 1.5 ? 'var(--accent)' : 'var(--sell)');
+      }
+    }
+
+    // 7. Sync with legacy display IDs if present
     const posResUnits = document.getElementById('pos-res-units');
     const posResMargin = document.getElementById('pos-res-margin');
     const posResLiq = document.getElementById('pos-res-liq');
     if (posResUnits) posResUnits.innerText = qty.toFixed(qty < 1 ? 4 : 2);
-    if (posResMargin) posResMargin.innerText = `${curr}${initialMargin.toFixed(2)}`;
-    if (posResLiq) posResLiq.innerText = `${curr}${Math.max(0, liqPrice).toFixed(2)}`;
+    if (posResMargin) posResMargin.innerText = fmtMargin;
+    if (posResLiq) posResLiq.innerText = `${curr}${Math.max(0, liqPrice).toFixed(prec)}`;
 
-    // Update Execution Button text with live margin
+    // 8. Update Execution Button
     const execBtn = document.getElementById('btn-execute-order');
     if (execBtn) {
       if (side === 'LONG') {
         execBtn.className = 'btn-action-primary btn-buy';
-        execBtn.innerText = `🟢 APRI POSIZIONE BUY / LONG · ${curr}${initialMargin.toFixed(2)} Margine`;
+        execBtn.innerText = `🟢 APRI POSIZIONE BUY / LONG · ${fmtMargin} Margine`;
       } else {
         execBtn.className = 'btn-action-primary btn-sell';
-        execBtn.innerText = `🔴 APRI POSIZIONE SELL / SHORT · ${curr}${initialMargin.toFixed(2)} Margine`;
+        execBtn.innerText = `🔴 APRI POSIZIONE SELL / SHORT · ${fmtMargin} Margine`;
       }
     }
   }

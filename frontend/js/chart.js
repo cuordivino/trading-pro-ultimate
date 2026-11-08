@@ -481,11 +481,14 @@ function initMainChart() {
     priceLineVisible: false
   });
 
-  // Init Sub-Panels
+  // Init Sub-Panels (Volume, Momentum 1, Oscillator 2)
   initVolumePane();
   initMomentumPane();
+  try {
+    if (typeof initSub2Pane === 'function') initSub2Pane();
+  } catch(e) {}
 
-  // Attach Bidirectional Synchronization across all 3 charts
+  // Attach Bidirectional Synchronization across all 4 charts
   attachMultiChartSync();
 
   // Initialize Theme, Pane Splitter & Workspace Masks
@@ -683,6 +686,7 @@ function attachMultiChartSync() {
     try {
       if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
       if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
+      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
     releaseSync();
   });
@@ -693,6 +697,7 @@ function attachMultiChartSync() {
     try {
       if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
       if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
+      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
     releaseSync();
   });
@@ -703,9 +708,24 @@ function attachMultiChartSync() {
     try {
       if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
       if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
+      if (sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
     } catch(e) {}
     releaseSync();
   });
+
+  if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') {
+    sub2Chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+      if (isSyncingRange || !range) return;
+      isSyncingRange = true;
+      try {
+        if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
+        if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
+        if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
+      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
+      } catch(e) {}
+      releaseSync();
+    });
+  }
 
   if (window.OrderFlowEngine) {
     OrderFlowEngine.renderFootprintOverlay();
@@ -1710,37 +1730,13 @@ function calcADXData(times, candles, period = 14) {
 // ==========================================
 function adjustPaneHeight(paneType, delta) {
   if (!window.PaneSplitterManager) return;
-  const h = window.PaneSplitterManager.getHeights();
-  if (paneType === 'volume') {
-    const newVol = Math.max(40, Math.min(260, h.vol + delta));
-    window.PaneSplitterManager.setHeights(h.main - delta, newVol, h.mom);
-  } else if (paneType === 'sub2') {
-    const curH = (h.mom2 || 90);
-    const newSub2 = Math.max(30, Math.min(260, curH + delta));
-    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, newSub2);
-  } else if (paneType === 'momentum') {
-    const newMom = Math.max(40, Math.min(260, h.mom + delta));
-    window.PaneSplitterManager.setHeights(h.main - delta, h.vol, newMom);
-  }
+  window.PaneSplitterManager.adjustPaneHeight(paneType, delta);
   if (window.showToast) window.showToast(`Altezza pannello ${paneType} aggiornata`, 'info');
 }
 
 function setPaneHeightPreset(paneType, targetH) {
   if (!window.PaneSplitterManager) return;
-  const h = window.PaneSplitterManager.getHeights();
-  if (paneType === 'volume') {
-    const delta = targetH - h.vol;
-    window.PaneSplitterManager.setHeights(h.main - delta, targetH, h.mom);
-  } else if (paneType === 'sub2') {
-    const curH = (h.mom2 || 90);
-    const newSub2 = Math.max(30, Math.min(260, curH + delta));
-    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, newSub2);
-  } else if (paneType === 'sub2') {
-    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, targetH);
-  } else if (paneType === 'momentum') {
-    const delta = targetH - h.mom;
-    window.PaneSplitterManager.setHeights(h.main - delta, h.vol, targetH);
-  }
+  window.PaneSplitterManager.setPaneHeight(paneType, targetH);
   if (window.showToast) window.showToast(`Altezza impostata: ${targetH}px`, 'info');
 }
 
@@ -3202,8 +3198,8 @@ window.toggleIndicatorKey = typeof toggleIndicatorKey !== 'undefined' ? toggleIn
 // =============================================================================
 window.BybitChartSettings = {
   currentHeight: 460,
-  minHeight: 260,
-  maxHeight: 880,
+  minHeight: 200,
+  maxHeight: 1600,
   isFullScreen: false,
 
   init() {
@@ -3518,6 +3514,70 @@ window.BybitMacroCalendar = {
         summary: 'Inflazione Regno Unito in decelerazione al 3.6%, perfetta convergenza verso il target Bank of England.'
       }
     ];
+  },
+
+  renderTimelineMarkers() {
+    if (!candleSeries || !window.currentCandles || !window.currentCandles.length) return;
+    try {
+      const candles = window.currentCandles;
+      const count = candles.length;
+      if (count < 8) return;
+
+      const markers = [];
+      const news = this.getNewsList();
+
+      if (news[0]) {
+        const idx = Math.max(0, count - 12);
+        markers.push({
+          time: candles[idx].time,
+          position: 'aboveBar',
+          color: '#ef4444',
+          shape: 'arrowDown',
+          text: '🔴 CPI US 13:30 (129.70)',
+          id: 'macro-cpi'
+        });
+      }
+
+      if (news[1]) {
+        const idx = Math.max(0, count - 28);
+        markers.push({
+          time: candles[idx].time,
+          position: 'belowBar',
+          color: '#10b981',
+          shape: 'arrowUp',
+          text: '🟢 NFP US 13:30 (172K)',
+          id: 'macro-nfp'
+        });
+      }
+
+      if (news[2]) {
+        const idx = Math.max(0, count - 2);
+        markers.push({
+          time: candles[idx].time,
+          position: 'aboveBar',
+          color: '#f59e0b',
+          shape: 'circle',
+          text: '⚡ FOMC Domani 19:00',
+          id: 'macro-fomc'
+        });
+      }
+
+      if (news[4]) {
+        const idx = Math.max(0, count - 45);
+        markers.push({
+          time: candles[idx].time,
+          position: 'aboveBar',
+          color: '#38bdf8',
+          shape: 'square',
+          text: '🌐 BCE Tassi 3.40%',
+          id: 'macro-bce'
+        });
+      }
+
+      candleSeries.setMarkers(markers);
+    } catch(e) {
+      console.warn('[BybitMacroCalendar] renderTimelineMarkers error:', e);
+    }
   },
 
   openModal(filter = 'tutte') {
