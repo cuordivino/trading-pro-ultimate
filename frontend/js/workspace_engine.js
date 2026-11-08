@@ -20,7 +20,7 @@ window.ThemeManager = {
       icon: '🌑',
       chartBg: '#070a12',
       paneBg: '#050811',
-      gridColor: 'rgba(255, 255, 255, 0.08)',
+      gridColor: 'rgba(255, 255, 255, 0.22)',
       borderColor: '#1e293b',
       textColor: '#94a3b8',
       candleUp: '#00f2a1',
@@ -47,7 +47,7 @@ window.ThemeManager = {
       icon: '☀️',
       chartBg: '#ffffff',
       paneBg: '#f8fafc',
-      gridColor: 'rgba(0, 0, 0, 0.05)',
+      gridColor: 'rgba(0, 0, 0, 0.18)',
       borderColor: '#cbd5e1',
       textColor: '#334155',
       candleUp: '#059669',
@@ -74,7 +74,7 @@ window.ThemeManager = {
       icon: '🪙',
       chartBg: '#121212',
       paneBg: '#0a0a0a',
-      gridColor: 'rgba(251, 191, 36, 0.06)',
+      gridColor: 'rgba(251, 191, 36, 0.22)',
       borderColor: '#292524',
       textColor: '#fbbf24',
       candleUp: '#fbbf24',
@@ -101,7 +101,7 @@ window.ThemeManager = {
       icon: '🌊',
       chartBg: '#071126',
       paneBg: '#040915',
-      gridColor: 'rgba(56, 189, 248, 0.08)',
+      gridColor: 'rgba(56, 189, 248, 0.22)',
       borderColor: '#1e3a8a',
       textColor: '#93c5fd',
       candleUp: '#00f2a1',
@@ -128,7 +128,7 @@ window.ThemeManager = {
       icon: '🔮',
       chartBg: '#030a05',
       paneBg: '#010502',
-      gridColor: 'rgba(34, 197, 94, 0.05)',
+      gridColor: 'rgba(34, 197, 94, 0.22)',
       borderColor: '#166534',
       textColor: '#86efac',
       candleUp: '#22c55e',
@@ -155,7 +155,7 @@ window.ThemeManager = {
       icon: '🌫️',
       chartBg: '#f1f5f9',
       paneBg: '#e2e8f0',
-      gridColor: 'rgba(0, 0, 0, 0.06)',
+      gridColor: 'rgba(0, 0, 0, 0.18)',
       borderColor: '#cbd5e1',
       textColor: '#1e293b',
       candleUp: '#059669',
@@ -183,7 +183,7 @@ window.ThemeManager = {
       icon: '💚',
       chartBg: '#04130d',
       paneBg: '#020b07',
-      gridColor: 'rgba(16, 185, 129, 0.05)',
+      gridColor: 'rgba(16, 185, 129, 0.22)',
       borderColor: '#064e3b',
       textColor: '#6ee7b7',
       candleUp: '#10b981',
@@ -210,7 +210,7 @@ window.ThemeManager = {
       icon: '🌆',
       chartBg: '#0f081d',
       paneBg: '#090414',
-      gridColor: 'rgba(168, 85, 247, 0.06)',
+      gridColor: 'rgba(168, 85, 247, 0.22)',
       borderColor: '#3b0764',
       textColor: '#d8b4fe',
       candleUp: '#06b6d4',
@@ -237,7 +237,7 @@ window.ThemeManager = {
       icon: '🩸',
       chartBg: '#140608',
       paneBg: '#0c0304',
-      gridColor: 'rgba(239, 68, 68, 0.05)',
+      gridColor: 'rgba(239, 68, 68, 0.22)',
       borderColor: '#450a0a',
       textColor: '#fca5a5',
       candleUp: '#22c55e',
@@ -291,7 +291,7 @@ window.ThemeManager = {
       icon: '❄️',
       chartBg: '#060f1e',
       paneBg: '#030811',
-      gridColor: 'rgba(56, 189, 248, 0.08)',
+      gridColor: 'rgba(56, 189, 248, 0.22)',
       borderColor: '#0c4a6e',
       textColor: '#bae6fd',
       candleUp: '#38bdf8',
@@ -318,7 +318,7 @@ window.ThemeManager = {
       icon: '⚙️',
       chartBg: '#1e222d',
       paneBg: '#171b26',
-      gridColor: 'rgba(255, 255, 255, 0.08)',
+      gridColor: 'rgba(255, 255, 255, 0.22)',
       borderColor: '#2e3546',
       textColor: '#b2b5be',
       candleUp: '#26a69a',
@@ -1152,14 +1152,63 @@ if (typeof document !== 'undefined') {
 // Directly implements official Bybit UX from screenshots media_1794165856984 & media_1794165949596
 // ============================================================================
 window.BybitLayoutManager = {
-  // Modes: 'split' (OB sopra / Trades sotto) | 'tabs' (Schede singole) | 'wide' (Grafico ampio / Book sotto) | '3col' (3 Colonne)
-  layoutMode: 'split',
-  activeTab: 'orderbook',
-  showBidAskRatio: true,
-  STORAGE_KEY: 'tpu_bybit_layout_mode_v3',
+  // Mobile Chart View Mode: 'chart-only' (Massimo spazio al grafico) vs 'chart-indicators' (Con oscillatori)
+  mobileViewMode: 'chart-indicators',
+
+  toggleMobileViewMode: function() {
+    this.mobileViewMode = this.mobileViewMode === 'chart-only' ? 'chart-indicators' : 'chart-only';
+    try { localStorage.setItem('tpu_mobile_view_mode', this.mobileViewMode); } catch(e) {}
+    this.applyMobileViewMode();
+  },
+
+  applyMobileViewMode: function() {
+    if (window.innerWidth > 920) return;
+    const isOnly = this.mobileViewMode === 'chart-only';
+    const vp = document.querySelector('.chart-viewport-wrapper');
+    const volPane = document.getElementById('chart-volume-pane');
+    const momPane = document.getElementById('chart-momentum-pane');
+    const sub2Pane = document.getElementById('chart-sub2-pane');
+    const splitVol = document.getElementById('splitter-vol');
+    const splitMom = document.getElementById('splitter-mom');
+    const splitSub2 = document.getElementById('splitter-sub2');
+    const splitSub2Btm = document.getElementById('splitter-sub2-bottom');
+    const macroWire = document.getElementById('bybit-macro-timeline-ribbon');
+    const btn = document.getElementById('btn-mobile-chart-mode');
+
+    if (vp) {
+      vp.style.height = isOnly ? '68vh' : '52vh';
+      vp.style.minHeight = isOnly ? '480px' : '380px';
+    }
+
+    const disp = isOnly ? 'none' : '';
+    if (volPane) volPane.style.display = disp;
+    if (momPane) momPane.style.display = disp;
+    if (sub2Pane) sub2Pane.style.display = disp;
+    if (splitVol) splitVol.style.display = disp;
+    if (splitMom) splitMom.style.display = disp;
+    if (splitSub2) splitSub2.style.display = disp;
+    if (splitSub2Btm) splitSub2Btm.style.display = disp;
+
+    if (btn) {
+      btn.innerText = isOnly ? '📈 Mostra Indicatori' : '🕯️ Solo Grafico (Max)';
+    }
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (window.mainChart && window.mainChart.timeScale) window.mainChart.timeScale().fitContent();
+    }, 50);
+  },
+
+
+  // Book Position: 'under' (Sotto al grafico) | 'lateral' (A lato del grafico)
+  bookPosition: 'under',
 
   init: function() {
     try {
+      const savedPos = localStorage.getItem('tpu_bybit_book_pos_v2');
+      if (savedPos && ['under', 'lateral'].includes(savedPos)) {
+        this.bookPosition = savedPos;
+      }
       const saved = localStorage.getItem(this.STORAGE_KEY);
       if (saved && ['split', 'tabs', 'wide', '3col'].includes(saved)) {
         this.layoutMode = saved;
@@ -1170,7 +1219,8 @@ window.BybitLayoutManager = {
       }
     } catch(e) {}
 
-    this.applyLayout();
+    this.applyBookPosition();
+    this.applyMobileViewMode();
     this.updateRatioVisibility();
 
     // Close popover when clicking anywhere outside
@@ -1184,263 +1234,130 @@ window.BybitLayoutManager = {
       }
     });
 
-    window.addEventListener('resize', () => this.applyLayout());
-    window.addEventListener('orientationchange', () => setTimeout(() => this.applyLayout(), 100));
+    window.addEventListener('resize', () => this.applyBookPosition());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.applyBookPosition(), 100));
   },
 
-  setLayoutMode: function(mode) {
-    if (!['split', 'tabs', 'wide', '3col'].includes(mode)) return;
-    this.layoutMode = mode;
-    try { localStorage.setItem(this.STORAGE_KEY, mode); } catch(e) {}
-    this.applyLayout();
-    this.closePopover();
-
-    const modeLabels = {
-      split: 'Split OB/Trades (Settaggio Bybit)',
-      tabs: 'A Schede Singole',
-      wide: 'Grafico Ampio (Book Sotto)',
-      '3col': '3 Colonne Classico'
-    };
-    if (window.showToast) window.showToast(`Layout impostato: ${modeLabels[mode]}`, 'info');
+  toggleBookPosition: function() {
+    const nextPos = this.bookPosition === 'under' ? 'lateral' : 'under';
+    this.setBookPosition(nextPos);
   },
 
-  cycleLayoutMode: function() {
-    const cycle = ['split', 'wide', 'tabs', '3col'];
-    const nextIdx = (cycle.indexOf(this.layoutMode) + 1) % cycle.length;
-    this.setLayoutMode(cycle[nextIdx]);
-  },
+  setBookPosition: function(pos) {
+    if (!['under', 'lateral'].includes(pos)) return;
+    this.bookPosition = pos;
+    try { localStorage.setItem('tpu_bybit_book_pos_v2', pos); } catch(e) {}
+    this.applyBookPosition();
+    this.applyMobileViewMode();
 
-  switchBookSubTab: function(tab) {
-    this.activeTab = tab;
-    if (this.layoutMode === 'split' || this.layoutMode === 'wide') {
-      // If user clicks a specific tab while in split mode, switch to tabs mode
-      this.setLayoutMode('tabs');
-    } else {
-      this.applyLayout();
+    if (window.showToast) {
+      window.showToast(`Order Book & Trades posizionati: ${pos === 'under' ? 'SOTTO AL GRAFICO' : 'A LATO DEL GRAFICO'}`, 'info');
     }
   },
 
-  togglePopover: function(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    const popover = document.getElementById('bybit-layout-popover-menu');
-    if (!popover) return;
-    popover.style.display = (popover.style.display === 'none' || !popover.style.display) ? 'block' : 'none';
-  },
-
-  closePopover: function() {
-    const popover = document.getElementById('bybit-layout-popover-menu');
-    if (popover) popover.style.display = 'none';
-  },
-
-  toggleBidAskRatio: function(checked) {
-    this.showBidAskRatio = checked;
-    try { localStorage.setItem('tpu_bid_ask_ratio_v1', String(checked)); } catch(e) {}
-    this.updateRatioVisibility();
-  },
-
-  updateRatioVisibility: function() {
-    const bar = document.getElementById('bb-bid-ask-ratio-bar');
-    const chk = document.getElementById('chk-bid-ask-ratio');
-    if (bar) bar.style.display = this.showBidAskRatio ? 'flex' : 'none';
-    if (chk) chk.checked = this.showBidAskRatio;
-  },
-
-  applyLayout: function() {
+  applyBookPosition: function() {
     const isMobile = window.innerWidth <= 920;
     const grid = document.querySelector('.bybit-terminal-grid');
-    const bookCol = document.getElementById('bb-col-book');
-    const chartCol = document.getElementById('bb-col-chart');
-    const orderCol = document.getElementById('bb-col-order');
+    const book = document.getElementById('bb-col-book');
+    const slotUnder = document.getElementById('slot-book-under-chart');
+    const slotLateral = document.getElementById('slot-book-lateral');
     const split1 = document.getElementById('splitter-col-1-2');
     const split2 = document.getElementById('splitter-col-2-3');
+    const chartWrap = document.getElementById('bybit-chart-column-wrap');
+    const orderCol = document.getElementById('bb-col-order');
 
-    const viewOb = document.getElementById('bb-view-orderbook');
-    const viewTr = document.getElementById('bb-view-trades');
-    const splitTradesHead = document.getElementById('bb-split-trades-header');
-    const tabOb = document.getElementById('bb-tab-ob-btn');
-    const tabTr = document.getElementById('bb-tab-tr-btn');
+    const lblDockIcon = document.getElementById('lbl-dock-icon');
+    const lblDockText = document.getElementById('lbl-dock-text');
+    const lblChartIcon = document.getElementById('lbl-chart-book-icon');
+    const lblChartText = document.getElementById('lbl-chart-book-text');
 
-    // Sync active tile classes in popover
-    ['split', 'tabs', 'wide', '3col'].forEach(m => {
-      const tile = document.getElementById(`tile-mode-${m}`);
-      if (tile) tile.classList.toggle('active', this.layoutMode === m);
-    });
+    if (!book || !grid) return;
 
-    // Sync label in Chart top bar
-    const lbl = document.getElementById('lbl-active-layout');
-    if (lbl) {
-      const shortLabels = { split: 'Split OB/RT', tabs: 'Schede', wide: 'Grafico Ampio', '3col': '3 Colonne' };
-      lbl.innerText = shortLabels[this.layoutMode] || this.layoutMode;
-    }
-
-    // 1. MOBILE / TABLET (ALWAYS VERTICAL STACK, NEVER HIDE)
     if (isMobile) {
-      if (grid) {
-        grid.style.display = 'flex';
-        grid.style.flexDirection = 'column';
-        grid.style.gap = '12px';
+      // Mobile / Tablet: ALWAYS stacked vertically in order: Chart -> Book -> Order Form
+      grid.style.display = 'flex';
+      grid.style.flexDirection = 'column';
+      grid.style.gap = '12px';
+
+      if (slotUnder && book.parentElement !== slotUnder) {
+        slotUnder.appendChild(book);
       }
+      if (slotUnder) slotUnder.style.display = 'block';
+      if (slotLateral) slotLateral.style.display = 'none';
       if (split1) split1.style.display = 'none';
       if (split2) split2.style.display = 'none';
-      if (chartCol) chartCol.style.display = 'block';
-      if (bookCol) {
-        bookCol.style.display = 'flex';
-        bookCol.style.flexDirection = 'column';
-        bookCol.style.gridColumn = 'auto';
-        bookCol.style.height = 'auto';
-        bookCol.style.minHeight = '480px';
-      }
-      if (orderCol) orderCol.style.display = 'block';
-
-      if (this.layoutMode === 'tabs') {
-        if (splitTradesHead) splitTradesHead.style.display = 'none';
-        if (this.activeTab === 'orderbook') {
-          if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
-          if (viewTr) { viewTr.style.display = 'none'; }
-          tabOb?.classList.add('active');
-          tabTr?.classList.remove('active');
-        } else {
-          if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
-          if (viewOb) { viewOb.style.display = 'none'; }
-          tabTr?.classList.add('active');
-          tabOb?.classList.remove('active');
-        }
-      } else {
-        // split mode: show both stacked
-        if (splitTradesHead) splitTradesHead.style.display = 'flex';
-        if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
-        if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
-        tabOb?.classList.add('active');
-        tabTr?.classList.add('active');
-      }
+      book.classList.add('docked-under');
+      if (lblDockText) lblDockText.innerText = 'Passa Sotto';
+      if (lblChartText) lblChartText.innerText = 'Book Sotto';
       return;
     }
 
-    // 2. DESKTOP WIDE CHART LAYOUT (Book docked under chart)
-    if (this.layoutMode === 'wide') {
-      const orderW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.order : 340;
-      if (grid) {
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `1fr 10px ${orderW}px`;
-        grid.style.gridTemplateRows = 'auto auto';
-        grid.style.gap = '0';
-      }
-      if (chartCol) {
-        chartCol.style.gridColumn = '1';
-        chartCol.style.gridRow = '1';
-        chartCol.style.display = 'block';
-      }
-      if (split1) split1.style.display = 'none';
-      if (split2) {
-        split2.style.gridColumn = '2';
-        split2.style.gridRow = '1 / span 2';
-        split2.style.display = 'flex';
-      }
-      if (orderCol) {
-        orderCol.style.gridColumn = '3';
-        orderCol.style.gridRow = '1 / span 2';
-        orderCol.style.display = 'block';
-      }
-      if (bookCol) {
-        bookCol.style.gridColumn = '1';
-        bookCol.style.gridRow = '2';
-        bookCol.style.display = 'flex';
-        bookCol.style.flexDirection = 'row'; // Horizontal side-by-side below chart!
-        bookCol.style.height = '360px';
-        bookCol.style.marginTop = '12px';
-      }
-
-      // Under chart: Order Book on left, Trades on right
-      if (viewOb) {
-        viewOb.style.display = 'flex';
-        viewOb.style.flex = '1';
-        viewOb.style.borderRight = '1px solid var(--border)';
-      }
-      if (splitTradesHead) splitTradesHead.style.display = 'none';
-      if (viewTr) {
-        viewTr.style.display = 'flex';
-        viewTr.style.flex = '1';
-      }
-      tabOb?.classList.add('active');
-      tabTr?.classList.add('active');
-      return;
-    }
-
-    // 3. DESKTOP 3-COLUMN MODES ('split', 'tabs', or '3col')
-    const bookW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.book : 310;
+    // DESKTOP (> 920px)
     const orderW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.order : 340;
+    const bookW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.book : 310;
 
-    if (grid) {
+    if (this.bookPosition === 'under') {
+      // 1. DOCKED UNDER CHART: Chart gets 1fr (Full width!), Order execution is 340px
+      if (slotUnder && book.parentElement !== slotUnder) {
+        slotUnder.appendChild(book);
+      }
+      if (slotUnder) slotUnder.style.display = 'block';
+      if (slotLateral) slotLateral.style.display = 'none';
+      if (split1) split1.style.display = 'none';
+      if (split2) split2.style.display = 'flex';
+
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = `1fr 10px ${orderW}px`;
+      grid.style.gridTemplateRows = 'auto';
+      grid.style.gap = '0';
+
+      book.classList.add('docked-under');
+
+      // Update button labels
+      if (lblDockIcon) lblDockIcon.innerText = '◫';
+      if (lblDockText) lblDockText.innerText = 'Torna a Lato';
+      if (lblChartIcon) lblChartIcon.innerText = '◫';
+      if (lblChartText) lblChartText.innerText = 'Book a Lato';
+
+      // Inside book under chart: show side-by-side Order Book & Trades
+      const viewOb = document.getElementById('bb-view-orderbook');
+      const viewTr = document.getElementById('bb-view-trades');
+      const splitHead = document.getElementById('bb-split-trades-header');
+      if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+      if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+      if (splitHead) splitHead.style.display = 'flex';
+
+    } else {
+      // 2. LATERAL: Chart (1fr) | Splitter | Book (310px) | Splitter | Orders (340px)
+      if (slotLateral && book.parentElement !== slotLateral) {
+        slotLateral.appendChild(book);
+      }
+      if (slotLateral) slotLateral.style.display = 'flex';
+      if (slotUnder) slotUnder.style.display = 'none';
+      if (split1) split1.style.display = 'flex';
+      if (split2) split2.style.display = 'flex';
+
       grid.style.display = 'grid';
       grid.style.gridTemplateColumns = `1fr 10px ${bookW}px 10px ${orderW}px`;
       grid.style.gridTemplateRows = 'auto';
       grid.style.gap = '0';
-    }
-    if (chartCol) {
-      chartCol.style.gridColumn = '1';
-      chartCol.style.gridRow = 'auto';
-      chartCol.style.display = 'block';
-    }
-    if (split1) {
-      split1.style.gridColumn = '2';
-      split1.style.gridRow = 'auto';
-      split1.style.display = 'flex';
-    }
-    if (bookCol) {
-      bookCol.style.gridColumn = '3';
-      bookCol.style.gridRow = 'auto';
-      bookCol.style.display = 'flex';
-      bookCol.style.flexDirection = 'column';
-      bookCol.style.height = '640px';
-      bookCol.style.marginTop = '0';
-    }
-    if (split2) {
-      split2.style.gridColumn = '4';
-      split2.style.gridRow = 'auto';
-      split2.style.display = 'flex';
-    }
-    if (orderCol) {
-      orderCol.style.gridColumn = '5';
-      orderCol.style.gridRow = 'auto';
-      orderCol.style.display = 'block';
+
+      book.classList.remove('docked-under');
+
+      // Update button labels
+      if (lblDockIcon) lblDockIcon.innerText = '⬇';
+      if (lblDockText) lblDockText.innerText = 'Passa Sotto';
+      if (lblChartIcon) lblChartIcon.innerText = '⬇';
+      if (lblChartText) lblChartText.innerText = 'Book Sotto al Grafico';
     }
 
-    if (this.layoutMode === 'tabs') {
-      // Schede Singole
-      if (splitTradesHead) splitTradesHead.style.display = 'none';
-      if (viewOb) viewOb.style.borderRight = 'none';
-      if (this.activeTab === 'orderbook') {
-        if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
-        if (viewTr) { viewTr.style.display = 'none'; }
-        tabOb?.classList.add('active');
-        tabTr?.classList.remove('active');
-      } else {
-        if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
-        if (viewOb) { viewOb.style.display = 'none'; }
-        tabTr?.classList.add('active');
-        tabOb?.classList.remove('active');
+    // Trigger chart resize smoothly
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (window.mainChart && window.mainChart.timeScale) {
+        window.mainChart.timeScale().fitContent();
       }
-    } else {
-      // 'split' mode (Settaggio da media_1794165949596_1c73396f.jpg):
-      // Upper half: Order Book, Lower half: Recent Trades!
-      if (viewOb) {
-        viewOb.style.display = 'flex';
-        viewOb.style.flex = '1';
-        viewOb.style.borderRight = 'none';
-        viewOb.style.overflowY = 'auto';
-      }
-      if (splitTradesHead) splitTradesHead.style.display = 'flex';
-      if (viewTr) {
-        viewTr.style.display = 'flex';
-        viewTr.style.flex = '1';
-        viewTr.style.overflowY = 'auto';
-        viewTr.style.borderTop = '1px solid var(--border)';
-      }
-      tabOb?.classList.add('active');
-      tabTr?.classList.add('active');
-    }
-  }
+    }, 50);
+  },
+
 };

@@ -8562,3 +8562,209 @@ body, html, input, select, button, textarea {
 .bybit-sym-sub, .bybit-stat-lbl, .bybit-stat-val, .bb-ob-head span, .bb-ob-size, .bb-ob-sum, .bb-tr-size, .bb-tr-time {
   font-weight: 400 !important;
 }
+
+
+/* ==========================================================================
+   BYBIT DOCK BOOK UNDER CHART & DUAL-SLOT ARCHITECTURE
+   ========================================================================== */
+.bybit-chart-column-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.slot-book-under-chart {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin-top: 12px !important;
+}
+
+.slot-book-lateral {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Button to toggle position */
+.btn-dock-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+  border: 1px solid #38bdf8 !important;
+  color: #38bdf8 !important;
+  border-radius: 4px !important;
+  padding: 3px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.25) !important;
+}
+
+.btn-dock-toggle:hover {
+  background: #38bdf8 !important;
+  color: #050811 !important;
+}
+
+/* Card when docked UNDER chart: wide horizontal layout */
+.bb-book-trades-card.docked-under {
+  height: 380px !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.bb-book-trades-card.docked-under .bb-view-pane-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 921px) {
+  .bb-book-trades-card.docked-under #bb-view-orderbook {
+    flex: 1 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: flex !important;
+  }
+  .bb-book-trades-card.docked-under #bb-view-trades {
+    flex: 1 !important;
+    display: flex !important;
+  }
+  .bb-book-trades-card.docked-under #bb-split-trades-header {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .bb-book-trades-card.docked-under {
+    height: auto !important;
+    min-height: 480px !important;
+  }
+}
+
+
+/* ==========================================================================
+   MOBILE & TABLET ULTRA-RESPONSIVE CHART OPTIMIZATION
+   Fixes: Single-row swipeable toolbar, 52vh-68vh massive chart, zero button wrap
+   ========================================================================== */
+@media (max-width: 860px) {
+  /* 1. CHART TOOLBAR: Single-line horizontal swipeable row (NO wrapping into 5 rows!) */
+  .chart-toolbar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    align-items: center !important;
+    background: #0b0e17 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    scrollbar-width: none !important;
+  }
+  .chart-toolbar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .chart-toolbar > * {
+    flex-shrink: 0 !important;
+  }
+
+  /* 2. HUGE DEDICATED CANDLESTICK CHART VIEWPORT */
+  .chart-viewport-wrapper {
+    height: 52vh !important;
+    min-height: 420px !important;
+    width: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  /* 3. COLLAPSIBLE ON-CHART LEGEND (INDICATORI ATTIVI) */
+  .bybit-chart-legend {
+    position: absolute !important;
+    top: 6px !important;
+    left: 6px !important;
+    max-width: 180px !important;
+    max-height: 22px !important;
+    overflow: hidden !important;
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+    background: rgba(10, 15, 25, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 4px !important;
+    z-index: 10 !important;
+    transition: max-height 0.25s ease, max-width 0.25s ease !important;
+  }
+  .bybit-chart-legend.expanded {
+    max-width: 280px !important;
+    max-height: 220px !important;
+    background: rgba(10, 15, 25, 0.96) !important;
+  }
+
+  /* 4. COMPACT SUB-PANES (VOLUME, RSI, WR) TO PREVENT SQUASHING CHART */
+  #chart-volume-pane {
+    height: 65px !important;
+    min-height: 55px !important;
+  }
+  #chart-momentum-pane {
+    height: 65px !important;
+    min-height: 55px !important;
+  }
+  #chart-sub2-pane {
+    height: 65px !important;
+    min-height: 55px !important;
+  }
+  .subpane-header-bar {
+    height: 22px !important;
+    min-height: 22px !important;
+    padding: 0 4px !important;
+    font-size: 9px !important;
+  }
+  .subpane-title {
+    font-size: 9px !important;
+  }
+  .subpane-select, .subpane-num-input {
+    font-size: 9px !important;
+    padding: 1px 3px !important;
+  }
+  .pane-height-controls {
+    display: none !important; /* Hide preset height pills on mobile to save space */
+  }
+
+  /* 5. THIN SPLITTER BARS ON MOBILE */
+  .chart-splitter {
+    height: 4px !important;
+    min-height: 4px !important;
+    border: none !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    margin: 0 !important;
+  }
+  .chart-splitter::before {
+    top: -6px !important;
+    bottom: -6px !important;
+  }
+
+  /* 6. COMPACT MACRO TIMELINE RIBBON ON MOBILE */
+  .bybit-macro-timeline-ribbon {
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 2px 6px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    font-size: 9px !important;
+  }
+  .bybit-macro-pin-btn {
+    padding: 1px 6px !important;
+    font-size: 8.5px !important;
+  }
+}
+
+/* Crisp visible grid lines on chart canvas */
+.chart-viewport-wrapper canvas {
+  image-rendering: -webkit-optimize-contrast !important;
+}

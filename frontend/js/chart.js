@@ -250,8 +250,8 @@ function initMainChart() {
       timeFormatter: (timestamp) => formatRomeTime(timestamp, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 },
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -513,8 +513,8 @@ window.applyChartThemeToAll = function(t) {
       textColor: t.textColor
     },
     grid: {
-      vertLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.12)', style: 1 },
-      horzLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.12)', style: 1 }
+      vertLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.22)', style: 1 },
+      horzLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.22)', style: 1 }
     },
     rightPriceScale: {
       borderColor: t.borderColor
@@ -555,8 +555,8 @@ function initVolumePane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 }
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -610,8 +610,8 @@ function initMomentumPane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 }
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -3643,8 +3643,8 @@ function initSub2Pane() {
     layout: { background: { color: '#070a12' }, textColor: '#64748b', fontSize: 10 },
     localization: { locale: 'it-IT' },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 1 }
     },
     rightPriceScale: {
       borderColor: '#1e293b',

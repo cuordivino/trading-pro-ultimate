@@ -414,8 +414,10 @@
       <!-- BYBIT 3-COLUMN RESPONSIVE GRID -->
       <div class="bybit-terminal-grid">
         
-        <!-- COLUMN 1: CANDLESTICK CHART & TECHNICAL TOOLS -->
-        <div class="window-card" id="bb-col-chart">
+        <!-- LEFT COLUMN WRAP: CHART + DOCKED BOOK UNDER CHART -->
+        <div class="bybit-chart-column-wrap" id="bybit-chart-column-wrap">
+          <!-- COLUMN 1: CANDLESTICK CHART & TECHNICAL TOOLS -->
+          <div class="window-card" id="bb-col-chart">
           <div class="window-header">
             <div class="window-title">
               <span>📈 Grafico Professionale Candele</span>
@@ -570,6 +572,11 @@
             </div>
 
             <div class="chart-toolbar">
+              <!-- MOBILE FULL CANDLESTICK CHART TOGGLE (SOLO GRAFICO MAX) -->
+              <button type="button" class="btn-tune-macro" id="btn-mobile-chart-mode" onclick="BybitLayoutManager.toggleMobileViewMode()" style="background:rgba(0,242,161,0.18); border-color:#00f2a1; color:#00f2a1; font-weight:700; padding:4px 9px;" title="Massimizza spazio grafico su cellulare nascondendo/mostrando oscillatori">
+                🕯️ Solo Grafico (Max)
+              </button>
+
               <div class="tf-pill-group">
                 <button class="tf-pill" onclick="changeTimeframe('1s', this)">1s</button>
                 <button class="tf-pill" onclick="changeTimeframe('1m', this)">1m</button>
@@ -637,6 +644,11 @@
                 <button type="button" class="tf-pill" onclick="BybitChartSettings.toggleFullScreen()" title="Schermo Intero ⛶">⛶</button>
               </div>
 
+                            <!-- DOCK BOOK UNDER CHART TOGGLE BUTTON -->
+              <button type="button" class="btn-tune-macro" id="btn-chart-book-pos" onclick="BybitLayoutManager.toggleBookPosition()" style="background:rgba(56,189,248,0.18); border-color:#38bdf8; color:#38bdf8; font-weight:700; padding:4px 10px; display:inline-flex; align-items:center; gap:5px;" title="Sposta Order Book & Operazioni Recenti Sotto al Grafico (oppure a Lato)">
+                <span id="lbl-chart-book-icon">⬇</span>
+                <span id="lbl-chart-book-text">Book Sotto al Grafico</span>
+              </button>
               <div class="dropdown" style="position:relative;">
                 <button class="theme-pill-btn" onclick="this.nextElementSibling.classList.toggle('open')" title="Cambia Tema (Notte / Giorno / Bloomberg / Wall St / Matrix)">
                   <span id="theme-trigger-icon">🌑</span>
@@ -687,7 +699,7 @@
             <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
             <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
               <!-- FLOATING BYBIT ON-CHART LIVE LEGEND -->
-              <div class="bybit-chart-legend" id="bybit-chart-legend"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:2px; margin-bottom:2px;"><span style="color:#fcd535; font-weight:800; font-size:9px;">📊 INDICATORI ATTIVI</span><button type="button" class="bybit-legend-toggle-btn" onclick="toggleBybitLegendCollapse()" title="Riduci/Espandi pannello indicatori sul grafico">▲/▼</button></div>
+              <div class="bybit-chart-legend" id="bybit-chart-legend" onclick="this.classList.toggle('expanded')"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:2px; margin-bottom:2px;"><span style="color:#fcd535; font-weight:800; font-size:9px;">📊 INDICATORI ATTIVI</span><button type="button" class="bybit-legend-toggle-btn" onclick="toggleBybitLegendCollapse()" title="Riduci/Espandi pannello indicatori sul grafico">▲/▼</button></div>
                 <div class="bybit-legend-line main">
                   <span class="bybit-leg-sym" id="bybit-leg-sym">BTCUSDT Perpetual</span>
                   <span class="bybit-leg-tf" id="bybit-leg-tf">15</span>
@@ -860,11 +872,17 @@
           </div>
         </div>
 
+        <!-- DOCKED UNDER CHART: ORDER BOOK & RECENT TRADES SLOT -->
+        <div id="slot-book-under-chart" class="slot-book-under-chart" style="display:none; margin-top:12px;"></div>
+      </div>
+
         <!-- VERTICAL SPLITTER 1-2: CHART / ORDERBOOK -->
         <div class="col-splitter" id="splitter-col-1-2" title="Trascina a destra/sinistra per ridimensionare la larghezza del Grafico e dell'Order Book">
           <div class="col-splitter-grip"></div>
         </div>
 
+        <!-- LATERAL SLOT FOR ORDER BOOK & RECENT TRADES -->
+        <div id="slot-book-lateral" class="slot-book-lateral">
         <!-- COLUMN 2: BYBIT ORDER BOOK & RECENT TRADES (DUAL-MODE & SPLIT) -->
         <div class="bb-book-trades-card" id="bb-col-book">
           <div class="bb-book-tabs-header">
@@ -878,6 +896,12 @@
             </div>
 
             <div class="bb-book-header-tools">
+              <!-- PROMINENT DOCK TOGGLE BUTTON (PASSA SOTTO / TORNA A LATO) -->
+              <button type="button" class="btn-dock-toggle" id="btn-dock-book-toggle" onclick="BybitLayoutManager.toggleBookPosition()" title="Sposta Order Book & Operazioni Recenti sotto al grafico per avere massima larghezza">
+                <span id="lbl-dock-icon">⬇</span>
+                <span id="lbl-dock-text">Passa Sotto</span>
+              </button>
+
               <!-- Bybit Layout Switcher Popover Trigger (matching media_1794165856984_419758d4.jpg) -->
               <div class="bybit-layout-dropdown-wrap">
                 <button type="button" class="btn-bb-layout-menu" id="btn-bybit-layout-menu" onclick="BybitLayoutManager.togglePopover(event)" title="Configura Layout Bybit (Split OB/Trades, Schede, Grafico Ampio)">
@@ -982,6 +1006,8 @@
               <!-- Injected dynamically via bybit_engine.js -->
             </div>
           </div>
+        </div>
+
         </div>
 
         <!-- VERTICAL SPLITTER 2-3: ORDERBOOK / ORDER EXECUTION -->
