@@ -596,10 +596,10 @@ window.PaneSplitterManager = {
   },
 
     setHeights: function(main, vol, mom, mom2) {
-    if (main !== undefined && !isNaN(main)) this.heights.main = Math.max(180, Math.min(1600, parseInt(main, 10)));
-    if (vol !== undefined && !isNaN(vol)) this.heights.vol = Math.max(30, Math.min(600, parseInt(vol, 10)));
-    if (mom !== undefined && !isNaN(mom)) this.heights.mom = Math.max(30, Math.min(600, parseInt(mom, 10)));
-    if (mom2 !== undefined && !isNaN(mom2)) this.heights.mom2 = Math.max(30, Math.min(600, parseInt(mom2, 10)));
+    if (main !== undefined && !isNaN(main)) this.heights.main = Math.max(180, Math.min(2400, parseInt(main, 10)));
+    if (vol !== undefined && !isNaN(vol)) this.heights.vol = Math.max(30, Math.min(1200, parseInt(vol, 10)));
+    if (mom !== undefined && !isNaN(mom)) this.heights.mom = Math.max(30, Math.min(1200, parseInt(mom, 10)));
+    if (mom2 !== undefined && !isNaN(mom2)) this.heights.mom2 = Math.max(30, Math.min(1200, parseInt(mom2, 10)));
 
     this.applyDomHeights();
     try {
@@ -615,10 +615,10 @@ window.PaneSplitterManager = {
     const val = parseInt(px, 10);
     if (isNaN(val)) return;
 
-    if (pane === 'main') this.heights.main = Math.max(180, Math.min(1600, val));
-    else if (pane === 'volume') this.heights.vol = Math.max(35, Math.min(600, val));
-    else if (pane === 'momentum') this.heights.mom = Math.max(35, Math.min(600, val));
-    else if (pane === 'sub2') this.heights.mom2 = Math.max(35, Math.min(600, val));
+    if (pane === 'main') this.heights.main = Math.max(180, Math.min(2400, val));
+    else if (pane === 'volume') this.heights.vol = Math.max(30, Math.min(1200, val));
+    else if (pane === 'momentum') this.heights.mom = Math.max(30, Math.min(1200, val));
+    else if (pane === 'sub2') this.heights.mom2 = Math.max(30, Math.min(1200, val));
 
     this.applyDomHeights();
     try {
@@ -694,13 +694,13 @@ window.PaneSplitterManager = {
 
       // INDEPENDENT NON-DESTRUCTIVE DRAG RESIZING
       if (type === 'main') {
-        this.heights.main = Math.max(180, Math.min(1600, startMainH + delta));
+        this.heights.main = Math.max(180, Math.min(2400, startMainH + delta));
       } else if (type === 'volume') {
-        this.heights.vol = Math.max(35, Math.min(600, startVolH + delta));
+        this.heights.vol = Math.max(30, Math.min(1200, startVolH + delta));
       } else if (type === 'momentum') {
-        this.heights.mom = Math.max(35, Math.min(600, startMomH + delta));
+        this.heights.mom = Math.max(30, Math.min(1200, startMomH + delta));
       } else if (type === 'sub2') {
-        this.heights.mom2 = Math.max(35, Math.min(600, startSub2H + delta));
+        this.heights.mom2 = Math.max(30, Math.min(1200, startSub2H + delta));
       }
 
       this.applyDomHeights();
@@ -730,6 +730,32 @@ window.PaneSplitterManager = {
     });
 
     window.addEventListener('mouseup', onEnd);
+
+    // Modern Pointer Events with setPointerCapture (Bulletproof for iPhone, iPad, Android & Desktop)
+    const onPointerDown = (e) => {
+      e.preventDefault();
+      try { el.setPointerCapture(e.pointerId); } catch(err) {}
+      onStart(e.clientY);
+    };
+
+    const onPointerMove = (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        onMove(e.clientY);
+      }
+    };
+
+    const onPointerUp = (e) => {
+      if (isDragging) {
+        try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+        onEnd();
+      }
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointercancel', onPointerUp);
 
     // Mobile / Cell Touch Listeners (touch-action: none & passive: false prevents iOS Safari scroll cancel)
     const onTouchStart = (e) => {
@@ -778,5 +804,121 @@ if (typeof document !== 'undefined') {
     } catch(e) {
       console.warn('[PaneSplitterManager] Auto-init:', e);
     }
+  });
+}
+
+
+// ============================================================================
+// 4. COLUMN SPLITTER MANAGER (TAGLI VERTICALI LARGHEZZA GRAFICO / BOOK / ORDINI)
+// ============================================================================
+window.ColumnSplitterManager = {
+  STORAGE_KEY: 'tpu_col_widths_v3',
+  widths: {
+    book: 310,
+    order: 340
+  },
+
+  init: function() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        this.widths = { ...this.widths, ...JSON.parse(saved) };
+      }
+    } catch(e) {}
+
+    this.applyDomWidths();
+    this.bindColSplitter('splitter-col-1-2', 'book');
+    this.bindColSplitter('splitter-col-2-3', 'order');
+
+    window.addEventListener('resize', () => this.applyDomWidths());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.applyDomWidths(), 100));
+  },
+
+  setColWidth: function(col, px) {
+    const val = parseInt(px, 10);
+    if (isNaN(val)) return;
+    if (col === 'book') this.widths.book = Math.max(180, Math.min(700, val));
+    if (col === 'order') this.widths.order = Math.max(220, Math.min(700, val));
+    this.applyDomWidths();
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
+    } catch(e) {}
+  },
+
+  applyDomWidths: function() {
+    const grid = document.querySelector('.bybit-terminal-grid');
+    if (!grid) return;
+
+    if (window.innerWidth > 920) {
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book}px 10px ${this.widths.order}px`;
+    } else {
+      grid.style.display = 'flex';
+      grid.style.flexDirection = 'column';
+    }
+
+    if (window.resizeAllCharts) {
+      window.resizeAllCharts();
+    }
+  },
+
+  bindColSplitter: function(splitterId, type) {
+    const el = document.getElementById(splitterId);
+    if (!el) return;
+
+    let startX = 0;
+    let startW = 0;
+    let isDragging = false;
+
+    const onPointerDown = (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startW = (type === 'book') ? this.widths.book : this.widths.order;
+      el.classList.add('dragging');
+      try { el.setPointerCapture(e.pointerId); } catch(err) {}
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      e.preventDefault();
+    };
+
+    const onPointerMove = (e) => {
+      if (!isDragging) return;
+      const delta = e.clientX - startX;
+      if (type === 'book') {
+        // Dragging left widens book, dragging right narrows book
+        this.widths.book = Math.max(180, Math.min(700, startW - delta));
+      } else if (type === 'order') {
+        // Dragging left widens order execution form
+        this.widths.order = Math.max(220, Math.min(700, startW - delta));
+      }
+      this.applyDomWidths();
+    };
+
+    const onPointerUp = (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove('dragging');
+      try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
+      } catch(e) {}
+      if (window.resizeAllCharts) window.resizeAllCharts();
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointercancel', onPointerUp);
+  }
+};
+
+// Auto-initialize ColumnSplitterManager
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      if (window.ColumnSplitterManager) window.ColumnSplitterManager.init();
+    } catch(e) {}
   });
 }

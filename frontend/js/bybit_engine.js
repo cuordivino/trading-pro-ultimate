@@ -39,6 +39,8 @@ window.BybitEngine = {
 
     if (isCrypto) {
       if (!this.currentSymbol.endsWith('USDT')) this.currentSymbol += 'USDT';
+      const base = (asset && asset.basePrice) ? asset.basePrice : (this.tickerData.lastPrice || 75000);
+      this.generateSyntheticOrderBook(base);
       this.fetchTicker();
       this.fetchOrderBook();
       this.fetchRecentTrades();
@@ -408,6 +410,7 @@ window.BybitEngine = {
 
     let html = '';
 
+    const isCrypto = asset ? asset.cat === 'crypto' : (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(s => this.currentSymbol.includes(s)));
     const obUnit = isCrypto ? 'USDT' : (curr || '$');
     const obAsset = (asset ? asset.symbol.replace('=F', '').replace('=X', '') : (this.currentSymbol || 'Asset'));
     const headEl = document.querySelector('#bb-view-orderbook .bb-ob-head');
@@ -680,10 +683,75 @@ window.BybitEngine = {
     this.recalcBybitOrderMetrics();
   },
 
+
+  // =========================================================================
+  // DYNAMIC ORDER CURRENCY & COMMUTATION ENGINE
+  // Euro for EU/Italian Stocks, USDT for Crypto, USD for US/Commodities
+  // Supports manual switching via commutation dropdown at any time
+  // =========================================================================
+  customOrderCurrency: null,
+
+  getOrderCurrency: function() {
+    if (this.customOrderCurrency) return this.customOrderCurrency;
+    const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
+    if (asset) {
+      if (asset.currency === '€' || asset.cat === 'eu_stock' || asset.cat === 'Borsa Italiana' || (asset.symbol && asset.symbol.endsWith('.MI'))) {
+        return 'EUR';
+      }
+      if (asset.cat === 'crypto' || (this.currentSymbol && this.currentSymbol.endsWith('USDT'))) {
+        return 'USDT';
+      }
+      if (asset.currency === '$') return 'USD';
+      if (asset.currency) return asset.currency;
+    }
+    if (this.currentSymbol && this.currentSymbol.endsWith('.MI')) return 'EUR';
+    if (this.currentSymbol && (this.currentSymbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(s => this.currentSymbol.includes(s)))) return 'USDT';
+    return 'USD';
+  },
+
+  getCurrencySymbol: function(currCode) {
+    const c = currCode || this.getOrderCurrency();
+    if (c === 'EUR' || c === '€') return '€';
+    if (c === 'USDT') return 'USDT';
+    if (c === 'GBP' || c === '£') return '£';
+    if (c === 'CHF') return 'CHF';
+    return '$';
+  },
+
+  setOrderCurrency: function(val) {
+    this.customOrderCurrency = val;
+    this.updateCurrencyUI();
+    this.recalcBybitOrderMetrics();
+    if (window.showToast) window.showToast(`Valuta Ordine impostata su: ${val}`, 'info');
+  },
+
+  updateCurrencyUI: function() {
+    const code = this.getOrderCurrency();
+    const sym = this.getCurrencySymbol(code);
+
+    const sel = document.getElementById('bb-order-currency-select');
+    if (sel && sel.value !== code) sel.value = code;
+
+    const amtBtn = document.querySelector('[data-sm="amount"]');
+    if (amtBtn) amtBtn.innerText = `💵 Per Importo (${code === 'EUR' ? '€' : code})`;
+
+    const symBadge = document.getElementById('bb-order-amt-sym');
+    if (symBadge) symBadge.innerText = (code === 'USDT' || code === 'CHF') ? code : sym;
+
+    const slLbl = document.getElementById('bb-sl-label');
+    if (slLbl) slLbl.innerText = `STOP LOSS (${code === 'EUR' ? '€' : code})`;
+
+    const tpLbl = document.getElementById('bb-tp-label');
+    if (tpLbl) tpLbl.innerText = `TAKE PROFIT (${code === 'EUR' ? '€' : code})`;
+  },
+
   // CALCULATE BYBIT LIQUIDATION PRICE & ORDER COST (COHERENT SINGLE SOURCE OF TRUTH)
   recalcBybitOrderMetrics: function() {
     const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
-    const curr = (asset && asset.currency) ? asset.currency : (this.currentSymbol && this.currentSymbol.endsWith('.MI') ? '€' : '$');
+    const currCode = this.getOrderCurrency ? this.getOrderCurrency() : 'USD';
+    const currSym = this.getCurrencySymbol ? this.getCurrencySymbol(currCode) : '$';
+    const curr = (currCode === 'USDT' || currCode === 'CHF') ? ` ${currCode}` : currSym;
+    this.updateCurrencyUI();
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
     
     // 1. Entry Price

@@ -7891,3 +7891,193 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+
+/* ==========================================================================
+   BYBIT SUBTABS, VERTICAL SPLITTERS, DRAWING TOOLBAR & DROPDOWN HIGH Z-INDEX
+   TRADING PRO ULTIMATE — MASTERPIECE SUITE
+   ========================================================================== */
+
+/* 1. VERTICAL COLUMN SPLITTERS */
+.col-splitter {
+  width: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(0, 0, 0, 0.6);
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none !important;
+  z-index: 30;
+  transition: background 0.15s ease;
+}
+.col-splitter:hover, .col-splitter.dragging {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border-color: #38bdf8 !important;
+}
+.col-splitter-grip {
+  width: 3px;
+  height: 48px;
+  background: #38bdf8;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+@media (max-width: 920px) {
+  .col-splitter {
+    display: none !important;
+  }
+}
+
+/* 2. TRADINGVIEW LEFT DRAWING TOOLBAR */
+.tv-drawing-toolbar {
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(11, 16, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+}
+.tv-tool-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tv-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.tv-tool-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+.tv-toolbar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 2px 0;
+}
+
+/* 3. BULLETPROOF HIGH Z-INDEX & OVERFLOW VISIBLE FOR OPZIONI & VP DROPDOWNS */
+.window-header {
+  position: relative;
+  z-index: 1200 !important;
+}
+.window-controls {
+  position: relative;
+  z-index: 1250 !important;
+}
+.dropdown {
+  position: relative;
+  z-index: 1250;
+}
+.indicators-dropdown-menu {
+  z-index: 9999999 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
+}
+.vp-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0 !important;
+  left: auto !important;
+  z-index: 9999999 !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
+  max-width: min(340px, 92vw) !important;
+}
+@media (max-width: 1024px), (max-height: 550px) {
+  .indicators-dropdown-menu,
+  .vp-dropdown-menu {
+    position: fixed !important;
+    top: 55px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 380px !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    z-index: 9999999 !important;
+  }
+}
+
+/* 4. BYBIT SUBTABS STYLING */
+.bybit-sub-pill {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.bybit-sub-pill:hover {
+  color: #fff;
+}
+.bybit-sub-pill.active {
+  background: #1e293b;
+  color: #fff;
+  font-weight: 800;
+}
+.bybit-tag-chip, .bybit-link-chip {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-block;
+}
+.bybit-link-chip:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+.bybit-tf-pill {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.bybit-tf-pill.active {
+  background: #1e293b;
+  color: #fff;
+}
+.bybit-data-card {
+  background: #0c101c;
+  border: 1px solid #1e2638;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+@media (max-width: 768px) {
+  .bybit-overview-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .bybit-data-2x2-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}

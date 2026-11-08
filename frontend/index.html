@@ -770,7 +770,7 @@
             <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD / Aroon / ADX) -->
             <div id="chart-momentum-pane" class="chart-sub-pane active" style="height:115px; position:relative;">
               <div class="subpane-header-bar" id="momentum-pane-header">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; overflow-x:auto;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span class="subpane-title">⚡ Oscillatore:</span>
                   <select id="momentum-mode-select" class="subpane-select" onchange="setMomentumMode(this.value)">
                     <option value="cvd">CVD (Cumulative Volume Delta)</option>
@@ -821,7 +821,7 @@
             <!-- SOTTO IL GRAFICO: PANNELLO 3 (Secondo Oscillatore: Williams %R, KDJ, Stocastico, MACD Hist) -->
             <div id="chart-sub2-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
               <div class="subpane-header-bar" id="sub2-pane-header">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; overflow-x:auto;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   <span class="subpane-title">📈 Parametri Settabili 2:</span>
                   <select id="sub2-mode-select" class="subpane-select" onchange="setSub2Mode(this.value)">
                     <option value="wr" selected>WR (Williams %R 14/20)</option>
@@ -894,6 +894,11 @@
               <!-- Injected dynamically via bybit_engine.js -->
             </div>
           </div>
+        </div>
+
+        <!-- VERTICAL SPLITTER 2-3: ORDERBOOK / ORDER EXECUTION -->
+        <div class="col-splitter" id="splitter-col-2-3" title="Trascina a destra/sinistra per ridimensionare la larghezza dell'Order Book e del Form Ordini">
+          <div class="col-splitter-grip"></div>
         </div>
 
         <!-- COLUMN 3: BYBIT PERPETUAL ORDER EXECUTION PANEL -->
@@ -996,9 +1001,18 @@
 
                 <!-- ORDER SIZING: DUAL MODE (CONTROVALORE $ / QUANTITÀ ASSET) -->
                 <div class="form-field">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <span style="font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:0.5px">DIMENSIONE POSIZIONE</span>
-                    <span style="font-size:10px; color:var(--text-dim)">Nominale: <b id="bb-nominal-val" style="color:#fff">$0.00</b></span>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="font-size:10px; font-weight:800; color:var(--text-muted); letter-spacing:0.5px">DIMENSIONE</span>
+                      <select id="bb-order-currency-select" class="subpane-select" onchange="BybitEngine.setOrderCurrency(this.value)" style="padding:2px 5px; font-size:9px; font-weight:800; background:#080c14; border:1px solid #1e2638; border-radius:4px; color:#38bdf8; cursor:pointer;" title="Commuta valuta per ordini di acquisto titoli azionari (EUR), cripto (USDT) o estero (USD/GBP/CHF)">
+                        <option value="EUR">EUR (€) Titoli Euro / Borsa IT</option>
+                        <option value="USDT" selected>USDT Cripto Perp</option>
+                        <option value="USD">USD ($) Azioni / Indici USA</option>
+                        <option value="GBP">GBP (£) Mercato UK</option>
+                        <option value="CHF">CHF Franco Svizzero</option>
+                      </select>
+                    </div>
+                    <span style="font-size:10px; color:var(--text-dim)">Nominale: <b id="bb-nominal-val" style="color:#fff">0.00 USDT</b></span>
                   </div>
 
                   <div class="bb-size-mode-tabs">
@@ -1009,7 +1023,7 @@
                   <div id="bb-amt-wrap" style="display:block;">
                     <div style="position:relative">
                       <input type="number" step="any" class="terminal-input" id="bb-order-usdt" value="1000" placeholder="1000" oninput="BybitEngine.onOrderAmountInput(this.value)" style="padding-left:22px;">
-                      <span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px; font-weight:700">$</span>
+                      <span id="bb-order-amt-sym" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:11px; font-weight:700">USDT</span>
                     </div>
                   </div>
 
@@ -1046,7 +1060,7 @@
                 <div class="tpu-tpsl-container">
                   <div class="form-field tpsl-field">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-                      <label style="margin:0; font-size:10px; font-weight:800; color:var(--sell)">STOP LOSS ($)</label>
+                      <label id="bb-sl-label" style="margin:0; font-size:10px; font-weight:800; color:var(--sell)">STOP LOSS (USDT)</label>
                       <span id="sl-loss-preview" style="font-size:9px; font-weight:800; color:var(--sell); font-family:var(--font-mono)">-$0.00 (-0.0%)</span>
                     </div>
                     <div class="input-with-pills">
@@ -1062,7 +1076,7 @@
 
                   <div class="form-field tpsl-field">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-                      <label style="margin:0; font-size:10px; font-weight:800; color:var(--buy)">TAKE PROFIT ($)</label>
+                      <label id="bb-tp-label" style="margin:0; font-size:10px; font-weight:800; color:var(--buy)">TAKE PROFIT (USDT)</label>
                       <span id="tp-gain-preview" style="font-size:9px; font-weight:800; color:var(--buy); font-family:var(--font-mono)">+$0.00 (+0.0%)</span>
                     </div>
                     <div class="input-with-pills">

@@ -250,8 +250,8 @@ function initMainChart() {
       timeFormatter: (timestamp) => formatRomeTime(timestamp, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 },
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -513,8 +513,8 @@ window.applyChartThemeToAll = function(t) {
       textColor: t.textColor
     },
     grid: {
-      vertLines: { color: t.gridColor },
-      horzLines: { color: t.gridColor }
+      vertLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.12)', style: 1 },
+      horzLines: { visible: true, color: t.gridColor || 'rgba(255, 255, 255, 0.12)', style: 1 }
     },
     rightPriceScale: {
       borderColor: t.borderColor
@@ -527,6 +527,7 @@ window.applyChartThemeToAll = function(t) {
   if (mainChart) mainChart.applyOptions(chartOpts);
   if (volumeChart) volumeChart.applyOptions(chartOpts);
   if (momentumChart) momentumChart.applyOptions(chartOpts);
+  if (sub2Chart) sub2Chart.applyOptions(chartOpts);
 
   if (candleSeries) {
     candleSeries.applyOptions({
@@ -554,8 +555,8 @@ function initVolumePane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -609,8 +610,8 @@ function initMomentumPane() {
       timeFormatter: (t) => formatRomeTime(t, true)
     },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Normal,
@@ -3532,8 +3533,7 @@ window.BybitMacroCalendar = {
           time: candles[idx].time,
           position: 'aboveBar',
           color: '#ef4444',
-          shape: 'arrowDown',
-          text: '🔴 CPI US 13:30 (129.70)',
+          shape: 'circle', color: '#ffb700', text: '🌐',
           id: 'macro-cpi'
         });
       }
@@ -3544,8 +3544,7 @@ window.BybitMacroCalendar = {
           time: candles[idx].time,
           position: 'belowBar',
           color: '#10b981',
-          shape: 'arrowUp',
-          text: '🟢 NFP US 13:30 (172K)',
+          shape: 'circle', color: '#10b981', text: '🌐',
           id: 'macro-nfp'
         });
       }
@@ -3556,8 +3555,7 @@ window.BybitMacroCalendar = {
           time: candles[idx].time,
           position: 'aboveBar',
           color: '#f59e0b',
-          shape: 'circle',
-          text: '⚡ FOMC Domani 19:00',
+          shape: 'circle', color: '#f59e0b', text: '🌐',
           id: 'macro-fomc'
         });
       }
@@ -3568,8 +3566,7 @@ window.BybitMacroCalendar = {
           time: candles[idx].time,
           position: 'aboveBar',
           color: '#38bdf8',
-          shape: 'square',
-          text: '🌐 BCE Tassi 3.40%',
+          shape: 'circle', color: '#38bdf8', text: '🌐',
           id: 'macro-bce'
         });
       }
@@ -3663,8 +3660,8 @@ function initSub2Pane() {
     layout: { background: { color: '#070a12' }, textColor: '#64748b', fontSize: 10 },
     localization: { locale: 'it-IT' },
     grid: {
-      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
-      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.12)', style: 1 }
     },
     rightPriceScale: {
       borderColor: '#1e293b',
@@ -3696,13 +3693,27 @@ function initSub2Pane() {
     lastValueVisible: false
   });
 
-  // Synchronize timescale with mainChart
+  // Synchronize timescale with mainChart (Bidirectional)
   if (mainChart && typeof mainChart.timeScale === 'function') {
     mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
       if (sub2Chart && range) {
         try { sub2Chart.timeScale().setVisibleLogicalRange(range); } catch(e){}
       }
     });
+    sub2Chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+      if (mainChart && range) {
+        try { mainChart.timeScale().setVisibleLogicalRange(range); } catch(e){}
+      }
+    });
+  }
+
+  // Initial indicator calculation & render
+  if (window.currentCandles || window.lastReceivedCandles) {
+    setTimeout(() => {
+      if (typeof renderCurrentSub2Data === 'function') {
+        renderCurrentSub2Data(window.currentCandles || window.lastReceivedCandles);
+      }
+    }, 50);
   }
 }
 
