@@ -748,82 +748,18 @@ window.PaneSplitterManager = {
       }
     }, { passive: false });
 
-    window.addEventListener('touchend', (e) => {
-      if (isDragging) onEnd();
-    });
-    window.addEventListener('touchcancel', (e) => {
-      if (isDragging) onEnd();
-    });
-  }
-};
-
-    // Desktop Mouse Listeners
-    el.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      onStart(e.clientY);
-    });
-
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('touchend', () => {
       if (isDragging) {
-        onMove(e.clientY);
-      }
-    });
-
-    window.addEventListener('mouseup', onEnd);
-
-    // Modern Pointer Events with setPointerCapture (Bulletproof for iPhone, iPad, Android & Desktop)
-    const onPointerDown = (e) => {
-      e.preventDefault();
-      try { el.setPointerCapture(e.pointerId); } catch(err) {}
-      onStart(e.clientY);
-    };
-
-    const onPointerMove = (e) => {
-      if (isDragging) {
-        e.preventDefault();
-        onMove(e.clientY);
-      }
-    };
-
-    const onPointerUp = (e) => {
-      if (isDragging) {
-        try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+        isDragging = false;
         onEnd();
       }
-    };
-
-    el.addEventListener('pointerdown', onPointerDown);
-    el.addEventListener('pointermove', onPointerMove);
-    el.addEventListener('pointerup', onPointerUp);
-    el.addEventListener('pointercancel', onPointerUp);
-
-    // Mobile / Cell Touch Listeners (touch-action: none & passive: false prevents iOS Safari scroll cancel)
-    const onTouchStart = (e) => {
-      if (!e.touches || !e.touches.length) return;
-      e.preventDefault();
-      e.stopPropagation();
-      onStart(e.touches[0].clientY);
-    };
-
-    const onTouchMove = (e) => {
-      if (!isDragging || !e.touches || !e.touches.length) return;
-      e.preventDefault();
-      e.stopPropagation();
-      onMove(e.touches[0].clientY);
-    };
-
-    const onTouchEnd = (e) => {
+    });
+    window.addEventListener('touchcancel', () => {
       if (isDragging) {
-        e.preventDefault();
-        e.stopPropagation();
+        isDragging = false;
         onEnd();
       }
-    };
-
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend', onTouchEnd, { passive: false });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    });
   }
 };
 
@@ -954,14 +890,6 @@ window.ColumnSplitterManager = {
       }
       if (orderCol) orderCol.style.display = 'block';
     }
-      
-      const chartCol = document.getElementById('bb-col-chart');
-      const bookCol = document.getElementById('bb-col-book');
-      const orderCol = document.getElementById('bb-col-order');
-      if (chartCol) chartCol.style.display = 'block';
-      if (bookCol) bookCol.style.display = 'flex';
-      if (orderCol) orderCol.style.display = 'block';
-    }
 
     if (window.resizeAllCharts) {
       window.resizeAllCharts();
@@ -1040,99 +968,12 @@ window.ColumnSplitterManager = {
     window.addEventListener('touchend', (e) => {
       if (isDragging) onEnd();
     });
+        window.addEventListener('touchend', (e) => {
+      if (isDragging) onEnd();
+    });
     window.addEventListener('touchcancel', (e) => {
       if (isDragging) onEnd();
     });
-  }
-};
-      }
-    } catch(e) {}
-
-    this.applyDomWidths();
-    this.bindColSplitter('splitter-col-1-2', 'book');
-    this.bindColSplitter('splitter-col-2-3', 'order');
-
-    window.addEventListener('resize', () => this.applyDomWidths());
-    window.addEventListener('orientationchange', () => setTimeout(() => this.applyDomWidths(), 100));
-  },
-
-  setColWidth: function(col, px) {
-    const val = parseInt(px, 10);
-    if (isNaN(val)) return;
-    if (col === 'book') this.widths.book = Math.max(180, Math.min(700, val));
-    if (col === 'order') this.widths.order = Math.max(220, Math.min(700, val));
-    this.applyDomWidths();
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
-    } catch(e) {}
-  },
-
-  applyDomWidths: function() {
-    const grid = document.querySelector('.bybit-terminal-grid');
-    if (!grid) return;
-
-    if (window.innerWidth > 920) {
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book}px 10px ${this.widths.order}px`;
-    } else {
-      grid.style.display = 'flex';
-      grid.style.flexDirection = 'column';
-    }
-
-    if (window.resizeAllCharts) {
-      window.resizeAllCharts();
-    }
-  },
-
-  bindColSplitter: function(splitterId, type) {
-    const el = document.getElementById(splitterId);
-    if (!el) return;
-
-    let startX = 0;
-    let startW = 0;
-    let isDragging = false;
-
-    const onPointerDown = (e) => {
-      isDragging = true;
-      startX = e.clientX;
-      startW = (type === 'book') ? this.widths.book : this.widths.order;
-      el.classList.add('dragging');
-      try { el.setPointerCapture(e.pointerId); } catch(err) {}
-      document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'col-resize';
-      e.preventDefault();
-    };
-
-    const onPointerMove = (e) => {
-      if (!isDragging) return;
-      const delta = e.clientX - startX;
-      if (type === 'book') {
-        // Dragging left widens book, dragging right narrows book
-        this.widths.book = Math.max(180, Math.min(700, startW - delta));
-      } else if (type === 'order') {
-        // Dragging left widens order execution form
-        this.widths.order = Math.max(220, Math.min(700, startW - delta));
-      }
-      this.applyDomWidths();
-    };
-
-    const onPointerUp = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      el.classList.remove('dragging');
-      try { el.releasePointerCapture(e.pointerId); } catch(err) {}
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      try {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
-      } catch(e) {}
-      if (window.resizeAllCharts) window.resizeAllCharts();
-    };
-
-    el.addEventListener('pointerdown', onPointerDown);
-    el.addEventListener('pointermove', onPointerMove);
-    el.addEventListener('pointerup', onPointerUp);
-    el.addEventListener('pointercancel', onPointerUp);
   }
 };
 
@@ -1168,29 +1009,24 @@ window.BybitLayoutManager = {
     const volPane = document.getElementById('chart-volume-pane');
     const momPane = document.getElementById('chart-momentum-pane');
     const sub2Pane = document.getElementById('chart-sub2-pane');
-    const splitVol = document.getElementById('splitter-vol');
-    const splitMom = document.getElementById('splitter-mom');
-    const splitSub2 = document.getElementById('splitter-sub2');
-    const splitSub2Btm = document.getElementById('splitter-sub2-bottom');
     const macroWire = document.getElementById('bybit-macro-timeline-ribbon');
     const btn = document.getElementById('btn-mobile-chart-mode');
 
     if (vp) {
-      vp.style.height = isOnly ? '68vh' : '52vh';
-      vp.style.minHeight = isOnly ? '480px' : '380px';
+      vp.style.height = isOnly ? '72vh' : '52vh';
+      vp.style.minHeight = isOnly ? '480px' : '400px';
     }
 
-    const disp = isOnly ? 'none' : '';
-    if (volPane) volPane.style.display = disp;
-    if (momPane) momPane.style.display = disp;
-    if (sub2Pane) sub2Pane.style.display = disp;
-    if (splitVol) splitVol.style.display = disp;
-    if (splitMom) splitMom.style.display = disp;
-    if (splitSub2) splitSub2.style.display = disp;
-    if (splitSub2Btm) splitSub2Btm.style.display = disp;
+    if (volPane) volPane.style.display = isOnly ? 'none' : 'flex';
+    if (momPane) momPane.style.display = isOnly ? 'none' : 'flex';
+    if (sub2Pane) sub2Pane.style.display = isOnly ? 'none' : 'flex';
+    if (macroWire) macroWire.style.display = isOnly ? 'none' : 'flex';
 
     if (btn) {
       btn.innerText = isOnly ? '📈 Mostra Indicatori' : '🕯️ Solo Grafico (Max)';
+      btn.style.background = isOnly ? 'rgba(56,189,248,0.2)' : 'rgba(0,242,161,0.18)';
+      btn.style.borderColor = isOnly ? '#38bdf8' : '#00f2a1';
+      btn.style.color = isOnly ? '#38bdf8' : '#00f2a1';
     }
 
     setTimeout(() => {
@@ -1360,4 +1196,51 @@ window.BybitLayoutManager = {
     }, 50);
   },
 
+
+  toggleBidAskRatio: function(checked) {
+    this.showBidAskRatio = checked;
+    try { localStorage.setItem('tpu_bid_ask_ratio_v1', String(checked)); } catch(e) {}
+    this.updateRatioVisibility();
+  },
+
+  updateRatioVisibility: function() {
+    const bar = document.getElementById('bb-bid-ask-ratio-bar');
+    const chk = document.getElementById('chk-bid-ask-ratio');
+    if (bar) bar.style.display = this.showBidAskRatio ? 'flex' : 'none';
+    if (chk) chk.checked = this.showBidAskRatio;
+  },
+
+  togglePopover: function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const popover = document.getElementById('bybit-layout-popover-menu');
+    if (!popover) return;
+    popover.style.display = (popover.style.display === 'none' || !popover.style.display) ? 'block' : 'none';
+  },
+
+  closePopover: function() {
+    const popover = document.getElementById('bybit-layout-popover-menu');
+    if (popover) popover.style.display = 'none';
+  },
+
+  switchBookSubTab: function(tab) {
+    this.activeTab = tab;
+    const viewOb = document.getElementById('bb-view-orderbook');
+    const viewTr = document.getElementById('bb-view-trades');
+    const tabOb = document.getElementById('bb-tab-ob-btn');
+    const tabTr = document.getElementById('bb-tab-tr-btn');
+    if (tab === 'orderbook') {
+      if (viewOb) viewOb.style.display = 'flex';
+      if (viewTr && this.bookPosition !== 'under') viewTr.style.display = 'none';
+      if (tabOb) tabOb.classList.add('active');
+      if (tabTr && this.bookPosition !== 'under') tabTr.classList.remove('active');
+    } else {
+      if (viewTr) viewTr.style.display = 'flex';
+      if (viewOb && this.bookPosition !== 'under') viewOb.style.display = 'none';
+      if (tabTr) tabTr.classList.add('active');
+      if (tabOb && this.bookPosition !== 'under') tabOb.classList.remove('active');
+    }
+  },
 };
