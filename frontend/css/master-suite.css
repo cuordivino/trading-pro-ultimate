@@ -1,80 +1,247 @@
 /* ==========================================================================
-   TRADING PRO ULTIMATE™ × cuordivino — MASTER EMOTIONAL & COMMUNITY SUITE (v4.0)
-   Cinematic MotionSites Fintech | High-End Emotional Storytelling & Payment Gateway
-   Signature: © La_mEnte_arDente
+   TRADING PRO ULTIMATE™ × cuordivino — MASTERPIECE COMPLETE SUITE CSS (v4.2)
+   Cinematic MotionSites Liquid Glass 2026 | Full-Chain Sequential Flow
+   Signature: © La_mEnte_arDente / cuordivino — Tutti i diritti riservati.
    ========================================================================== */
 
 :root {
   --ms-bg-deep: #020408;
-  --ms-glass-obsidian: linear-gradient(135deg, rgba(13, 19, 33, 0.9) 0%, rgba(6, 9, 17, 0.98) 100%);
+  --ms-glass-obsidian: linear-gradient(135deg, rgba(13, 19, 33, 0.88) 0%, rgba(6, 9, 17, 0.96) 100%);
   --ms-gold: #f59e0b;
   --ms-gold-bright: #fbbf24;
   --ms-cyan: #0ea5e9;
   --ms-cyan-bright: #38bdf8;
   --ms-emerald: #10b981;
+  --ms-purple: #a855f7;
   --ms-border-specular: rgba(255, 255, 255, 0.08);
+  --ms-border-glow: rgba(56, 189, 248, 0.3);
   --ms-ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.master-suite-wrapper {
+.masterpiece-suite-wrapper {
   position: relative;
-  max-width: 1320px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 50px 20px;
+  padding: 30px 16px 80px 16px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #f8fafc;
   z-index: 20;
 }
 
+/* ==========================================================================
+   QUICK-JUMP SEQUENTIAL STEPPER BAR
+   ========================================================================== */
+.master-stepper-bar {
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  margin-bottom: 30px;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  padding: 6px 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.master-stepper-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+.master-stepper-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.stepper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.stepper-pill:hover, .stepper-pill.active {
+  color: #fff;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.stepper-pill.highlight {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   MASTER SECTIONS & CARDS
+   ========================================================================== */
+.master-section {
+  margin-bottom: 40px;
+  scroll-margin-top: 110px;
+}
+
 .master-card {
   background: var(--ms-glass-obsidian) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid var(--ms-border-specular) !important;
   border-radius: 24px;
-  padding: 44px;
+  padding: 40px;
   box-shadow: 0 32px 80px -20px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   transition: all 0.4s var(--ms-ease-smooth);
+  position: relative;
 }
 
 .master-headline {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 900;
   letter-spacing: -0.03em;
   background: linear-gradient(135deg, #ffffff 20%, #cbd5e1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
+}
+
+.master-subheadline {
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .community-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 16px;
+  padding: 5px 16px;
   background: rgba(14, 165, 233, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 9999px;
   color: #38bdf8;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-/* Pricing / Payment Grid */
+/* Real-Time KPI Ribbon */
+.master-kpi-ribbon {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 20px;
+  margin: 32px 0 10px 0;
+}
+.kpi-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kpi-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kpi-val {
+  font-size: 22px;
+  font-weight: 900;
+  font-family: monospace;
+}
+.kpi-sub {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* Profile Selector */
+.profile-tabs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.profile-tab-btn {
+  padding: 14px;
+  background: rgba(11, 16, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+.profile-tab-btn.active {
+  background: rgba(14, 165, 233, 0.12);
+  border-color: #0ea5e9;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.25);
+}
+
+.emotional-profile-box {
+  padding: 28px;
+  background: rgba(3, 7, 18, 0.85);
+  border-radius: 18px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.profile-badge-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 9999px;
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.profile-quote {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #38bdf8;
+  border-left: 3px solid #0ea5e9;
+  padding-left: 18px;
+  margin: 16px 0;
+  line-height: 1.6;
+}
+.profile-macro-note {
+  padding: 14px 18px;
+  background: rgba(14, 165, 233, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+
+/* ==========================================================================
+   PRICING GRID
+   ========================================================================== */
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-top: 36px;
+  gap: 20px;
 }
 
 .pricing-tier-card {
-  background: rgba(11, 16, 28, 0.7);
+  background: rgba(11, 16, 28, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 18px;
-  padding: 32px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -82,102 +249,374 @@
   position: relative;
   overflow: hidden;
 }
-
 .pricing-tier-card.featured {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(20, 29, 52, 0.98) 100%);
   border-color: var(--ms-gold);
   box-shadow: 0 16px 40px -10px rgba(245, 158, 11, 0.25);
-  transform: translateY(-6px);
+  transform: translateY(-4px);
 }
-
 .pricing-tier-card:hover {
   transform: translateY(-4px);
   border-color: var(--ms-cyan);
 }
-
+.featured-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid #f59e0b;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
 .tier-price {
   font-size: 2.2rem;
-  font-weight: 800;
+  font-weight: 900;
   color: #fff;
-  margin: 16px 0;
+  margin: 12px 0 16px 0;
+}
+.tier-price span {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
 }
 
-.tier-price span {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #94a3b8;
+.pricing-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .checkout-btn {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
   color: #fff;
-  font-weight: 700;
-  border-radius: 12px;
+  font-weight: 800;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
-  transition: filter 0.2s ease, transform 0.2s ease;
   text-align: center;
   text-decoration: none;
   display: block;
-  margin-top: 24px;
+  font-size: 12.5px;
+  transition: all 0.2s ease;
 }
-
 .checkout-btn.gold {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #030509;
 }
-
 .checkout-btn:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.15);
   transform: translateY(-2px);
 }
 
-/* Macro News & Community Feed Stream */
-.news-stream-box {
-  margin-top: 40px;
-  padding: 28px;
-  background: rgba(3, 7, 18, 0.75);
-  border-radius: 18px;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+/* ==========================================================================
+   ACCORDIONS
+   ========================================================================== */
+.accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.accordion-item {
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.accordion-item.open {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.accordion-header {
+  width: 100%;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.acc-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.acc-arrow {
+  font-size: 11px;
+  color: #38bdf8;
+}
+.accordion-body {
+  display: none;
+  padding: 0 20px 20px 20px;
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+.accordion-item.open .accordion-body {
+  display: block;
+}
+.acc-tip {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(56, 189, 248, 0.08);
+  border-left: 3px solid #38bdf8;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #cbd5e1;
 }
 
+/* ==========================================================================
+   GLOBAL MARKETS GRID
+   ========================================================================== */
+.markets-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.market-cell-card {
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px;
+  transition: transform 0.2s ease;
+}
+.market-cell-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+.regime-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
+   AUDIO BRIEFING & NEWS
+   ========================================================================== */
+.audio-briefing-player {
+  background: rgba(3, 7, 18, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.audio-play-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #38bdf8;
+  color: #030712;
+  border: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 900;
+}
+.audio-wave-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.audio-wave-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #a855f7);
+  transition: width 0.3s linear;
+}
+
+.news-stream-box {
+  padding: 20px;
+  background: rgba(3, 7, 18, 0.7);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
 .news-item {
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  padding: 16px 0;
+  padding: 14px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .news-item:last-child {
   border-bottom: none;
+}
+
+/* ==========================================================================
+   CATALOG GRID
+   ========================================================================== */
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.catalog-card {
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+.cat-pill {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+}
+.catalog-load-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.catalog-load-btn:hover {
+  background: #38bdf8;
+  color: #030712;
+}
+
+/* ==========================================================================
+   5 AI AGENTS ENSEMBLE & TELEMETRY HUD
+   ========================================================================== */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.agent-card {
+  background: rgba(3, 7, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.agent-status-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.agents-telemetry-hud {
+  background: rgba(3, 7, 18, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+.hud-log-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 11px;
+}
+.hud-log-line {
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+.hud-log-line span {
+  color: #64748b;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (PC, TABLET, SMARTPHONE VERTICALE/ORIZZONTALE)
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .agents-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .markets-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 968px) {
   .pricing-grid {
     grid-template-columns: 1fr;
   }
+  .catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .master-kpi-ribbon {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .agents-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
+  .masterpiece-suite-wrapper {
+    padding: 16px 10px 60px 10px;
+  }
   .master-card {
-    padding: 24px 16px !important;
+    padding: 20px 14px !important;
     border-radius: 16px !important;
   }
-  .master-headline {
-    font-size: 1.7rem !important;
+  .master-stepper-bar {
+    top: 42px;
+    padding: 4px 6px;
   }
-  .profile-tab-btn {
-    padding: 12px 10px !important;
-    font-size: 0.9rem !important;
+  .stepper-pill {
+    padding: 5px 10px;
+    font-size: 10.5px;
   }
-  .master-suite-wrapper {
-    padding: 30px 10px !important;
+  .profile-tabs-grid {
+    grid-template-columns: 1fr;
   }
-  .news-item {
-    flex-direction: column !important;
-    gap: 6px !important;
+  .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+  .agents-grid {
+    grid-template-columns: 1fr;
+  }
+  .markets-grid {
+    grid-template-columns: 1fr;
+  }
+  .audio-briefing-player {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 }
