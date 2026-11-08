@@ -865,19 +865,96 @@
           <div class="col-splitter-grip"></div>
         </div>
 
-        <!-- COLUMN 2: BYBIT ORDER BOOK & RECENT TRADES -->
+        <!-- COLUMN 2: BYBIT ORDER BOOK & RECENT TRADES (DUAL-MODE & SPLIT) -->
         <div class="bb-book-trades-card" id="bb-col-book">
           <div class="bb-book-tabs-header">
-            <button class="bb-subtab-btn active" id="bb-tab-ob-btn" onclick="switchBookSubTab('orderbook')">
-              📖 Order Book (L2 Depth)
-            </button>
-            <button class="bb-subtab-btn" id="bb-tab-tr-btn" onclick="switchBookSubTab('trades')">
-              ⚡ Trade Recenti
-            </button>
+            <div class="bb-book-tabs-left">
+              <button class="bb-subtab-btn active" id="bb-tab-ob-btn" onclick="BybitLayoutManager.switchBookSubTab('orderbook')">
+                📖 Ordine Prenota
+              </button>
+              <button class="bb-subtab-btn" id="bb-tab-tr-btn" onclick="BybitLayoutManager.switchBookSubTab('trades')">
+                ⚡ Operazioni recenti
+              </button>
+            </div>
+
+            <div class="bb-book-header-tools">
+              <!-- Bybit Layout Switcher Popover Trigger (matching media_1794165856984_419758d4.jpg) -->
+              <div class="bybit-layout-dropdown-wrap">
+                <button type="button" class="btn-bb-layout-menu" id="btn-bybit-layout-menu" onclick="BybitLayoutManager.togglePopover(event)" title="Configura Layout Bybit (Split OB/Trades, Schede, Grafico Ampio)">
+                  <span class="icon-layout-tiles">◫</span>
+                  <span class="chevron-mini">▾</span>
+                </button>
+
+                <!-- Floating Bybit Layout Popover Card -->
+                <div id="bybit-layout-popover-menu" class="bybit-layout-popover" style="display:none;">
+                  <div class="popover-header">
+                    <span class="popover-title">MODALITÀ VISUALIZZAZIONE</span>
+                    <button type="button" class="popover-close-btn" onclick="BybitLayoutManager.closePopover()">✕</button>
+                  </div>
+                  
+                  <div class="bybit-layout-tiles-grid">
+                    <!-- Tile 1: Vertical Split (OB sopra, Trades sotto) as in media_1794165949596_1c73396f.jpg -->
+                    <div class="bybit-layout-tile active" id="tile-mode-split" onclick="BybitLayoutManager.setLayoutMode('split')" title="Visualizza Order Book sopra e Trade Recenti sotto">
+                      <div class="tile-icon-box split-box">
+                        <div class="tile-seg top">OB</div>
+                        <div class="tile-seg btm">RT</div>
+                      </div>
+                      <span class="tile-title">OB + Trades (Split)</span>
+                    </div>
+
+                    <!-- Tile 2: Tabs Mode (OB o RT a tutta altezza) as in media_1794165856984_419758d4.jpg -->
+                    <div class="bybit-layout-tile" id="tile-mode-tabs" onclick="BybitLayoutManager.setLayoutMode('tabs')" title="Visualizza a schede singole a tutta altezza">
+                      <div class="tile-icon-box tabs-box">
+                        <div class="tile-seg tab-l">OB</div>
+                        <div class="tile-seg tab-r">RT</div>
+                      </div>
+                      <span class="tile-title">A Schede</span>
+                    </div>
+
+                    <!-- Tile 3: Wide Chart (Book & Trades docked UNDER chart) -->
+                    <div class="bybit-layout-tile" id="tile-mode-wide" onclick="BybitLayoutManager.setLayoutMode('wide')" title="Grafico a tutta larghezza, Book sotto">
+                      <div class="tile-icon-box wide-box">
+                        <div class="tile-seg chart-area">GRAFICO AMPIO</div>
+                        <div class="tile-seg dock-area">OB / RT SOTTO</div>
+                      </div>
+                      <span class="tile-title">Grafico Ampio</span>
+                    </div>
+
+                    <!-- Tile 4: Standard 3 Columns -->
+                    <div class="bybit-layout-tile" id="tile-mode-3col" onclick="BybitLayoutManager.setLayoutMode('3col')" title="Classico 3 Colonne affiancate">
+                      <div class="tile-icon-box threecol-box">
+                        <div class="tile-seg col-c">G</div>
+                        <div class="tile-seg col-b">B</div>
+                        <div class="tile-seg col-o">O</div>
+                      </div>
+                      <span class="tile-title">3 Colonne</span>
+                    </div>
+                  </div>
+
+                  <div class="bybit-layout-footer">
+                    <span class="footer-lbl">Rapporto Bid-Ask</span>
+                    <label class="switch-mini">
+                      <input type="checkbox" id="chk-bid-ask-ratio" checked onchange="BybitLayoutManager.toggleBidAskRatio(this.checked)">
+                      <span class="slider-toggle-mini"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Bid-Ask Ratio Bar (From media_1794165856984_419758d4.jpg toggle) -->
+          <div id="bb-bid-ask-ratio-bar" class="bb-bid-ask-ratio-bar">
+            <span class="ratio-val bid" id="bb-ratio-bid-lbl">Bid 50.0%</span>
+            <div class="ratio-track">
+              <div class="ratio-bar-bid" id="bb-ratio-bid-bar" style="width:50%;"></div>
+              <div class="ratio-bar-ask" id="bb-ratio-ask-bar" style="width:50%;"></div>
+            </div>
+            <span class="ratio-val ask" id="bb-ratio-ask-lbl">Ask 50.0%</span>
           </div>
 
           <!-- Order Book View -->
-          <div id="bb-view-orderbook" style="display:flex; flex-direction:column; height:100%;">
+          <div id="bb-view-orderbook" class="bb-view-pane" style="display:flex; flex-direction:column;">
             <div class="bb-ob-head">
               <span>Prezzo (USDT)</span>
               <span>Dim. (BTC)</span>
@@ -888,8 +965,14 @@
             </div>
           </div>
 
+          <!-- Split Sub-Header for Recent Trades in 'split' mode (as in media_1794165949596_1c73396f.jpg) -->
+          <div id="bb-split-trades-header" class="bb-trades-subhead" style="display:flex;">
+            <span class="subhead-title">⚡ Operazioni recenti</span>
+            <span class="live-dot-pulse">● Live</span>
+          </div>
+
           <!-- Recent Trades View -->
-          <div id="bb-view-trades" style="display:none; flex-direction:column; height:100%;" class="bb-trades-wrap">
+          <div id="bb-view-trades" class="bb-view-pane bb-trades-wrap" style="display:flex; flex-direction:column;">
             <div class="bb-ob-head">
               <span>Prezzo (USDT)</span>
               <span>Dim. (BTC)</span>

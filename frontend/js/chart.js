@@ -3517,40 +3517,48 @@ window.BybitMacroCalendar = {
     ];
   },
 
-    renderTimelineMarkers() {
-    if (!candleSeries || !window.currentCandles || !window.currentCandles.length) return;
-    try {
-      const candles = window.currentCandles;
-      const count = candles.length;
-      if (count < 15) return;
+    
+  // RENDER DEDICATED MACRO TIMELINE GLOBE MARKERS RIGHT ABOVE TIME SCALE
+  renderMacroGlobeTrack() {
+    const parent = document.getElementById('chart-container');
+    if (!parent || !mainChart || !window.currentCandles || !window.currentCandles.length) return;
 
-      const markers = [];
-      const news = this.getNewsList();
-
-      // Place single neat globe dots spaced along the bottom of the timeline
-      const offsets = [10, 26, 42, 60];
-      const usedTimes = new Set();
-
-      news.slice(0, 4).forEach((item, i) => {
-        const idx = Math.max(0, count - offsets[i]);
-        if (candles[idx] && !usedTimes.has(candles[idx].time)) {
-          usedTimes.add(candles[idx].time);
-          markers.push({
-            time: candles[idx].time,
-            position: 'belowBar',
-            color: '#38bdf8',
-            shape: 'circle',
-            text: '🌐',
-            id: `macro-${i}`
-          });
-        }
-      });
-
-      candleSeries.setMarkers(markers);
-    } catch(e) {
-      console.warn('[BybitMacroCalendar] renderTimelineMarkers error:', e);
+    let track = document.getElementById('macro-timeline-track');
+    if (!track) {
+      track = document.createElement('div');
+      track.id = 'macro-timeline-track';
+      track.className = 'macro-timeline-track';
+      parent.appendChild(track);
     }
+    track.innerHTML = '';
+
+    const candles = window.currentCandles;
+    const count = candles.length;
+    const news = this.getNewsList();
+    const offsets = [12, 28, 48, 72];
+
+    news.slice(0, 4).forEach((ev, i) => {
+      const idx = Math.max(0, count - offsets[i]);
+      if (candles[idx]) {
+        const time = candles[idx].time;
+        const x = mainChart.timeScale().timeToCoordinate(time);
+        if (x !== null && x >= 0 && x <= parent.clientWidth - 70) {
+          const marker = document.createElement('div');
+          marker.className = 'macro-globe-marker';
+          marker.style.left = `${x}px`;
+          marker.title = `${ev.flag} ${ev.title} (${ev.time || '13:30'})`;
+          marker.innerText = '🌐';
+          marker.onclick = () => BybitMacroCalendar.openModal();
+          track.appendChild(marker);
+        }
+      }
+    });
   },
+
+  renderTimelineMarkers() {
+    this.renderMacroGlobeTrack();
+  },
+
 
   openModal(filter = 'tutte') {
     this.activeTab = filter;
@@ -3835,3 +3843,11 @@ function renderCurrentSub2Data(candles) {
     if (badge) badge.textContent = `Hist: ${lastH}`;
   }
 }
+
+  if (mainChart && typeof mainChart.timeScale === 'function') {
+    mainChart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+      if (window.BybitMacroCalendar && typeof BybitMacroCalendar.renderMacroGlobeTrack === 'function') {
+        BybitMacroCalendar.renderMacroGlobeTrack();
+      }
+    });
+  }

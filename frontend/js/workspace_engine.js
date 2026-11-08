@@ -20,7 +20,7 @@ window.ThemeManager = {
       icon: '🌑',
       chartBg: '#070a12',
       paneBg: '#050811',
-      gridColor: 'rgba(255, 255, 255, 0.03)',
+      gridColor: 'rgba(255, 255, 255, 0.08)',
       borderColor: '#1e293b',
       textColor: '#94a3b8',
       candleUp: '#00f2a1',
@@ -101,7 +101,7 @@ window.ThemeManager = {
       icon: '🌊',
       chartBg: '#071126',
       paneBg: '#040915',
-      gridColor: 'rgba(56, 189, 248, 0.04)',
+      gridColor: 'rgba(56, 189, 248, 0.08)',
       borderColor: '#1e3a8a',
       textColor: '#93c5fd',
       candleUp: '#00f2a1',
@@ -291,7 +291,7 @@ window.ThemeManager = {
       icon: '❄️',
       chartBg: '#060f1e',
       paneBg: '#030811',
-      gridColor: 'rgba(56, 189, 248, 0.05)',
+      gridColor: 'rgba(56, 189, 248, 0.08)',
       borderColor: '#0c4a6e',
       textColor: '#bae6fd',
       candleUp: '#38bdf8',
@@ -318,7 +318,7 @@ window.ThemeManager = {
       icon: '⚙️',
       chartBg: '#1e222d',
       paneBg: '#171b26',
-      gridColor: 'rgba(255, 255, 255, 0.05)',
+      gridColor: 'rgba(255, 255, 255, 0.08)',
       borderColor: '#2e3546',
       textColor: '#b2b5be',
       candleUp: '#26a69a',
@@ -852,6 +852,18 @@ if (typeof document !== 'undefined') {
 // 4. COLUMN SPLITTER MANAGER (TAGLI VERTICALI LARGHEZZA GRAFICO / BOOK / ORDINI)
 // ============================================================================
 window.ColumnSplitterManager = {
+  // Layout Modes: '3col' (Chart | Book | Order) or 'wide' (Wide Chart & Book docked below)
+  layoutMode: 'wide',
+
+  toggleLayoutMode: function(mode) {
+    this.layoutMode = mode || (this.layoutMode === 'wide' ? '3col' : 'wide');
+    try { localStorage.setItem('tpu_layout_mode_pref', this.layoutMode); } catch(e) {}
+    this.applyDomWidths();
+    const btn = document.getElementById('btn-toggle-layout-mode');
+    if (btn) btn.innerText = this.layoutMode === 'wide' ? '◫ Grafico Ampio' : '⊞ 3 Colonne';
+    if (window.showToast) window.showToast(`Layout impostato su: ${this.layoutMode === 'wide' ? 'Grafico Ampio (Book sotto)' : '3 Colonne'}`, 'info');
+  },
+
   STORAGE_KEY: 'tpu_col_widths_v5',
   widths: {
     book: 310,
@@ -889,15 +901,59 @@ window.ColumnSplitterManager = {
     const grid = document.querySelector('.bybit-terminal-grid');
     if (!grid) return;
 
+    const bookCol = document.getElementById('bb-col-book');
+    const orderCol = document.getElementById('bb-col-order');
+    const chartCol = document.getElementById('bb-col-chart');
+    const split1 = document.getElementById('splitter-col-1-2');
+    const split2 = document.getElementById('splitter-col-2-3');
+
+    // Restore saved layout mode pref
+    try {
+      const savedMode = localStorage.getItem('tpu_layout_mode_pref');
+      if (savedMode) this.layoutMode = savedMode;
+    } catch(e) {}
+
     if (window.innerWidth > 920) {
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book}px 10px ${this.widths.order}px`;
-      grid.style.gap = '0';
+      if (this.layoutMode === 'wide') {
+        // Bybit Wide Chart Layout: Chart (1fr), Order Form (340px), Book docked below chart
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = `1fr 10px ${this.widths.order || 340}px`;
+        grid.style.gap = '0';
+        if (split1) split1.style.display = 'none';
+        if (split2) split2.style.display = 'flex';
+        if (bookCol) {
+          bookCol.style.display = 'flex';
+          bookCol.style.gridColumn = '1 / -1';
+          bookCol.style.marginTop = '12px';
+        }
+      } else {
+        // Standard 3-Column Layout: Chart (1fr) | Book (310px) | Order Form (340px)
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book || 310}px 10px ${this.widths.order || 340}px`;
+        grid.style.gap = '0';
+        if (split1) split1.style.display = 'flex';
+        if (split2) split2.style.display = 'flex';
+        if (bookCol) {
+          bookCol.style.display = 'flex';
+          bookCol.style.gridColumn = 'auto';
+          bookCol.style.marginTop = '0';
+        }
+      }
     } else {
-      // Mobile / Tablet: ALWAYS stack vertically, NEVER hide!
+      // Mobile / Tablet: Stack Chart, Book, and Order Execution vertically
       grid.style.display = 'flex';
       grid.style.flexDirection = 'column';
       grid.style.gap = '12px';
+      if (split1) split1.style.display = 'none';
+      if (split2) split2.style.display = 'none';
+      if (chartCol) chartCol.style.display = 'block';
+      if (bookCol) {
+        bookCol.style.display = 'flex';
+        bookCol.style.gridColumn = 'auto';
+        bookCol.style.marginTop = '0';
+      }
+      if (orderCol) orderCol.style.display = 'block';
+    }
       
       const chartCol = document.getElementById('bb-col-chart');
       const bookCol = document.getElementById('bb-col-book');
@@ -1085,6 +1141,306 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     try {
       if (window.ColumnSplitterManager) window.ColumnSplitterManager.init();
+      if (window.BybitLayoutManager) window.BybitLayoutManager.init();
     } catch(e) {}
   });
 }
+
+
+// ============================================================================
+// BYBIT DUAL-MODE LAYOUT MANAGER (SPLIT VERTICALE, TABS, GRAFICO AMPIO, 3 COLONNE)
+// Directly implements official Bybit UX from screenshots media_1794165856984 & media_1794165949596
+// ============================================================================
+window.BybitLayoutManager = {
+  // Modes: 'split' (OB sopra / Trades sotto) | 'tabs' (Schede singole) | 'wide' (Grafico ampio / Book sotto) | '3col' (3 Colonne)
+  layoutMode: 'split',
+  activeTab: 'orderbook',
+  showBidAskRatio: true,
+  STORAGE_KEY: 'tpu_bybit_layout_mode_v3',
+
+  init: function() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved && ['split', 'tabs', 'wide', '3col'].includes(saved)) {
+        this.layoutMode = saved;
+      }
+      const ratioSaved = localStorage.getItem('tpu_bid_ask_ratio_v1');
+      if (ratioSaved !== null) {
+        this.showBidAskRatio = ratioSaved === 'true';
+      }
+    } catch(e) {}
+
+    this.applyLayout();
+    this.updateRatioVisibility();
+
+    // Close popover when clicking anywhere outside
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('bybit-layout-popover-menu');
+      const btn = document.getElementById('btn-bybit-layout-menu');
+      if (popover && popover.style.display !== 'none') {
+        if (!popover.contains(e.target) && (!btn || !btn.contains(e.target))) {
+          popover.style.display = 'none';
+        }
+      }
+    });
+
+    window.addEventListener('resize', () => this.applyLayout());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.applyLayout(), 100));
+  },
+
+  setLayoutMode: function(mode) {
+    if (!['split', 'tabs', 'wide', '3col'].includes(mode)) return;
+    this.layoutMode = mode;
+    try { localStorage.setItem(this.STORAGE_KEY, mode); } catch(e) {}
+    this.applyLayout();
+    this.closePopover();
+
+    const modeLabels = {
+      split: 'Split OB/Trades (Settaggio Bybit)',
+      tabs: 'A Schede Singole',
+      wide: 'Grafico Ampio (Book Sotto)',
+      '3col': '3 Colonne Classico'
+    };
+    if (window.showToast) window.showToast(`Layout impostato: ${modeLabels[mode]}`, 'info');
+  },
+
+  cycleLayoutMode: function() {
+    const cycle = ['split', 'wide', 'tabs', '3col'];
+    const nextIdx = (cycle.indexOf(this.layoutMode) + 1) % cycle.length;
+    this.setLayoutMode(cycle[nextIdx]);
+  },
+
+  switchBookSubTab: function(tab) {
+    this.activeTab = tab;
+    if (this.layoutMode === 'split' || this.layoutMode === 'wide') {
+      // If user clicks a specific tab while in split mode, switch to tabs mode
+      this.setLayoutMode('tabs');
+    } else {
+      this.applyLayout();
+    }
+  },
+
+  togglePopover: function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const popover = document.getElementById('bybit-layout-popover-menu');
+    if (!popover) return;
+    popover.style.display = (popover.style.display === 'none' || !popover.style.display) ? 'block' : 'none';
+  },
+
+  closePopover: function() {
+    const popover = document.getElementById('bybit-layout-popover-menu');
+    if (popover) popover.style.display = 'none';
+  },
+
+  toggleBidAskRatio: function(checked) {
+    this.showBidAskRatio = checked;
+    try { localStorage.setItem('tpu_bid_ask_ratio_v1', String(checked)); } catch(e) {}
+    this.updateRatioVisibility();
+  },
+
+  updateRatioVisibility: function() {
+    const bar = document.getElementById('bb-bid-ask-ratio-bar');
+    const chk = document.getElementById('chk-bid-ask-ratio');
+    if (bar) bar.style.display = this.showBidAskRatio ? 'flex' : 'none';
+    if (chk) chk.checked = this.showBidAskRatio;
+  },
+
+  applyLayout: function() {
+    const isMobile = window.innerWidth <= 920;
+    const grid = document.querySelector('.bybit-terminal-grid');
+    const bookCol = document.getElementById('bb-col-book');
+    const chartCol = document.getElementById('bb-col-chart');
+    const orderCol = document.getElementById('bb-col-order');
+    const split1 = document.getElementById('splitter-col-1-2');
+    const split2 = document.getElementById('splitter-col-2-3');
+
+    const viewOb = document.getElementById('bb-view-orderbook');
+    const viewTr = document.getElementById('bb-view-trades');
+    const splitTradesHead = document.getElementById('bb-split-trades-header');
+    const tabOb = document.getElementById('bb-tab-ob-btn');
+    const tabTr = document.getElementById('bb-tab-tr-btn');
+
+    // Sync active tile classes in popover
+    ['split', 'tabs', 'wide', '3col'].forEach(m => {
+      const tile = document.getElementById(`tile-mode-${m}`);
+      if (tile) tile.classList.toggle('active', this.layoutMode === m);
+    });
+
+    // Sync label in Chart top bar
+    const lbl = document.getElementById('lbl-active-layout');
+    if (lbl) {
+      const shortLabels = { split: 'Split OB/RT', tabs: 'Schede', wide: 'Grafico Ampio', '3col': '3 Colonne' };
+      lbl.innerText = shortLabels[this.layoutMode] || this.layoutMode;
+    }
+
+    // 1. MOBILE / TABLET (ALWAYS VERTICAL STACK, NEVER HIDE)
+    if (isMobile) {
+      if (grid) {
+        grid.style.display = 'flex';
+        grid.style.flexDirection = 'column';
+        grid.style.gap = '12px';
+      }
+      if (split1) split1.style.display = 'none';
+      if (split2) split2.style.display = 'none';
+      if (chartCol) chartCol.style.display = 'block';
+      if (bookCol) {
+        bookCol.style.display = 'flex';
+        bookCol.style.flexDirection = 'column';
+        bookCol.style.gridColumn = 'auto';
+        bookCol.style.height = 'auto';
+        bookCol.style.minHeight = '480px';
+      }
+      if (orderCol) orderCol.style.display = 'block';
+
+      if (this.layoutMode === 'tabs') {
+        if (splitTradesHead) splitTradesHead.style.display = 'none';
+        if (this.activeTab === 'orderbook') {
+          if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+          if (viewTr) { viewTr.style.display = 'none'; }
+          tabOb?.classList.add('active');
+          tabTr?.classList.remove('active');
+        } else {
+          if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+          if (viewOb) { viewOb.style.display = 'none'; }
+          tabTr?.classList.add('active');
+          tabOb?.classList.remove('active');
+        }
+      } else {
+        // split mode: show both stacked
+        if (splitTradesHead) splitTradesHead.style.display = 'flex';
+        if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+        if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+        tabOb?.classList.add('active');
+        tabTr?.classList.add('active');
+      }
+      return;
+    }
+
+    // 2. DESKTOP WIDE CHART LAYOUT (Book docked under chart)
+    if (this.layoutMode === 'wide') {
+      const orderW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.order : 340;
+      if (grid) {
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = `1fr 10px ${orderW}px`;
+        grid.style.gridTemplateRows = 'auto auto';
+        grid.style.gap = '0';
+      }
+      if (chartCol) {
+        chartCol.style.gridColumn = '1';
+        chartCol.style.gridRow = '1';
+        chartCol.style.display = 'block';
+      }
+      if (split1) split1.style.display = 'none';
+      if (split2) {
+        split2.style.gridColumn = '2';
+        split2.style.gridRow = '1 / span 2';
+        split2.style.display = 'flex';
+      }
+      if (orderCol) {
+        orderCol.style.gridColumn = '3';
+        orderCol.style.gridRow = '1 / span 2';
+        orderCol.style.display = 'block';
+      }
+      if (bookCol) {
+        bookCol.style.gridColumn = '1';
+        bookCol.style.gridRow = '2';
+        bookCol.style.display = 'flex';
+        bookCol.style.flexDirection = 'row'; // Horizontal side-by-side below chart!
+        bookCol.style.height = '360px';
+        bookCol.style.marginTop = '12px';
+      }
+
+      // Under chart: Order Book on left, Trades on right
+      if (viewOb) {
+        viewOb.style.display = 'flex';
+        viewOb.style.flex = '1';
+        viewOb.style.borderRight = '1px solid var(--border)';
+      }
+      if (splitTradesHead) splitTradesHead.style.display = 'none';
+      if (viewTr) {
+        viewTr.style.display = 'flex';
+        viewTr.style.flex = '1';
+      }
+      tabOb?.classList.add('active');
+      tabTr?.classList.add('active');
+      return;
+    }
+
+    // 3. DESKTOP 3-COLUMN MODES ('split', 'tabs', or '3col')
+    const bookW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.book : 310;
+    const orderW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.order : 340;
+
+    if (grid) {
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = `1fr 10px ${bookW}px 10px ${orderW}px`;
+      grid.style.gridTemplateRows = 'auto';
+      grid.style.gap = '0';
+    }
+    if (chartCol) {
+      chartCol.style.gridColumn = '1';
+      chartCol.style.gridRow = 'auto';
+      chartCol.style.display = 'block';
+    }
+    if (split1) {
+      split1.style.gridColumn = '2';
+      split1.style.gridRow = 'auto';
+      split1.style.display = 'flex';
+    }
+    if (bookCol) {
+      bookCol.style.gridColumn = '3';
+      bookCol.style.gridRow = 'auto';
+      bookCol.style.display = 'flex';
+      bookCol.style.flexDirection = 'column';
+      bookCol.style.height = '640px';
+      bookCol.style.marginTop = '0';
+    }
+    if (split2) {
+      split2.style.gridColumn = '4';
+      split2.style.gridRow = 'auto';
+      split2.style.display = 'flex';
+    }
+    if (orderCol) {
+      orderCol.style.gridColumn = '5';
+      orderCol.style.gridRow = 'auto';
+      orderCol.style.display = 'block';
+    }
+
+    if (this.layoutMode === 'tabs') {
+      // Schede Singole
+      if (splitTradesHead) splitTradesHead.style.display = 'none';
+      if (viewOb) viewOb.style.borderRight = 'none';
+      if (this.activeTab === 'orderbook') {
+        if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+        if (viewTr) { viewTr.style.display = 'none'; }
+        tabOb?.classList.add('active');
+        tabTr?.classList.remove('active');
+      } else {
+        if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+        if (viewOb) { viewOb.style.display = 'none'; }
+        tabTr?.classList.add('active');
+        tabOb?.classList.remove('active');
+      }
+    } else {
+      // 'split' mode (Settaggio da media_1794165949596_1c73396f.jpg):
+      // Upper half: Order Book, Lower half: Recent Trades!
+      if (viewOb) {
+        viewOb.style.display = 'flex';
+        viewOb.style.flex = '1';
+        viewOb.style.borderRight = 'none';
+        viewOb.style.overflowY = 'auto';
+      }
+      if (splitTradesHead) splitTradesHead.style.display = 'flex';
+      if (viewTr) {
+        viewTr.style.display = 'flex';
+        viewTr.style.flex = '1';
+        viewTr.style.overflowY = 'auto';
+        viewTr.style.borderTop = '1px solid var(--border)';
+      }
+      tabOb?.classList.add('active');
+      tabTr?.classList.add('active');
+    }
+  }
+};

@@ -400,6 +400,24 @@ window.BybitEngine = {
       spreadVal.innerText = `${curr}${spread.toFixed(prec)} (${spreadPct.toFixed(3)}%)`;
     }
 
+    
+    // Update Live Bid-Ask Ratio Bar (media_1794165856984_419758d4.jpg)
+    const totalBidVol = bids.reduce((acc, b) => acc + (b.size || 0), 0);
+    const totalAskVol = asks.reduce((acc, a) => acc + (a.size || 0), 0);
+    const sumVol = totalBidVol + totalAskVol;
+    if (sumVol > 0) {
+      const bidPct = Math.round((totalBidVol / sumVol) * 1000) / 10;
+      const askPct = (100 - bidPct).toFixed(1);
+      const bidEl = document.getElementById('bb-ratio-bid-lbl');
+      const askEl = document.getElementById('bb-ratio-ask-lbl');
+      const bidBar = document.getElementById('bb-ratio-bid-bar');
+      const askBar = document.getElementById('bb-ratio-ask-bar');
+      if (bidEl) bidEl.innerText = `Bid ${bidPct.toFixed(1)}%`;
+      if (askEl) askEl.innerText = `Ask ${askPct}%`;
+      if (bidBar) bidBar.style.width = `${bidPct}%`;
+      if (askBar) askBar.style.width = `${askPct}%`;
+    }
+
     const maxBidVol = bids.length ? Math.max(...bids.map(b => b.size)) : 1;
     const maxAskVol = asks.length ? Math.max(...asks.map(a => a.size)) : 1;
     const maxVol = Math.max(maxBidVol, maxAskVol, 1);
@@ -729,6 +747,10 @@ window.BybitEngine = {
     const code = this.getOrderCurrency();
     const sym = this.getCurrencySymbol(code);
 
+        const amtInput = document.getElementById('bb-order-usdt');
+    if (amtInput) {
+      amtInput.style.paddingLeft = (code === 'USDT' || code === 'CHF') ? '58px' : '28px';
+    }
     const sel = document.getElementById('bb-order-currency-select');
     if (sel && sel.value !== code) sel.value = code;
 
@@ -750,7 +772,7 @@ window.BybitEngine = {
     const asset = this.activeAsset || (window.getAssetBySymbol ? window.getAssetBySymbol(this.currentSymbol) : null);
     const currCode = this.getOrderCurrency ? this.getOrderCurrency() : 'USD';
     const currSym = this.getCurrencySymbol ? this.getCurrencySymbol(currCode) : '$';
-    const curr = (currCode === 'USDT' || currCode === 'CHF') ? ` ${currCode}` : currSym;
+    const curr = (currCode === 'USDT' || currCode === 'CHF') ? `${currCode} ` : currSym;
     this.updateCurrencyUI();
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(this.tickerData.lastPrice, this.currentSymbol) : (asset ? (asset.precision || 2) : 2);
     
@@ -888,3 +910,9 @@ document.addEventListener('DOMContentLoaded', () => {
     BybitEngine.init();
   }, 400);
 });
+
+window.switchBookSubTab = function(tab) {
+  if (window.BybitLayoutManager) {
+    window.BybitLayoutManager.switchBookSubTab(tab);
+  }
+};

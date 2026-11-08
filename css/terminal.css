@@ -727,11 +727,13 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   position: relative;
 }
 .chart-sub-pane {
-  height: 110px;
-  width: 100%;
-  border-top: 1px solid var(--border);
-  position: relative;
-  display: none;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 .chart-sub-pane.active {
   display: block;
@@ -3027,19 +3029,21 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
    INTERACTIVE PANE SPLITTERS & WORKSPACE CONTROLS
    ========================================================================== */
 .chart-splitter {
-  height: 8px;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  cursor: row-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  touch-action: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
-  position: relative;
-  z-index: 25;
+  height: 8px !important;
+  min-height: 8px !important;
+  background: #090e1a !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.8) !important;
+  cursor: row-resize !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: none !important;
+  z-index: 15 !important;
+  margin: 0 !important;
 }
 .chart-splitter:hover, .chart-splitter.dragging {
   background: rgba(56, 189, 248, 0.25) !important;
@@ -5617,21 +5621,19 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
    SUBPANE HEADER BARS (INLINE PARAMETER CONTROLS & LIVE READINGS)
    ========================================================================== */
 .subpane-header-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 75px;
-  height: 24px;
-  background: rgba(10, 15, 29, 0.85);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
-  z-index: 10;
-  pointer-events: auto;
-  box-sizing: border-box;
+  position: relative !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  background: rgba(10, 15, 29, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 8px !important;
+  z-index: 5 !important;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
 }
 
 .subpane-title {
@@ -7727,12 +7729,11 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 .chart-splitter::before {
   content: '';
   position: absolute;
-  top: -12px;
-  bottom: -12px;
+  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
-  z-index: 26;
-  touch-action: none !important;
+  z-index: 10;
   cursor: row-resize;
 }
 .splitter-grip {
@@ -8119,4 +8120,445 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     display: block !important;
     width: 100% !important;
   }
+}
+
+
+/* ==========================================================================
+   BYBIT INSTITUTIONAL TYPOGRAPHY & REFINED INPUT PADDING
+   Thin, crisp, ultra-high legibility fonts matching official Bybit UI
+   ========================================================================== */
+body, input, select, button, textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv03" 1, "cv04" 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Order Amount Input: Plenty of left padding to prevent currency text overlap */
+#bb-order-usdt {
+  padding-left: 58px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+#bb-order-amt-sym {
+  left: 10px !important;
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Sleek numbers and labels across the terminal */
+.bb-ob-price, .bb-ob-size, .bb-ob-sum,
+.ticker-price, .hero-price-val, .window-title,
+.form-field label, .bybit-header-pill {
+  font-weight: 500 !important;
+  letter-spacing: -0.2px !important;
+}
+.bb-ob-price {
+  font-weight: 600 !important;
+}
+
+/* Macro timeline track pinned immediately above time scale */
+.macro-timeline-track {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 75px;
+  height: 22px;
+  pointer-events: none;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+}
+.macro-globe-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+  transition: transform 0.15s ease;
+}
+.macro-globe-marker:hover {
+  transform: translateX(-50%) scale(1.25);
+  border-color: #00f2a1;
+}
+
+
+/* ==========================================================================
+   OFFICIAL BYBIT LAYOUT POPOVER & DUAL-MODE STYLES
+   Matches media_1794165856984_419758d4.jpg and media_1794165949596_1c73396f.jpg
+   ========================================================================== */
+.bb-book-tabs-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #0b0e14 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0 4px !important;
+  position: relative !important;
+  min-height: 34px !important;
+}
+
+.bb-book-tabs-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+.bb-book-header-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding-right: 4px !important;
+}
+
+.btn-bb-layout-menu {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #94a3b8 !important;
+  border-radius: 4px !important;
+  padding: 3px 6px !important;
+  font-size: 11px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-bb-layout-menu:hover {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: #38bdf8 !important;
+  color: #fff !important;
+}
+
+.bybit-layout-dropdown-wrap {
+  position: relative !important;
+}
+
+/* Floating Bybit Layout Popover Card */
+.bybit-layout-popover {
+  position: absolute !important;
+  top: 36px !important;
+  right: 0 !important;
+  width: 220px !important;
+  background: #121824 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+  padding: 10px !important;
+  z-index: 1000 !important;
+  animation: fadeInPop 0.15s ease forwards !important;
+}
+
+@keyframes fadeInPop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.popover-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 8px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-bottom: 6px !important;
+}
+
+.popover-title {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: #848e9c !important;
+  letter-spacing: 0.5px !important;
+}
+
+.popover-close-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+}
+
+.popover-close-btn:hover {
+  color: #fff !important;
+}
+
+/* 2x2 Grid of Visual Layout Tiles */
+.bybit-layout-tiles-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+
+.bybit-layout-tile {
+  background: #182030 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 4px !important;
+  padding: 6px 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.bybit-layout-tile:hover {
+  border-color: #38bdf8 !important;
+  background: #1e293b !important;
+}
+
+.bybit-layout-tile.active {
+  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.3) !important;
+}
+
+.tile-icon-box {
+  width: 36px !important;
+  height: 28px !important;
+  background: #090d16 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 2px !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+.tile-icon-box.split-box {
+  flex-direction: column !important;
+}
+.tile-icon-box.split-box .top {
+  flex: 1 !important;
+  background: rgba(239, 68, 68, 0.3) !important;
+  font-size: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fca5a5 !important;
+}
+.tile-icon-box.split-box .btm {
+  flex: 1 !important;
+  background: rgba(0, 242, 161, 0.3) !important;
+  font-size: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #86efac !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.tile-icon-box.tabs-box .tab-l {
+  flex: 1 !important;
+  background: rgba(56, 189, 248, 0.3) !important;
+  font-size: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #93c5fd !important;
+}
+.tile-icon-box.tabs-box .tab-r {
+  flex: 1 !important;
+  background: rgba(148, 163, 184, 0.1) !important;
+  font-size: 7px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #64748b !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.tile-icon-box.wide-box {
+  flex-direction: column !important;
+}
+.tile-icon-box.wide-box .chart-area {
+  flex: 2 !important;
+  background: rgba(56, 189, 248, 0.25) !important;
+  font-size: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #38bdf8 !important;
+}
+.tile-icon-box.wide-box .dock-area {
+  flex: 1 !important;
+  background: rgba(245, 158, 11, 0.25) !important;
+  font-size: 5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fcd34d !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.tile-icon-box.threecol-box .col-c {
+  flex: 2 !important;
+  background: rgba(56, 189, 248, 0.25) !important;
+  font-size: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.tile-icon-box.threecol-box .col-b {
+  flex: 1 !important;
+  background: rgba(245, 158, 11, 0.25) !important;
+  font-size: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.tile-icon-box.threecol-box .col-o {
+  flex: 1 !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  font-size: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.tile-title {
+  font-size: 9.5px !important;
+  color: #94a3b8 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+.bybit-layout-footer {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-top: 6px !important;
+}
+
+.footer-lbl {
+  font-size: 10.5px !important;
+  color: #cbd5e1 !important;
+}
+
+/* Switch Mini */
+.switch-mini {
+  position: relative !important;
+  display: inline-block !important;
+  width: 28px !important;
+  height: 16px !important;
+}
+.switch-mini input {
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.slider-toggle-mini {
+  position: absolute !important;
+  cursor: pointer !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #334155 !important;
+  transition: 0.2s !important;
+  border-radius: 16px !important;
+}
+.slider-toggle-mini:before {
+  position: absolute !important;
+  content: "" !important;
+  height: 12px !important;
+  width: 12px !important;
+  left: 2px !important;
+  bottom: 2px !important;
+  background-color: white !important;
+  transition: 0.2s !important;
+  border-radius: 50% !important;
+}
+.switch-mini input:checked + .slider-toggle-mini {
+  background-color: #f59e0b !important;
+}
+.switch-mini input:checked + .slider-toggle-mini:before {
+  transform: translateX(12px) !important;
+}
+
+/* Live Bid-Ask Ratio Bar */
+.bb-bid-ask-ratio-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 10px !important;
+  background: #080c14 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  gap: 8px !important;
+}
+.ratio-val {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+}
+.ratio-val.bid { color: #0ecb81 !important; }
+.ratio-val.ask { color: #f6465d !important; }
+.ratio-track {
+  flex: 1 !important;
+  height: 4px !important;
+  background: #1e293b !important;
+  border-radius: 2px !important;
+  display: flex !important;
+  overflow: hidden !important;
+}
+.ratio-bar-bid {
+  background: #0ecb81 !important;
+  height: 100% !important;
+  transition: width 0.3s ease !important;
+}
+.ratio-bar-ask {
+  background: #f6465d !important;
+  height: 100% !important;
+  transition: width 0.3s ease !important;
+}
+
+/* Split sub-header for Recent Trades */
+.bb-trades-subhead {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: #090d16 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 4px 10px !important;
+}
+.subhead-title {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+}
+.live-dot-pulse {
+  font-size: 9px !important;
+  color: #00f2a1 !important;
+  font-weight: 600 !important;
+  animation: pulseDot 2s infinite ease-in-out !important;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Thin Bybit Institutional Typography */
+:root {
+  --font-bybit: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+body, html, input, select, button, textarea {
+  font-family: var(--font-bybit) !important;
+  font-weight: 400 !important;
+}
+.bybit-sym-badge, .bybit-price-large, .bb-ob-price, .bb-tr-price, .ticker-price {
+  font-weight: 500 !important;
+}
+.bybit-sym-sub, .bybit-stat-lbl, .bybit-stat-val, .bb-ob-head span, .bb-ob-size, .bb-ob-sum, .bb-tr-size, .bb-tr-time {
+  font-weight: 400 !important;
 }
