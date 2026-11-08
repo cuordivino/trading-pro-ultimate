@@ -500,6 +500,11 @@ async function pollActiveQuote() {
   if (volElem) volElem.innerText = q.volume.toLocaleString();
   if (latElem) latElem.innerText = `${tLatency}ms`;
 
+  if (asset) {
+    asset.basePrice = q.price;
+    asset.change24h = q.change;
+  }
+
   // 2. Synchronize BybitEngine telemetry with active symbol
   if (window.BybitEngine) {
     window.BybitEngine.currentSymbol = sym;
@@ -508,10 +513,19 @@ async function pollActiveQuote() {
     window.BybitEngine.tickerData.markPrice = q.price;
     window.BybitEngine.tickerData.indexPrice = q.price;
     window.BybitEngine.tickerData.price24hPcnt = (q.change / 100);
+    window.BybitEngine.tickerData.highPrice24h = q.high || +(q.price * 1.018).toFixed(prec);
+    window.BybitEngine.tickerData.lowPrice24h = q.low || +(q.price * 0.982).toFixed(prec);
+    window.BybitEngine.tickerData.volume24h = q.volume;
+    window.BybitEngine.tickerData.turnover24h = q.turnover || (q.price * q.volume);
     try {
       window.BybitEngine.renderBybitTelemetry();
+      if (!isCrypto) {
+        window.BybitEngine.generateSyntheticOrderBook(q.price);
+        window.BybitEngine.generateSyntheticRecentTrades(q.price);
+      }
+      window.BybitEngine.recalcBybitOrderMetrics();
     } catch(e) {
-      console.error('Error in renderBybitTelemetry:', e);
+      console.error('Error in BybitEngine sync:', e);
     }
   }
 
@@ -583,16 +597,7 @@ async function loadCandleHistory() {
   const interval = window.currentInterval || '15m';
   const asset = window.getAssetBySymbol ? window.getAssetBySymbol(symbol) : null;
   const isCrypto = asset ? asset.cat === 'crypto' : (symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(c => symbol.includes(c)));
-  let targetPrice = (asset && asset.basePrice) ? asset.basePrice : 100;
-  if (window.activePrice && window.activePrice > 0) {
-    if (!isCrypto && asset && asset.basePrice) {
-      if (Math.abs(window.activePrice - asset.basePrice) / asset.basePrice < 0.6) {
-        targetPrice = window.activePrice;
-      }
-    } else {
-      targetPrice = window.activePrice;
-    }
-  }
+  let targetPrice = (window.activePrice && window.activePrice > 0) ? window.activePrice : ((asset && asset.basePrice) ? asset.basePrice : 100);
 
   let candles = [];
 

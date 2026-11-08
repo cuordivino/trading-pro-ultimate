@@ -408,16 +408,29 @@ window.BybitEngine = {
 
     let html = '';
 
+    const obUnit = isCrypto ? 'USDT' : (curr || '$');
+    const obAsset = (asset ? asset.symbol.replace('=F', '').replace('=X', '') : (this.currentSymbol || 'Asset'));
+    const headEl = document.querySelector('#bb-view-orderbook .bb-ob-head');
+    if (headEl) {
+      headEl.innerHTML = `
+        <span>Prezzo (${obUnit})</span>
+        <span>Dim. (${obAsset})</span>
+        <span>Totale</span>
+      `;
+    }
+
     // Asks (Red)
     if (this.orderBookFilter !== 'bids') {
       html += sliceAsks.map(a => {
         const depthPct = Math.min(100, (a.size / maxVol) * 100);
+        const fmtSize = (a.size >= 100) ? Math.round(a.size).toLocaleString() : a.size.toFixed(prec > 2 ? 3 : 2);
+        const fmtSum = ((a.price * a.size) >= 1000) ? `${((a.price * a.size) / 1000).toFixed(1)}k` : (a.price * a.size).toFixed(0);
         return `
           <div class="bb-ob-row ask" onclick="BybitEngine.setPriceFromOrderBook(${a.price})">
             <div class="bb-ob-depth-bar ask" style="width:${depthPct}%"></div>
             <span class="bb-ob-price">${a.price.toFixed(prec)}</span>
-            <span class="bb-ob-size">${a.size.toFixed(3)}</span>
-            <span class="bb-ob-sum">${(a.price * a.size / 1000).toFixed(1)}k</span>
+            <span class="bb-ob-size">${fmtSize}</span>
+            <span class="bb-ob-sum">${fmtSum}</span>
           </div>
         `;
       }).join('');
@@ -437,12 +450,14 @@ window.BybitEngine = {
     if (this.orderBookFilter !== 'asks') {
       html += sliceBids.map(b => {
         const depthPct = Math.min(100, (b.size / maxVol) * 100);
+        const fmtSize = (b.size >= 100) ? Math.round(b.size).toLocaleString() : b.size.toFixed(prec > 2 ? 3 : 2);
+        const fmtSum = ((b.price * b.size) >= 1000) ? `${((b.price * b.size) / 1000).toFixed(1)}k` : (b.price * b.size).toFixed(0);
         return `
           <div class="bb-ob-row bid" onclick="BybitEngine.setPriceFromOrderBook(${b.price})">
             <div class="bb-ob-depth-bar bid" style="width:${depthPct}%"></div>
             <span class="bb-ob-price">${b.price.toFixed(prec)}</span>
-            <span class="bb-ob-size">${b.size.toFixed(3)}</span>
-            <span class="bb-ob-sum">${(b.price * b.size / 1000).toFixed(1)}k</span>
+            <span class="bb-ob-size">${fmtSize}</span>
+            <span class="bb-ob-sum">${fmtSum}</span>
           </div>
         `;
       }).join('');

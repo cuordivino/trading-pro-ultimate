@@ -791,7 +791,7 @@ function setLeveragePreset(val, chipElem) {
 }
 
 function updateLeverage(val) {
-  let lev = parseInt(val, 10);
+  let lev = Math.round(parseFloat(String(val).replace(',', '.')) || 10);
   if (isNaN(lev) || lev < 1) lev = 1;
   if (lev > 100) lev = 100;
   currentLeverage = lev;
@@ -799,7 +799,7 @@ function updateLeverage(val) {
 
   // Sync Bybit panel controls
   const input = document.getElementById('leverage-input');
-  if (input && parseInt(input.value, 10) !== lev) input.value = lev;
+  if (input) input.value = lev;
 
   const slider = document.getElementById('leverage-slider');
   if (slider && parseInt(slider.value, 10) !== lev) slider.value = lev;

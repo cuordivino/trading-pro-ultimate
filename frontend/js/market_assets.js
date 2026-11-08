@@ -302,6 +302,10 @@ window.GlobalMarketAssets = [
 
 // Commodity & Cross Aliases Mapping for Ultra-Accurate Search & Selection
 const COMMODITY_ALIASES = {
+  // Futures & Yahoo Ticker Mapping (=F, =X, spot)
+  'GC=F': 'GC', 'SI=F': 'SI', 'CL=F': 'CL', 'BZ=F': 'BRN', 'BRN=F': 'BRN', 'NG=F': 'NG', 'HG=F': 'HG',
+  'ZW=F': 'ZW', 'ZC=F': 'ZC', 'ZS=F': 'ZS', 'KC=F': 'KC', 'CC=F': 'CC', 'SB=F': 'SB', 'CT=F': 'CT',
+  'EURUSD=X': 'EURUSD', 'GBPUSD=X': 'GBPUSD', 'USDJPY=X': 'USDJPY', 'USDCHF=X': 'USDCHF',
   // Metalli Preziosi
   'GC': 'GC', 'GOLD': 'GC', 'ORO': 'GC', 'XAUUSD': 'XAUUSD',
   'SI': 'SI', 'SILVER': 'SI', 'ARGENTO': 'SI', 'XAGUSD': 'XAGUSD',
@@ -409,18 +413,22 @@ window.getAssetBySymbol = function(symbol) {
   if (!symbol) return null;
   let s = symbol.toUpperCase().trim();
 
-  // Alias lookup for commodities & tokens (es. 'ORO' -> 'GC', 'RAME' -> 'HG', 'CACAO' -> 'CC')
+  // 1. Strip query suffixes (=F, =X, -PERP, .MI) for alias matching
+  const bare = s.replace('=F', '').replace('=X', '').replace('-PERP', '').replace('USDT', '').replace('.MI', '').replace('/', '');
+
   if (COMMODITY_ALIASES[s]) {
     s = COMMODITY_ALIASES[s];
+  } else if (COMMODITY_ALIASES[bare]) {
+    s = COMMODITY_ALIASES[bare];
   }
 
-  const cleanBare = s.replace('.MI', '').replace('/', '').replace('-PERP', '').replace('USDT', '');
+  const cleanBare = s.replace('.MI', '').replace('/', '').replace('-PERP', '').replace('USDT', '').replace('=F', '').replace('=X', '');
 
-  // 1. Exact or Clean Match
+  // 1. Exact, Alias or Clean Match in GlobalMarketAssets
   const found = window.GlobalMarketAssets.find(a => {
     const aSym = a.symbol.toUpperCase();
-    const aBare = aSym.replace('.MI', '').replace('/', '').replace('USDT', '');
-    return aSym === s || aSym === `${s}.MI` || aBare === cleanBare || aSym.replace('.MI', '') === s;
+    const aBare = aSym.replace('.MI', '').replace('/', '').replace('USDT', '').replace('=F', '').replace('=X', '');
+    return aSym === s || aBare === cleanBare || aBare === bare || aSym === bare || aSym === `${cleanBare}.MI` || aSym.replace('.MI', '') === s;
   });
 
   if (found) {
@@ -432,7 +440,7 @@ window.getAssetBySymbol = function(symbol) {
   const isCrypto = s.endsWith('USDT') || s.endsWith('USD') || ['BTC', 'ETH', 'SOL', 'NEAR', 'ENA', 'HYPE', 'KORU'].some(c => s.includes(c));
   const isItalian = s.endsWith('.MI');
   const isForex = ['EUR', 'GBP', 'JPY', 'CHF', 'AUD', 'CAD', 'NZD'].some(fx => s.startsWith(fx) && s.length === 6);
-  const isCommodity = ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT'].includes(s);
+  const isCommodity = ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT'].includes(cleanBare) || ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT'].includes(bare);
 
   const basePrice = isCrypto ? (s.includes('ENA') ? 0.1835 : (s.includes('NEAR') ? 4.0200 : 10.00)) : (isItalian ? 14.20 : (isForex ? 1.0850 : (isCommodity ? 100.00 : 150.00)));
   const precision = window.getDynamicPrecision(basePrice, s);

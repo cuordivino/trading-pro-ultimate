@@ -7859,3 +7859,35 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   appearance: textfield !important;
   text-align: center !important;
 }
+
+/* Order Book Precision Alignment - No Overlap */
+.bb-ob-head, .bb-ob-row {
+  display: grid !important;
+  grid-template-columns: 88px 1fr 1fr !important;
+  gap: 4px !important;
+  align-items: center !important;
+  padding: 3px 8px !important;
+  box-sizing: border-box !important;
+}
+.bb-ob-row span {
+  position: relative !important;
+  z-index: 1 !important;
+}
+.bb-ob-row .bb-ob-price {
+  text-align: left !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.bb-ob-row .bb-ob-size {
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.bb-ob-row .bb-ob-sum {
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
