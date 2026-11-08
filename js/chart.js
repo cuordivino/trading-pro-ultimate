@@ -752,8 +752,10 @@ function resizeAllCharts() {
     }
 
     const c4 = document.getElementById('chart-sub2-pane');
-    if (sub2Chart && c4 && c4.style.display !== 'none' && c4.clientWidth > 10 && c4.clientHeight > 10) {
-      sub2Chart.resize(c4.clientWidth, c4.clientHeight);
+    const c4Canvas = document.getElementById('chart-sub2-canvas');
+    if (sub2Chart && c4 && c4.style.display !== 'none' && c4.clientWidth > 10) {
+      const h = c4Canvas && c4Canvas.clientHeight > 10 ? c4Canvas.clientHeight : Math.max(30, c4.clientHeight - 26);
+      sub2Chart.resize(c4.clientWidth, h);
     }
   } catch(e) {
     console.warn('[resizeAllCharts] Handled safely:', e);
@@ -1280,6 +1282,66 @@ function updateChartLegend(candle, explicitPrec) {
         legEma.style.display = 'none';
       }
     }
+  }
+
+  // =========================================================================
+  // AUTOMATIC SYNCHRONIZATION OF HIGH/LOW MARKERS, MACRO WIRE, SUB2 & BYBIT TOP HEADER
+  // =========================================================================
+  try {
+    if (typeof updateVisibleHighLowMarkers === 'function') {
+      updateVisibleHighLowMarkers(candles);
+    }
+  } catch(e) {}
+
+  try {
+    if (typeof renderCurrentSub2Data === 'function') {
+      renderCurrentSub2Data(candles);
+    }
+  } catch(e) {}
+
+  try {
+    if (window.BybitMacroCalendar && typeof BybitMacroCalendar.renderTimelineMarkers === 'function') {
+      BybitMacroCalendar.renderTimelineMarkers();
+    }
+  } catch(e) {}
+
+  try {
+    const topSym = document.getElementById('bybit-top-sym');
+    const topName = document.getElementById('bybit-top-name');
+    const topPrice = document.getElementById('bybit-top-price');
+    const topMark = document.getElementById('bybit-top-mark');
+    const topHigh = document.getElementById('bybit-top-high');
+    const topLow = document.getElementById('bybit-top-low');
+    const topChg = document.getElementById('bybit-top-chg');
+    const heroPrice = document.getElementById('active-live-price');
+    const legSym = document.getElementById('bybit-leg-sym');
+
+    const curr = (sym.endsWith('.MI') || (asset && asset.cat === 'eu_stock')) ? '€' : ((asset && asset.currency) ? asset.currency : '$');
+    const lastPriceFormatted = `${curr}${lastClose.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+
+    if (topSym) topSym.innerText = sym;
+    if (topName) topName.innerText = asset ? asset.name : (sym.endsWith('USDT') ? `${sym.replace('USDT', '')} Perpetual` : sym);
+    if (topPrice) topPrice.innerText = lastPriceFormatted;
+    if (topMark) topMark.innerText = `Mark: ${lastPriceFormatted}`;
+    if (heroPrice) heroPrice.innerText = lastPriceFormatted;
+    if (legSym) legSym.innerText = `${sym} ${activeTimeframe || '15m'}`;
+
+    if (candles.length > 0) {
+      const slice24 = candles.slice(-24);
+      const high24 = Math.max(...slice24.map(c => c.high));
+      const low24 = Math.min(...slice24.map(c => c.low));
+      const open24 = candles.length >= 24 ? candles[candles.length - 24].open : candles[0].open;
+      const chg24 = open24 > 0 ? ((lastClose - open24) / open24) * 100 : 0;
+
+      if (topHigh) topHigh.innerText = `${curr}${high24.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+      if (topLow) topLow.innerText = `${curr}${low24.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+      if (topChg) {
+        topChg.innerText = `${chg24 >= 0 ? '+' : ''}${chg24.toFixed(2)}%`;
+        topChg.className = `bybit-price-chg ${chg24 >= 0 ? 'text-green' : 'text-red'}`;
+      }
+    }
+  } catch(e) {
+    console.warn('[renderChartData] Bybit header sync handled safely:', e);
   }
 }
 
@@ -3597,23 +3659,24 @@ function updateSub2Param(val) {
 
 function renderCurrentSub2Data(candles) {
   if (!candles) {
-    candles = window.lastReceivedCandles || [];
+    candles = window.lastReceivedCandles || window.currentCandles || [];
   } else {
     window.lastReceivedCandles = candles;
   }
   if (!sub2Chart) initSub2Pane();
-  if (!sub2Chart || !candles.length) return;
+  if (!sub2Chart || !candles || !candles.length) return;
 
   const times = candles.map(c => c.time);
   const closes = candles.map(c => c.close);
   const highs = candles.map(c => c.high);
   const lows = candles.map(c => c.low);
+  const n = candles.length;
 
   if (activeSub2Mode === 'wr') {
     // Williams %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
     const period = activeSub2Period || 14;
     const wrData = [];
-    for (let i = 0; i < candles.length; i++) {
+    for (let i = 0; i < n; i++) {
       if (i < period) continue;
       let hh = -Infinity, ll = Infinity;
       for (let j = i - period + 1; j <= i; j++) {
@@ -3635,7 +3698,7 @@ function renderCurrentSub2Data(candles) {
     const kData = [];
     const dData = [];
     let k = 50, d = 50;
-    for (let i = 0; i < candles.length; i++) {
+    for (let i = 0; i < n; i++) {
       if (i < period) continue;
       let hh = -Infinity, ll = Infinity;
       for (let j = i - period + 1; j <= i; j++) {
@@ -3656,5 +3719,73 @@ function renderCurrentSub2Data(candles) {
     const lastJ = dData.length ? dData[dData.length - 1].value.toFixed(1) : '61.6';
     const badge = document.getElementById('sub2-live-badge');
     if (badge) badge.textContent = `K: ${lastK} J: ${lastJ}`;
+  } else if (activeSub2Mode === 'cci') {
+    // CCI = (TP - SMA(TP)) / (0.015 * MeanDev)
+    const period = activeSub2Period || 20;
+    const cciData = [];
+    const tpArr = candles.map(c => (c.high + c.low + c.close) / 3);
+    for (let i = 0; i < n; i++) {
+      if (i < period) continue;
+      let sum = 0;
+      for (let j = i - period + 1; j <= i; j++) sum += tpArr[j];
+      const sma = sum / period;
+      let meanDev = 0;
+      for (let j = i - period + 1; j <= i; j++) meanDev += Math.abs(tpArr[j] - sma);
+      meanDev = meanDev / period || 0.0001;
+      const cci = (tpArr[i] - sma) / (0.015 * meanDev);
+      cciData.push({ time: times[i], value: cci });
+    }
+    if (sub2Series) sub2Series.setData(cciData);
+    if (sub2Series2) sub2Series2.setData([]);
+
+    const lastCci = cciData.length ? cciData[cciData.length - 1].value.toFixed(1) : '+45.2';
+    const badge = document.getElementById('sub2-live-badge');
+    if (badge) badge.textContent = `CCI${period}: ${lastCci}`;
+  } else if (activeSub2Mode === 'stoch') {
+    // Stocastico Lento %K / %D
+    const period = activeSub2Period || 14;
+    const kData = [];
+    const dData = [];
+    for (let i = 0; i < n; i++) {
+      if (i < period) continue;
+      let hh = -Infinity, ll = Infinity;
+      for (let j = i - period + 1; j <= i; j++) {
+        if (highs[j] > hh) hh = highs[j];
+        if (lows[j] < ll) ll = lows[j];
+      }
+      const k = hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100;
+      kData.push({ time: times[i], value: k });
+    }
+    // 3-period SMA of %K for %D
+    for (let i = 2; i < kData.length; i++) {
+      const avg = (kData[i].value + kData[i-1].value + kData[i-2].value) / 3;
+      dData.push({ time: kData[i].time, value: avg });
+    }
+    if (sub2Series) sub2Series.setData(kData);
+    if (sub2Series2) sub2Series2.setData(dData);
+
+    const lastK = kData.length ? kData[kData.length - 1].value.toFixed(1) : '48.0';
+    const lastD = dData.length ? dData[dData.length - 1].value.toFixed(1) : '52.1';
+    const badge = document.getElementById('sub2-live-badge');
+    if (badge) badge.textContent = `%K: ${lastK} %D: ${lastD}`;
+  } else if (activeSub2Mode === 'macd_hist') {
+    // MACD Hist: 12 EMA - 26 EMA - 9 Signal
+    const histData = [];
+    let e12 = closes[0], e26 = closes[0], sig = 0;
+    const a12 = 2 / (12 + 1), a26 = 2 / (26 + 1), aSig = 2 / (9 + 1);
+    for (let i = 0; i < n; i++) {
+      e12 = closes[i] * a12 + e12 * (1 - a12);
+      e26 = closes[i] * a26 + e26 * (1 - a26);
+      const macd = e12 - e26;
+      sig = macd * aSig + sig * (1 - aSig);
+      const hist = macd - sig;
+      histData.push({ time: times[i], value: hist });
+    }
+    if (sub2Series) sub2Series.setData(histData);
+    if (sub2Series2) sub2Series2.setData([]);
+
+    const lastH = histData.length ? histData[histData.length - 1].value.toFixed(2) : '12.4';
+    const badge = document.getElementById('sub2-live-badge');
+    if (badge) badge.textContent = `Hist: ${lastH}`;
   }
 }

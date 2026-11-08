@@ -464,7 +464,6 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema9', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
-                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -475,7 +474,6 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema21', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
-                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -486,7 +484,6 @@
                       <input type="checkbox" checked onchange="toggleIndicatorKey('ema200', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
-                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -510,7 +507,6 @@
                       <input type="checkbox" onchange="toggleIndicatorKey('sar', this.checked)">
                       <span class="slider-toggle"></span>
                     </label>
-                    </div>
                   </div>
                   <div class="ind-toggle-row">
                     <div class="ind-label-group">
@@ -546,7 +542,7 @@
             <!-- ============================================================= -->
             <div class="bybit-chart-top-header" id="bybit-chart-top-header">
               <div class="bybit-top-left">
-                <div class="bybit-sym-title-row" onclick="if(window.toggleMegaAssetDropdown) toggleMegaAssetDropdown();" style="cursor:pointer;" title="Clicca per cambiare asset">
+                <div class="bybit-sym-title-row" onclick="if(window.openBybitQuickAssetSearchModal) openBybitQuickAssetSearchModal(); else if(window.toggleMegaAssetDropdown) toggleMegaAssetDropdown();" style="cursor:pointer;" title="Clicca per cambiare asset (Doppia Ricerca)">
                   <span class="bybit-sym-badge" id="bybit-top-sym">BTCUSDT</span>
                   <span class="bybit-sym-arrow">▾</span>
                   <span class="bybit-sym-sub" id="bybit-top-name">Bitcoin Perpetual</span>
@@ -760,7 +756,6 @@
               </div>
               <div id="chart-volume-canvas" style="width:100%; height:100%;"></div>
             </div>
-            </div>
 
             <!-- DRAGGABLE SPLITTER 2: VOLUMI / MOMENTUM -->
             <div class="chart-splitter" id="splitter-mom" title="Trascina su/giù per ridimensionare il pannello Momentum">
@@ -847,8 +842,11 @@
               <div id="chart-sub2-canvas" style="width:100%; height:100%;"></div>
             </div>
 
-          </div>
-        </div>
+            <!-- DRAGGABLE SPLITTER 4: OSCILLATORE 2 BOTTOM SPLITTER -->
+            <div class="chart-splitter" id="splitter-sub2-bottom" title="Trascina su/giù per ridimensionare il Secondo Oscillatore">
+              <div class="splitter-grip"></div>
+            </div>
+
           </div>
         </div>
 

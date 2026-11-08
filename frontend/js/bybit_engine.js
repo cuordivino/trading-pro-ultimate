@@ -311,6 +311,50 @@ window.BybitEngine = {
     const heroPrice = document.getElementById('active-live-price');
     const heroChg = document.getElementById('active-chg-badge');
 
+    // Dedicated Bybit Chart Top Header Elements (100% Synchronized)
+    const bybitTopSym = document.getElementById('bybit-top-sym');
+    const bybitTopName = document.getElementById('bybit-top-name');
+    const bybitTopPrice = document.getElementById('bybit-top-price');
+    const bybitTopMark = document.getElementById('bybit-top-mark');
+    const bybitTopHigh = document.getElementById('bybit-top-high');
+    const bybitTopLow = document.getElementById('bybit-top-low');
+    const bybitTopChg = document.getElementById('bybit-top-chg');
+    const bybitTopVol = document.getElementById('bybit-top-vol');
+
+    if (bybitTopSym) bybitTopSym.innerText = this.currentSymbol;
+    if (bybitTopName) bybitTopName.innerText = asset ? asset.name : (this.currentSymbol.endsWith('USDT') ? `${this.currentSymbol.replace('USDT', '')} Perpetual` : this.currentSymbol);
+    if (bybitTopPrice) bybitTopPrice.innerText = `${curr}${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopMark) bybitTopMark.innerText = `Mark: ${curr}${t.markPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopHigh) bybitTopHigh.innerText = `${curr}${t.highPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopLow) bybitTopLow.innerText = `${curr}${t.lowPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopChg) {
+      bybitTopChg.innerText = `${(t.price24hPcnt * 100) >= 0 ? '+' : ''}${(t.price24hPcnt * 100).toFixed(2)}%`;
+      bybitTopChg.className = `bybit-price-chg ${(t.price24hPcnt * 100) >= 0 ? 'text-green' : 'text-red'}`;
+    }
+    if (bybitTopVol) bybitTopVol.innerText = `${curr}${(t.turnover24h / 1e6).toFixed(2)}M`;
+
+    // Dedicated Bybit Chart Top Header Elements (100% Synchronized)
+    const bybitTopSym = document.getElementById('bybit-top-sym');
+    const bybitTopName = document.getElementById('bybit-top-name');
+    const bybitTopPrice = document.getElementById('bybit-top-price');
+    const bybitTopMark = document.getElementById('bybit-top-mark');
+    const bybitTopHigh = document.getElementById('bybit-top-high');
+    const bybitTopLow = document.getElementById('bybit-top-low');
+    const bybitTopChg = document.getElementById('bybit-top-chg');
+    const bybitTopVol = document.getElementById('bybit-top-vol');
+
+    if (bybitTopSym) bybitTopSym.innerText = this.currentSymbol;
+    if (bybitTopName) bybitTopName.innerText = asset ? asset.name : (this.currentSymbol.endsWith('USDT') ? `${this.currentSymbol.replace('USDT', '')} Perpetual` : this.currentSymbol);
+    if (bybitTopPrice) bybitTopPrice.innerText = `${curr}${t.lastPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopMark) bybitTopMark.innerText = `Mark: ${curr}${t.markPrice.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopHigh) bybitTopHigh.innerText = `${curr}${t.highPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopLow) bybitTopLow.innerText = `${curr}${t.lowPrice24h.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+    if (bybitTopChg) {
+      bybitTopChg.innerText = `${(t.price24hPcnt * 100) >= 0 ? '+' : ''}${(t.price24hPcnt * 100).toFixed(2)}%`;
+      bybitTopChg.className = `bybit-price-chg ${(t.price24hPcnt * 100) >= 0 ? 'text-green' : 'text-red'}`;
+    }
+    if (bybitTopVol) bybitTopVol.innerText = `${curr}${(t.turnover24h / 1e6).toFixed(2)}M`;
+
     if (pContract) {
       if (isCrypto) pContract.innerText = `${this.currentSymbol} Perp`;
       else if (asset && asset.cat === 'eu_stock') pContract.innerText = `${asset.symbol} • MTA Milano`;

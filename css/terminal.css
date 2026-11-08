@@ -7697,3 +7697,154 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   flex-direction: column;
   gap: 6px;
 }
+
+
+/* =========================================================================
+   TOUCH SPLITTER ENHANCEMENTS FOR MOBILE PHONES / CELLULARI
+   ========================================================================= */
+.chart-splitter {
+  position: relative;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none !important;
+  z-index: 25;
+  transition: background 0.15s ease;
+}
+.chart-splitter:hover, .chart-splitter.dragging {
+  background: rgba(56, 189, 248, 0.25);
+}
+.chart-splitter::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+  z-index: 26;
+  touch-action: none !important;
+  cursor: row-resize;
+}
+.splitter-grip {
+  width: 38px;
+  height: 3px;
+  background: #38bdf8;
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+}
+
+/* =========================================================================
+   SECOND SEARCH POSSIBILITY: BYBIT QUICK ASSET SEARCH MODAL
+   ========================================================================= */
+.bybit-search-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.bybit-search-modal-box {
+  background: #090e18;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+}
+.bybit-search-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #1e293b;
+}
+.bybit-search-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+}
+.bybit-search-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+.bybit-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+.bybit-search-cats-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid #1e293b;
+  scrollbar-width: none;
+}
+.bybit-search-cat-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.bybit-search-cat-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+.bybit-search-results-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 50vh;
+}
+.bybit-search-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.bybit-search-row:hover, .bybit-search-row.active {
+  background: rgba(56, 189, 248, 0.12);
+}
+.bybit-search-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+}

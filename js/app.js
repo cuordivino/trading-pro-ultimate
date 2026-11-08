@@ -288,8 +288,15 @@ async function selectAsset(symbol) {
 
   const symElem = document.getElementById('active-sym-title');
   const triggerSym = document.getElementById('active-asset-trigger-sym');
+  const bybitTopSym = document.getElementById('bybit-top-sym');
+  const bybitTopName = document.getElementById('bybit-top-name');
+  const bybitLegSym = document.getElementById('bybit-leg-sym');
+
   if (symElem) symElem.innerText = symbol;
   if (triggerSym) triggerSym.innerText = symbol;
+  if (bybitTopSym) bybitTopSym.innerText = symbol;
+  if (bybitTopName) bybitTopName.innerText = asset ? asset.name : (symbol.endsWith('USDT') ? `${symbol.replace('USDT', '')} Perpetual` : symbol);
+  if (bybitLegSym) bybitLegSym.innerText = `${symbol} ${window.activeTimeframe || '15m'}`;
 
   const chatTitle = document.getElementById('chat-active-persona-title');
   if (chatTitle && window.currentPersonaSlug) {
@@ -1126,3 +1133,265 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 300);
   }, 3500);
 }
+
+
+// =========================================================================
+// SECOND SEARCH POSSIBILITY: BYBIT DEDICATED QUICK ASSET SEARCH MODAL
+// =========================================================================
+window.openBybitQuickAssetSearchModal = function() {
+  let modal = document.getElementById('bybit-quick-search-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bybit-quick-search-modal';
+    modal.className = 'bybit-search-modal-backdrop';
+    document.body.appendChild(modal);
+  }
+
+  const allAssets = window.ASSET_REGISTRY || [
+    { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', price: 75865.30, chg: 0.45 },
+    { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', price: 2950.40, chg: 1.12 },
+    { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', price: 198.80, chg: 4.25 },
+    { symbol: 'NVDA', name: 'NVIDIA Corp', cat: 'us_stock', price: 147.20, chg: 2.80 },
+    { symbol: 'AAPL', name: 'Apple Inc', cat: 'us_stock', price: 228.50, chg: 0.75 },
+    { symbol: 'TSLA', name: 'Tesla Inc', cat: 'us_stock', price: 254.30, chg: 3.40 },
+    { symbol: 'AMD', name: 'Advanced Micro Devices', cat: 'us_stock', price: 148.50, chg: 3.45 },
+    { symbol: 'ENEL.MI', name: 'Enel S.p.A.', cat: 'eu_stock', price: 6.84, chg: 0.92 },
+    { symbol: 'ENI.MI', name: 'Eni S.p.A.', cat: 'eu_stock', price: 14.32, chg: -0.72 },
+    { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', price: 3.88, chg: 0.65 },
+    { symbol: 'EURUSD', name: 'Euro / US Dollar', cat: 'forex', price: 1.0825, chg: -0.15 },
+    { symbol: 'CHFJPY', name: 'Swiss Franc / JPY', cat: 'forex', price: 174.20, chg: 0.58 },
+    { symbol: 'GC=F', name: 'Gold Futures', cat: 'commodity', price: 2685.40, chg: 0.45 },
+    { symbol: 'CL=F', name: 'Crude Oil WTI', cat: 'commodity', price: 71.12, chg: -0.80 },
+    { symbol: 'SSEC', name: 'Shanghai Composite', cat: 'index', price: 3380.00, chg: 2.15 },
+    { symbol: 'SPY', name: 'S&P 500 ETF', cat: 'index', price: 588.40, chg: 0.35 }
+  ];
+
+  window._bybitSearchFilterCat = 'all';
+
+  function renderList(query = '') {
+    const q = query.toLowerCase().trim();
+    const filtered = allAssets.filter(a => {
+      const matchCat = window._bybitSearchFilterCat === 'all' || a.cat === window._bybitSearchFilterCat;
+      const matchText = !q || a.symbol.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q));
+      return matchCat && matchText;
+    });
+
+    const listContainer = document.getElementById('bybit-search-results-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = filtered.map(a => {
+      const isCurrent = a.symbol === window.currentSymbol;
+      const curr = (a.symbol.endsWith('.MI') || a.cat === 'eu_stock') ? '€' : '$';
+      const chgStr = a.chg !== undefined ? `${a.chg >= 0 ? '+' : ''}${a.chg.toFixed(2)}%` : '+0.00%';
+      const chgColor = (a.chg || 0) >= 0 ? '#10b981' : '#ef4444';
+
+      return `
+        <div class="bybit-search-row ${isCurrent ? 'active' : ''}" onclick="selectAsset('${a.symbol}'); closeBybitQuickAssetSearchModal();">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="bybit-search-badge">${a.cat.toUpperCase()}</div>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#fff;">${a.symbol} ${isCurrent ? '<span style="color:#fcd535; font-size:10px;">● ATTIVO</span>' : ''}</div>
+              <div style="font-size:10px; color:#64748b;">${a.name || a.symbol}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13px; font-weight:800; color:#fff; font-family:monospace;">${curr}${a.price ? a.price.toLocaleString() : '--'}</div>
+            <div style="font-size:10.5px; font-weight:700; color:${chgColor};">${chgStr}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  modal.innerHTML = `
+    <div class="bybit-search-modal-box" onclick="event.stopPropagation()">
+      <div class="bybit-search-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">🔍</span>
+          <span style="font-size:14px; font-weight:900; color:#fff;">Ricerca Rapida Strumento Bybit</span>
+        </div>
+        <button class="bybit-search-close-btn" onclick="closeBybitQuickAssetSearchModal()">✕</button>
+      </div>
+
+      <div style="padding:12px 16px; border-bottom:1px solid #1e293b;">
+        <input type="text" id="bybit-search-input" class="bybit-search-input" placeholder="Cerca ticker o nome (BTC, NVDA, AAPL, EURUSD, ENEL...)" autofocus autocomplete="off">
+      </div>
+
+      <!-- Categories Filter Tabs -->
+      <div class="bybit-search-cats-bar">
+        ${[
+          { id: 'all', label: 'Tutti' },
+          { id: 'crypto', label: 'Crypto Perp' },
+          { id: 'us_stock', label: 'Azioni US' },
+          { id: 'eu_stock', label: 'Azioni EU' },
+          { id: 'forex', label: 'Forex' },
+          { id: 'commodity', label: 'Materie Prime' },
+          { id: 'index', label: 'Indici' }
+        ].map(c => `
+          <button class="bybit-search-cat-btn ${c.id === 'all' ? 'active' : ''}" data-cat="${c.id}">
+            ${c.label}
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- Results list -->
+      <div id="bybit-search-results-list" class="bybit-search-results-list"></div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+  modal.onclick = closeBybitQuickAssetSearchModal;
+
+  const inp = document.getElementById('bybit-search-input');
+  if (inp) {
+    inp.focus();
+    inp.oninput = (e) => renderList(e.target.value);
+  }
+
+  modal.querySelectorAll('.bybit-search-cat-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      modal.querySelectorAll('.bybit-search-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      window._bybitSearchFilterCat = btn.getAttribute('data-cat');
+      renderList(inp ? inp.value : '');
+    };
+  });
+
+  renderList();
+};
+
+window.closeBybitQuickAssetSearchModal = function() {
+  const modal = document.getElementById('bybit-quick-search-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+
+// =========================================================================
+// SECOND SEARCH POSSIBILITY: BYBIT DEDICATED QUICK ASSET SEARCH MODAL
+// =========================================================================
+window.openBybitQuickAssetSearchModal = function() {
+  let modal = document.getElementById('bybit-quick-search-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bybit-quick-search-modal';
+    modal.className = 'bybit-search-modal-backdrop';
+    document.body.appendChild(modal);
+  }
+
+  const allAssets = window.ASSET_REGISTRY || [
+    { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', price: 75865.30, chg: 0.45 },
+    { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', price: 2950.40, chg: 1.12 },
+    { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', price: 198.80, chg: 4.25 },
+    { symbol: 'NVDA', name: 'NVIDIA Corp', cat: 'us_stock', price: 147.20, chg: 2.80 },
+    { symbol: 'AAPL', name: 'Apple Inc', cat: 'us_stock', price: 228.50, chg: 0.75 },
+    { symbol: 'TSLA', name: 'Tesla Inc', cat: 'us_stock', price: 254.30, chg: 3.40 },
+    { symbol: 'AMD', name: 'Advanced Micro Devices', cat: 'us_stock', price: 148.50, chg: 3.45 },
+    { symbol: 'ENEL.MI', name: 'Enel S.p.A.', cat: 'eu_stock', price: 6.84, chg: 0.92 },
+    { symbol: 'ENI.MI', name: 'Eni S.p.A.', cat: 'eu_stock', price: 14.32, chg: -0.72 },
+    { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', price: 3.88, chg: 0.65 },
+    { symbol: 'EURUSD', name: 'Euro / US Dollar', cat: 'forex', price: 1.0825, chg: -0.15 },
+    { symbol: 'CHFJPY', name: 'Swiss Franc / JPY', cat: 'forex', price: 174.20, chg: 0.58 },
+    { symbol: 'GC=F', name: 'Gold Futures', cat: 'commodity', price: 2685.40, chg: 0.45 },
+    { symbol: 'CL=F', name: 'Crude Oil WTI', cat: 'commodity', price: 71.12, chg: -0.80 },
+    { symbol: 'SSEC', name: 'Shanghai Composite', cat: 'index', price: 3380.00, chg: 2.15 },
+    { symbol: 'SPY', name: 'S&P 500 ETF', cat: 'index', price: 588.40, chg: 0.35 }
+  ];
+
+  window._bybitSearchFilterCat = 'all';
+
+  function renderList(query = '') {
+    const q = query.toLowerCase().trim();
+    const filtered = allAssets.filter(a => {
+      const matchCat = window._bybitSearchFilterCat === 'all' || a.cat === window._bybitSearchFilterCat;
+      const matchText = !q || a.symbol.toLowerCase().includes(q) || (a.name && a.name.toLowerCase().includes(q));
+      return matchCat && matchText;
+    });
+
+    const listContainer = document.getElementById('bybit-search-results-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = filtered.map(a => {
+      const isCurrent = a.symbol === window.currentSymbol;
+      const curr = (a.symbol.endsWith('.MI') || a.cat === 'eu_stock') ? '€' : '$';
+      const chgStr = a.chg !== undefined ? `${a.chg >= 0 ? '+' : ''}${a.chg.toFixed(2)}%` : '+0.00%';
+      const chgColor = (a.chg || 0) >= 0 ? '#10b981' : '#ef4444';
+
+      return `
+        <div class="bybit-search-row ${isCurrent ? 'active' : ''}" onclick="selectAsset('${a.symbol}'); closeBybitQuickAssetSearchModal();">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="bybit-search-badge">${a.cat.toUpperCase()}</div>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#fff;">${a.symbol} ${isCurrent ? '<span style="color:#fcd535; font-size:10px;">● ATTIVO</span>' : ''}</div>
+              <div style="font-size:10px; color:#64748b;">${a.name || a.symbol}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13px; font-weight:800; color:#fff; font-family:monospace;">${curr}${a.price ? a.price.toLocaleString() : '--'}</div>
+            <div style="font-size:10.5px; font-weight:700; color:${chgColor};">${chgStr}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  modal.innerHTML = `
+    <div class="bybit-search-modal-box" onclick="event.stopPropagation()">
+      <div class="bybit-search-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">🔍</span>
+          <span style="font-size:14px; font-weight:900; color:#fff;">Ricerca Rapida Strumento Bybit</span>
+        </div>
+        <button class="bybit-search-close-btn" onclick="closeBybitQuickAssetSearchModal()">✕</button>
+      </div>
+
+      <div style="padding:12px 16px; border-bottom:1px solid #1e293b;">
+        <input type="text" id="bybit-search-input" class="bybit-search-input" placeholder="Cerca ticker o nome (BTC, NVDA, AAPL, EURUSD, ENEL...)" autofocus autocomplete="off">
+      </div>
+
+      <!-- Categories Filter Tabs -->
+      <div class="bybit-search-cats-bar">
+        ${[
+          { id: 'all', label: 'Tutti' },
+          { id: 'crypto', label: 'Crypto Perp' },
+          { id: 'us_stock', label: 'Azioni US' },
+          { id: 'eu_stock', label: 'Azioni EU' },
+          { id: 'forex', label: 'Forex' },
+          { id: 'commodity', label: 'Materie Prime' },
+          { id: 'index', label: 'Indici' }
+        ].map(c => `
+          <button class="bybit-search-cat-btn ${c.id === 'all' ? 'active' : ''}" data-cat="${c.id}">
+            ${c.label}
+          </button>
+        `).join('')}
+      </div>
+
+      <!-- Results list -->
+      <div id="bybit-search-results-list" class="bybit-search-results-list"></div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+  modal.onclick = closeBybitQuickAssetSearchModal;
+
+  const inp = document.getElementById('bybit-search-input');
+  if (inp) {
+    inp.focus();
+    inp.oninput = (e) => renderList(e.target.value);
+  }
+
+  modal.querySelectorAll('.bybit-search-cat-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      modal.querySelectorAll('.bybit-search-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      window._bybitSearchFilterCat = btn.getAttribute('data-cat');
+      renderList(inp ? inp.value : '');
+    };
+  });
+
+  renderList();
+};
+
+window.closeBybitQuickAssetSearchModal = function() {
+  const modal = document.getElementById('bybit-quick-search-modal');
+  if (modal) modal.style.display = 'none';
+};
