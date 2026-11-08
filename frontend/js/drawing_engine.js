@@ -45,6 +45,11 @@ window.DrawingEngine = {
       return;
     }
     this.activeTool = tool;
+    const overlay = document.getElementById('tv-drawing-canvas');
+    if (overlay) {
+      overlay.style.pointerEvents = (tool === 'crosshair') ? 'none' : 'all';
+      overlay.style.cursor = 'crosshair';
+    }
     document.querySelectorAll('.tv-tool-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tool === tool);
     });
@@ -105,7 +110,7 @@ window.DrawingEngine = {
     canvas.style.left = '0';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    canvas.style.pointerEvents = 'all';
+    canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = '12';
     parent.style.position = 'relative';
     parent.appendChild(canvas);

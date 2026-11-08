@@ -665,7 +665,7 @@ window.PaneSplitterManager = {
     }
   },
 
-  bindSplitterEvents: function(splitterId, type) {
+    bindSplitterEvents: function(splitterId, type) {
     const el = document.getElementById(splitterId);
     if (!el) return;
 
@@ -686,13 +686,13 @@ window.PaneSplitterManager = {
       el.classList.add('dragging');
       document.body.style.userSelect = 'none';
       document.body.style.webkitUserSelect = 'none';
+      document.body.style.cursor = 'row-resize';
     };
 
     const onMove = (clientY) => {
       if (!isDragging) return;
       const delta = clientY - startY;
 
-      // INDEPENDENT NON-DESTRUCTIVE DRAG RESIZING
       if (type === 'main') {
         this.heights.main = Math.max(180, Math.min(2400, startMainH + delta));
       } else if (type === 'volume') {
@@ -712,10 +712,50 @@ window.PaneSplitterManager = {
       el.classList.remove('dragging');
       document.body.style.userSelect = '';
       document.body.style.webkitUserSelect = '';
+      document.body.style.cursor = '';
       try {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.heights));
       } catch(e) {}
+      if (window.resizeAllCharts) window.resizeAllCharts();
     };
+
+    // Desktop Mouse Listeners attached to window
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      onStart(e.clientY);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        onMove(e.clientY);
+      }
+    });
+
+    window.addEventListener('mouseup', onEnd);
+
+    // Mobile / Cell Touch Listeners attached to window with passive: false
+    el.addEventListener('touchstart', (e) => {
+      if (!e.touches || !e.touches.length) return;
+      e.preventDefault();
+      onStart(e.touches[0].clientY);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches && e.touches.length) {
+        e.preventDefault();
+        onMove(e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+      if (isDragging) onEnd();
+    });
+    window.addEventListener('touchcancel', (e) => {
+      if (isDragging) onEnd();
+    });
+  }
+};
 
     // Desktop Mouse Listeners
     el.addEventListener('mousedown', (e) => {
@@ -812,7 +852,7 @@ if (typeof document !== 'undefined') {
 // 4. COLUMN SPLITTER MANAGER (TAGLI VERTICALI LARGHEZZA GRAFICO / BOOK / ORDINI)
 // ============================================================================
 window.ColumnSplitterManager = {
-  STORAGE_KEY: 'tpu_col_widths_v3',
+  STORAGE_KEY: 'tpu_col_widths_v5',
   widths: {
     book: 310,
     order: 340
@@ -823,6 +863,132 @@ window.ColumnSplitterManager = {
       const saved = localStorage.getItem(this.STORAGE_KEY);
       if (saved) {
         this.widths = { ...this.widths, ...JSON.parse(saved) };
+      }
+    } catch(e) {}
+
+    this.applyDomWidths();
+    this.bindColSplitter('splitter-col-1-2', 'book');
+    this.bindColSplitter('splitter-col-2-3', 'order');
+
+    window.addEventListener('resize', () => this.applyDomWidths());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.applyDomWidths(), 100));
+  },
+
+  setColWidth: function(col, px) {
+    const val = parseInt(px, 10);
+    if (isNaN(val)) return;
+    if (col === 'book') this.widths.book = Math.max(180, Math.min(700, val));
+    if (col === 'order') this.widths.order = Math.max(220, Math.min(700, val));
+    this.applyDomWidths();
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
+    } catch(e) {}
+  },
+
+  applyDomWidths: function() {
+    const grid = document.querySelector('.bybit-terminal-grid');
+    if (!grid) return;
+
+    if (window.innerWidth > 920) {
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book}px 10px ${this.widths.order}px`;
+      grid.style.gap = '0';
+    } else {
+      // Mobile / Tablet: ALWAYS stack vertically, NEVER hide!
+      grid.style.display = 'flex';
+      grid.style.flexDirection = 'column';
+      grid.style.gap = '12px';
+      
+      const chartCol = document.getElementById('bb-col-chart');
+      const bookCol = document.getElementById('bb-col-book');
+      const orderCol = document.getElementById('bb-col-order');
+      if (chartCol) chartCol.style.display = 'block';
+      if (bookCol) bookCol.style.display = 'flex';
+      if (orderCol) orderCol.style.display = 'block';
+    }
+
+    if (window.resizeAllCharts) {
+      window.resizeAllCharts();
+    }
+  },
+
+  bindColSplitter: function(splitterId, type) {
+    const el = document.getElementById(splitterId);
+    if (!el) return;
+
+    let startX = 0;
+    let startW = 0;
+    let isDragging = false;
+
+    const onStart = (clientX) => {
+      isDragging = true;
+      startX = clientX;
+      startW = (type === 'book') ? this.widths.book : this.widths.order;
+      el.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+    };
+
+    const onMove = (clientX) => {
+      if (!isDragging) return;
+      const delta = clientX - startX;
+      if (type === 'book') {
+        this.widths.book = Math.max(180, Math.min(700, startW - delta));
+      } else if (type === 'order') {
+        this.widths.order = Math.max(220, Math.min(700, startW - delta));
+      }
+      this.applyDomWidths();
+    };
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      document.body.style.cursor = '';
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
+      } catch(e) {}
+      if (window.resizeAllCharts) window.resizeAllCharts();
+    };
+
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      onStart(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        onMove(e.clientX);
+      }
+    });
+
+    window.addEventListener('mouseup', onEnd);
+
+    el.addEventListener('touchstart', (e) => {
+      if (!e.touches || !e.touches.length) return;
+      e.preventDefault();
+      onStart(e.touches[0].clientX);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches && e.touches.length) {
+        e.preventDefault();
+        onMove(e.touches[0].clientX);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+      if (isDragging) onEnd();
+    });
+    window.addEventListener('touchcancel', (e) => {
+      if (isDragging) onEnd();
+    });
+  }
+};
       }
     } catch(e) {}
 

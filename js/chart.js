@@ -3517,59 +3517,34 @@ window.BybitMacroCalendar = {
     ];
   },
 
-  renderTimelineMarkers() {
+    renderTimelineMarkers() {
     if (!candleSeries || !window.currentCandles || !window.currentCandles.length) return;
     try {
       const candles = window.currentCandles;
       const count = candles.length;
-      if (count < 8) return;
+      if (count < 15) return;
 
       const markers = [];
       const news = this.getNewsList();
 
-      if (news[0]) {
-        const idx = Math.max(0, count - 12);
-        markers.push({
-          time: candles[idx].time,
-          position: 'aboveBar',
-          color: '#ef4444',
-          shape: 'circle', color: '#ffb700', text: '🌐',
-          id: 'macro-cpi'
-        });
-      }
+      // Place single neat globe dots spaced along the bottom of the timeline
+      const offsets = [10, 26, 42, 60];
+      const usedTimes = new Set();
 
-      if (news[1]) {
-        const idx = Math.max(0, count - 28);
-        markers.push({
-          time: candles[idx].time,
-          position: 'belowBar',
-          color: '#10b981',
-          shape: 'circle', color: '#10b981', text: '🌐',
-          id: 'macro-nfp'
-        });
-      }
-
-      if (news[2]) {
-        const idx = Math.max(0, count - 2);
-        markers.push({
-          time: candles[idx].time,
-          position: 'aboveBar',
-          color: '#f59e0b',
-          shape: 'circle', color: '#f59e0b', text: '🌐',
-          id: 'macro-fomc'
-        });
-      }
-
-      if (news[4]) {
-        const idx = Math.max(0, count - 45);
-        markers.push({
-          time: candles[idx].time,
-          position: 'aboveBar',
-          color: '#38bdf8',
-          shape: 'circle', color: '#38bdf8', text: '🌐',
-          id: 'macro-bce'
-        });
-      }
+      news.slice(0, 4).forEach((item, i) => {
+        const idx = Math.max(0, count - offsets[i]);
+        if (candles[idx] && !usedTimes.has(candles[idx].time)) {
+          usedTimes.add(candles[idx].time);
+          markers.push({
+            time: candles[idx].time,
+            position: 'belowBar',
+            color: '#38bdf8',
+            shape: 'circle',
+            text: '🌐',
+            id: `macro-${i}`
+          });
+        }
+      });
 
       candleSeries.setMarkers(markers);
     } catch(e) {

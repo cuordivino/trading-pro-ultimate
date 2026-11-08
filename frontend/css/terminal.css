@@ -2056,8 +2056,8 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 /* Bybit 3-Column Terminal Pro Grid */
 .bybit-terminal-grid {
   display: grid;
-  grid-template-columns: 1fr 310px 340px;
-  gap: 10px;
+  grid-template-columns: 1fr 10px 310px 10px 340px !important;
+  gap: 0 !important;
   margin-top: 10px;
   width: 100% !important;
   max-width: 100% !important;
@@ -2583,9 +2583,12 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     gap: 10px !important;
   }
 
-  /* Hide Book, Order, Positions by default on mobile so only 1 view is shown */
+  /* Always show Chart, Orderbook and Order Execution stacked vertically on mobile & tablet */
   #bb-col-book, #bb-col-order, #bb-col-positions {
-    display: none;
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .window-card {
@@ -7900,30 +7903,30 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 
 /* 1. VERTICAL COLUMN SPLITTERS */
 .col-splitter {
-  width: 10px;
-  background: rgba(15, 23, 42, 0.95);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  border-right: 1px solid rgba(0, 0, 0, 0.6);
-  cursor: col-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  -webkit-user-select: none;
+  width: 10px !important;
+  min-width: 10px !important;
+  background: #0b1120 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.8) !important;
+  cursor: col-resize !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
   touch-action: none !important;
-  z-index: 30;
-  transition: background 0.15s ease;
+  z-index: 50 !important;
+  transition: background 0.15s ease !important;
 }
 .col-splitter:hover, .col-splitter.dragging {
   background: rgba(56, 189, 248, 0.25) !important;
-  border-color: #38bdf8 !important;
 }
 .col-splitter-grip {
-  width: 3px;
-  height: 48px;
-  background: #38bdf8;
-  border-radius: 2px;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  width: 3px !important;
+  height: 48px !important;
+  background: #38bdf8 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
 }
 @media (max-width: 920px) {
   .col-splitter {
@@ -8079,5 +8082,41 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   .bybit-data-2x2-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
+  }
+}
+
+
+/* Responsive Mobile & Tablet Layout: Chart, Orderbook and Order Execution stacked vertically */
+@media (max-width: 920px) {
+  .bybit-terminal-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+  .col-splitter {
+    display: none !important;
+  }
+  #bb-col-chart {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  #bb-col-book {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 440px !important;
+  }
+  #bb-col-order {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  #bb-col-positions {
+    display: block !important;
+    width: 100% !important;
   }
 }
