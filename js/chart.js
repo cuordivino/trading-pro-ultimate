@@ -721,7 +721,6 @@ function attachMultiChartSync() {
         if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
         if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
         if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
-      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
       } catch(e) {}
       releaseSync();
     });
@@ -772,9 +771,9 @@ function resizeAllCharts() {
     }
 
     const c4 = document.getElementById('chart-sub2-pane');
-    const c4Canvas = document.getElementById('chart-sub2-canvas');
     if (sub2Chart && c4 && c4.style.display !== 'none' && c4.clientWidth > 10) {
-      const h = c4Canvas && c4Canvas.clientHeight > 10 ? c4Canvas.clientHeight : Math.max(30, c4.clientHeight - 26);
+      const paneH = c4.clientHeight || parseInt(c4.style.height, 10) || 90;
+      const h = Math.max(35, paneH - 24);
       sub2Chart.resize(c4.clientWidth, h);
     }
   } catch(e) {
@@ -832,7 +831,9 @@ function renderChartData(candles) {
     close: c.close
   }));
   candleSeries.setData(formattedCandles);
+  window.currentCandles = candles;
   window.currentChartCandles = candles;
+  window.lastReceivedCandles = candles;
   if (window.OrderFlowEngine && OrderFlowEngine.forecastConeVisible) {
     OrderFlowEngine.renderForecastCone();
   }
@@ -3298,6 +3299,7 @@ let minPriceLine = null;
 let sub2Chart = null;
 let sub2Series = null;
 let sub2Series2 = null;
+let sub2HistSeries = null;
 let activeSub2Mode = 'wr';
 let activeSub2Period = 14;
 
@@ -3640,16 +3642,24 @@ function initSub2Pane() {
   container.innerHTML = '';
   sub2Chart = LightweightCharts.createChart(container, {
     layout: { background: { color: '#070a12' }, textColor: '#64748b', fontSize: 10 },
-    localization: { locale: 'it-IT' },
+    localization: {
+      locale: 'it-IT',
+      timeFormatter: (t) => formatRomeTime(t, true)
+    },
     grid: {
       vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 2 },
       horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.22)', style: 2 }
+    },
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+      vertLine: { color: '#64748b', width: 1, style: 2 },
+      horzLine: { color: '#64748b', width: 1, style: 2 }
     },
     rightPriceScale: {
       borderColor: '#1e293b',
       autoScale: true,
       minimumWidth: 72,
-      scaleMargins: { top: 0.25, bottom: 0.15 }
+      scaleMargins: { top: 0.20, bottom: 0.15 }
     },
     timeScale: {
       visible: true,
@@ -3657,63 +3667,71 @@ function initSub2Pane() {
       timeVisible: true,
       secondsVisible: false,
       rightOffset: 12,
-      barSpacing: 8
+      barSpacing: 8,
+      fixLeftEdge: false,
+      fixRightEdge: false,
+      tickMarkFormatter: (time, tickMarkType, locale) => formatTimeScaleTick(time, tickMarkType, locale)
     }
   });
 
   sub2Series = sub2Chart.addLineSeries({
     color: '#ec4899',
-    lineWidth: 1.5,
+    lineWidth: 1.8,
     title: '',
-    lastValueVisible: true
+    lastValueVisible: true,
+    priceLineVisible: false
   });
 
   sub2Series2 = sub2Chart.addLineSeries({
     color: '#f59e0b',
-    lineWidth: 1.5,
+    lineWidth: 1.8,
     title: '',
-    lastValueVisible: false
+    lastValueVisible: false,
+    priceLineVisible: false
   });
 
-  // Synchronize timescale with mainChart (Bidirectional)
-  if (mainChart && typeof mainChart.timeScale === 'function') {
-    mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-      if (sub2Chart && range) {
-        try { sub2Chart.timeScale().setVisibleLogicalRange(range); } catch(e){}
-      }
-    });
-    sub2Chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-      if (mainChart && range) {
-        try { mainChart.timeScale().setVisibleLogicalRange(range); } catch(e){}
-      }
-    });
+  sub2HistSeries = sub2Chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    lastValueVisible: true,
+    priceLineVisible: false
+  });
+
+  // Attach synchronization cleanly
+  if (typeof attachMultiChartSync === 'function') {
+    attachMultiChartSync();
   }
 
   // Initial indicator calculation & render
-  if (window.currentCandles || window.lastReceivedCandles) {
+  const availableCandles = window.currentCandles || window.currentChartCandles || window.lastReceivedCandles;
+  if (availableCandles && availableCandles.length) {
     setTimeout(() => {
-      if (typeof renderCurrentSub2Data === 'function') {
-        renderCurrentSub2Data(window.currentCandles || window.lastReceivedCandles);
-      }
-    }, 50);
+      renderCurrentSub2Data(availableCandles);
+    }, 40);
   }
 }
 
 function setSub2Mode(mode) {
   activeSub2Mode = mode;
-  if (window.showToast) window.showToast(`Oscillatore 2 impostato su: ${mode.toUpperCase()}`, 'info');
-  if (typeof renderCurrentSub2Data === 'function') renderCurrentSub2Data();
+  const sel = document.getElementById('sub2-mode-select');
+  if (sel && sel.value !== mode) sel.value = mode;
+  if (window.showToast) window.showToast(`Oscillatore 2: ${mode.toUpperCase()}`, 'info');
+  renderCurrentSub2Data();
 }
 
 function updateSub2Param(val) {
   activeSub2Period = parseInt(val, 10) || 14;
-  if (typeof renderCurrentSub2Data === 'function') renderCurrentSub2Data();
+  const input = document.getElementById('sub2-param-input');
+  if (input && input.value !== String(activeSub2Period)) input.value = activeSub2Period;
+  renderCurrentSub2Data();
 }
 
 function renderCurrentSub2Data(candles) {
   if (!candles) {
-    candles = window.lastReceivedCandles || window.currentCandles || [];
+    candles = window.currentCandles || window.currentChartCandles || window.lastReceivedCandles || [];
   } else {
+    window.currentCandles = candles;
+    window.currentChartCandles = candles;
     window.lastReceivedCandles = candles;
   }
   if (!sub2Chart) initSub2Pane();
@@ -3730,21 +3748,29 @@ function renderCurrentSub2Data(candles) {
     const period = activeSub2Period || 14;
     const wrData = [];
     for (let i = 0; i < n; i++) {
-      if (i < period) continue;
+      const start = Math.max(0, i - period + 1);
       let hh = -Infinity, ll = Infinity;
-      for (let j = i - period + 1; j <= i; j++) {
+      for (let j = start; j <= i; j++) {
         if (highs[j] > hh) hh = highs[j];
         if (lows[j] < ll) ll = lows[j];
       }
       const val = hh === ll ? -50 : ((hh - closes[i]) / (hh - ll)) * -100;
-      wrData.push({ time: times[i], value: Math.max(-100, Math.min(0, val)) });
+      wrData.push({ time: times[i], value: Math.max(-100, Math.min(0, +val.toFixed(2))) });
     }
-    if (sub2Series) sub2Series.setData(wrData);
+    const cleanWr = wrData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    if (sub2HistSeries) sub2HistSeries.setData([]);
+    if (sub2Series) {
+      sub2Series.applyOptions({ color: '#ec4899', lineWidth: 1.8 });
+      sub2Series.setData(cleanWr);
+    }
     if (sub2Series2) sub2Series2.setData([]);
 
-    const lastVal = wrData.length ? wrData[wrData.length - 1].value.toFixed(2) : '-28.73';
+    const lastVal = cleanWr.length ? cleanWr[cleanWr.length - 1].value.toFixed(2) : '-28.73';
     const badge = document.getElementById('sub2-live-badge');
-    if (badge) badge.textContent = `WR${period}: ${lastVal}`;
+    if (badge) {
+      badge.textContent = `WR${period}: ${lastVal}`;
+      badge.style.color = '#ec4899';
+    }
   } else if (activeSub2Mode === 'kdj') {
     // KDJ: Fast Stochastic %K, %D, and %J = 3K - 2D
     const period = activeSub2Period || 9;
@@ -3752,9 +3778,9 @@ function renderCurrentSub2Data(candles) {
     const dData = [];
     let k = 50, d = 50;
     for (let i = 0; i < n; i++) {
-      if (i < period) continue;
+      const start = Math.max(0, i - period + 1);
       let hh = -Infinity, ll = Infinity;
-      for (let j = i - period + 1; j <= i; j++) {
+      for (let j = start; j <= i; j++) {
         if (highs[j] > hh) hh = highs[j];
         if (lows[j] < ll) ll = lows[j];
       }
@@ -3762,69 +3788,103 @@ function renderCurrentSub2Data(candles) {
       k = (2/3) * k + (1/3) * rsv;
       d = (2/3) * d + (1/3) * k;
       const jVal = 3 * k - 2 * d;
-      kData.push({ time: times[i], value: k });
-      dData.push({ time: times[i], value: jVal });
+      kData.push({ time: times[i], value: +k.toFixed(2) });
+      dData.push({ time: times[i], value: +jVal.toFixed(2) });
     }
-    if (sub2Series) sub2Series.setData(kData);
-    if (sub2Series2) sub2Series2.setData(dData);
+    const cleanK = kData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    const cleanD = dData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    if (sub2HistSeries) sub2HistSeries.setData([]);
+    if (sub2Series) {
+      sub2Series.applyOptions({ color: '#00f2a1', lineWidth: 1.8 });
+      sub2Series.setData(cleanK);
+    }
+    if (sub2Series2) {
+      sub2Series2.applyOptions({ color: '#f59e0b', lineWidth: 1.8 });
+      sub2Series2.setData(cleanD);
+    }
 
-    const lastK = kData.length ? kData[kData.length - 1].value.toFixed(1) : '59.5';
-    const lastJ = dData.length ? dData[dData.length - 1].value.toFixed(1) : '61.6';
+    const lastK = cleanK.length ? cleanK[cleanK.length - 1].value.toFixed(1) : '59.5';
+    const lastJ = cleanD.length ? cleanD[cleanD.length - 1].value.toFixed(1) : '61.6';
     const badge = document.getElementById('sub2-live-badge');
-    if (badge) badge.textContent = `K: ${lastK} J: ${lastJ}`;
+    if (badge) {
+      badge.textContent = `K:${lastK} J:${lastJ}`;
+      badge.style.color = '#00f2a1';
+    }
   } else if (activeSub2Mode === 'cci') {
     // CCI = (TP - SMA(TP)) / (0.015 * MeanDev)
     const period = activeSub2Period || 20;
     const cciData = [];
     const tpArr = candles.map(c => (c.high + c.low + c.close) / 3);
     for (let i = 0; i < n; i++) {
-      if (i < period) continue;
+      const start = Math.max(0, i - period + 1);
+      const count = i - start + 1;
       let sum = 0;
-      for (let j = i - period + 1; j <= i; j++) sum += tpArr[j];
-      const sma = sum / period;
+      for (let j = start; j <= i; j++) sum += tpArr[j];
+      const sma = sum / count;
       let meanDev = 0;
-      for (let j = i - period + 1; j <= i; j++) meanDev += Math.abs(tpArr[j] - sma);
-      meanDev = meanDev / period || 0.0001;
+      for (let j = start; j <= i; j++) meanDev += Math.abs(tpArr[j] - sma);
+      meanDev = meanDev / count || 0.0001;
       const cci = (tpArr[i] - sma) / (0.015 * meanDev);
-      cciData.push({ time: times[i], value: cci });
+      cciData.push({ time: times[i], value: +cci.toFixed(2) });
     }
-    if (sub2Series) sub2Series.setData(cciData);
+    const cleanCci = cciData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    if (sub2HistSeries) sub2HistSeries.setData([]);
+    if (sub2Series) {
+      sub2Series.applyOptions({ color: '#38bdf8', lineWidth: 1.8 });
+      sub2Series.setData(cleanCci);
+    }
     if (sub2Series2) sub2Series2.setData([]);
 
-    const lastCci = cciData.length ? cciData[cciData.length - 1].value.toFixed(1) : '+45.2';
+    const lastCci = cleanCci.length ? cleanCci[cleanCci.length - 1].value.toFixed(1) : '+45.2';
     const badge = document.getElementById('sub2-live-badge');
-    if (badge) badge.textContent = `CCI${period}: ${lastCci}`;
+    if (badge) {
+      badge.textContent = `CCI${period}: ${lastCci}`;
+      badge.style.color = '#38bdf8';
+    }
   } else if (activeSub2Mode === 'stoch') {
     // Stocastico Lento %K / %D
     const period = activeSub2Period || 14;
-    const kData = [];
-    const dData = [];
+    const rawK = [];
     for (let i = 0; i < n; i++) {
-      if (i < period) continue;
+      const start = Math.max(0, i - period + 1);
       let hh = -Infinity, ll = Infinity;
-      for (let j = i - period + 1; j <= i; j++) {
+      for (let j = start; j <= i; j++) {
         if (highs[j] > hh) hh = highs[j];
         if (lows[j] < ll) ll = lows[j];
       }
       const k = hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100;
-      kData.push({ time: times[i], value: k });
+      rawK.push({ time: times[i], value: +k.toFixed(2) });
     }
-    // 3-period SMA of %K for %D
-    for (let i = 2; i < kData.length; i++) {
-      const avg = (kData[i].value + kData[i-1].value + kData[i-2].value) / 3;
-      dData.push({ time: kData[i].time, value: avg });
+    const dData = [];
+    for (let i = 0; i < rawK.length; i++) {
+      const p1 = rawK[i].value;
+      const p2 = i >= 1 ? rawK[i-1].value : p1;
+      const p3 = i >= 2 ? rawK[i-2].value : p2;
+      dData.push({ time: rawK[i].time, value: +((p1 + p2 + p3) / 3).toFixed(2) });
     }
-    if (sub2Series) sub2Series.setData(kData);
-    if (sub2Series2) sub2Series2.setData(dData);
+    const cleanK = rawK.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    const cleanD = dData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    if (sub2HistSeries) sub2HistSeries.setData([]);
+    if (sub2Series) {
+      sub2Series.applyOptions({ color: '#a855f7', lineWidth: 1.8 });
+      sub2Series.setData(cleanK);
+    }
+    if (sub2Series2) {
+      sub2Series2.applyOptions({ color: '#fcd535', lineWidth: 1.8 });
+      sub2Series2.setData(cleanD);
+    }
 
-    const lastK = kData.length ? kData[kData.length - 1].value.toFixed(1) : '48.0';
-    const lastD = dData.length ? dData[dData.length - 1].value.toFixed(1) : '52.1';
+    const lastK = cleanK.length ? cleanK[cleanK.length - 1].value.toFixed(1) : '48.0';
+    const lastD = cleanD.length ? cleanD[cleanD.length - 1].value.toFixed(1) : '52.1';
     const badge = document.getElementById('sub2-live-badge');
-    if (badge) badge.textContent = `%K: ${lastK} %D: ${lastD}`;
+    if (badge) {
+      badge.textContent = `%K:${lastK} %D:${lastD}`;
+      badge.style.color = '#a855f7';
+    }
   } else if (activeSub2Mode === 'macd_hist') {
     // MACD Hist: 12 EMA - 26 EMA - 9 Signal
     const histData = [];
-    let e12 = closes[0], e26 = closes[0], sig = 0;
+    let e12 = closes[0] || 0, e26 = closes[0] || 0, sig = 0;
     const a12 = 2 / (12 + 1), a26 = 2 / (26 + 1), aSig = 2 / (9 + 1);
     for (let i = 0; i < n; i++) {
       e12 = closes[i] * a12 + e12 * (1 - a12);
@@ -3832,15 +3892,26 @@ function renderCurrentSub2Data(candles) {
       const macd = e12 - e26;
       sig = macd * aSig + sig * (1 - aSig);
       const hist = macd - sig;
-      histData.push({ time: times[i], value: hist });
+      histData.push({
+        time: times[i],
+        value: +hist.toFixed(4),
+        color: hist >= 0 ? 'rgba(0, 242, 161, 0.85)' : 'rgba(244, 63, 94, 0.85)'
+      });
     }
-    if (sub2Series) sub2Series.setData(histData);
+    const cleanHist = histData.filter((pt, idx, a) => idx === 0 || pt.time > a[idx - 1].time);
+    if (sub2Series) sub2Series.setData([]);
     if (sub2Series2) sub2Series2.setData([]);
+    if (sub2HistSeries) sub2HistSeries.setData(cleanHist);
 
-    const lastH = histData.length ? histData[histData.length - 1].value.toFixed(2) : '12.4';
+    const lastH = cleanHist.length ? cleanHist[cleanHist.length - 1].value.toFixed(2) : '12.4';
     const badge = document.getElementById('sub2-live-badge');
-    if (badge) badge.textContent = `Hist: ${lastH}`;
+    if (badge) {
+      badge.textContent = `Hist: ${lastH}`;
+      badge.style.color = (+lastH >= 0) ? '#00f2a1' : '#f43f5e';
+    }
   }
+
+  if (window.resizeAllCharts) window.resizeAllCharts();
 }
 
   if (mainChart && typeof mainChart.timeScale === 'function') {

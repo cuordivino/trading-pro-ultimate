@@ -5786,11 +5786,18 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
   backdrop-filter: blur(16px);
 }
 
+#top-chapter-drawer.closed,
 .top-chapter-drawer.closed {
   max-height: 0 !important;
+  height: 0 !important;
   opacity: 0 !important;
   display: none !important;
   pointer-events: none !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 .top-chapter-drawer.fullscreen {
@@ -8705,23 +8712,22 @@ body, html, input, select, button, textarea {
   }
 
   /* 4. COMPACT SUB-PANES (VOLUME, RSI, WR) TO PREVENT SQUASHING CHART */
-  #chart-volume-pane {
-    height: 65px !important;
-    min-height: 55px !important;
-  }
-  #chart-momentum-pane {
-    height: 65px !important;
-    min-height: 55px !important;
-  }
+  #chart-volume-pane,
+  #chart-momentum-pane,
   #chart-sub2-pane {
-    height: 65px !important;
-    min-height: 55px !important;
+    min-height: 45px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .subpane-header-bar {
-    height: 22px !important;
-    min-height: 22px !important;
+    height: 24px !important;
+    min-height: 24px !important;
     padding: 0 4px !important;
     font-size: 9px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
   .subpane-title {
     font-size: 9px !important;
@@ -8731,7 +8737,28 @@ body, html, input, select, button, textarea {
     padding: 1px 3px !important;
   }
   .pane-height-controls {
-    display: none !important; /* Hide preset height pills on mobile to save space */
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .pane-height-controls .btn-pane-h {
+    padding: 2px 5px !important;
+    font-size: 8.5px !important;
+    height: 19px !important;
+    line-height: 17px !important;
+    border-radius: 3px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #e2e8f0 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    touch-action: manipulation !important;
+  }
+  .pane-height-controls .btn-pane-h:active {
+    background: #00f2a1 !important;
+    color: #000 !important;
   }
 
   /* 5. THIN SPLITTER BARS ON MOBILE */
@@ -8904,29 +8931,35 @@ body, html, input, select, button, textarea {
     flex-shrink: 0 !important;
   }
   .pane-height-controls {
-    display: none !important; /* Hide preset height pills on mobile */
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .pane-height-controls .btn-pane-h {
+    padding: 2px 5px !important;
+    font-size: 8.5px !important;
+    height: 19px !important;
+    line-height: 17px !important;
+    border-radius: 3px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #e2e8f0 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    touch-action: manipulation !important;
+  }
+  .pane-height-controls .btn-pane-h:active {
+    background: #00f2a1 !important;
+    color: #000 !important;
   }
 
-  /* 6. CLEAN SPACIOUS SUBPANES (NO OVERFLOW, STRICT FLEX) */
-  #chart-volume-pane {
-    height: 85px !important;
-    min-height: 85px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
-  #chart-momentum-pane {
-    height: 85px !important;
-    min-height: 85px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
+  /* 6. CLEAN SPACIOUS SUBPANES (NO OVERFLOW, STRICT FLEX, DYNAMIC HEIGHTS) */
+  #chart-volume-pane,
+  #chart-momentum-pane,
   #chart-sub2-pane {
-    height: 85px !important;
-    min-height: 85px !important;
+    min-height: 45px !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -8951,4 +8984,16 @@ body, html, input, select, button, textarea {
     flex-wrap: nowrap !important;
     font-size: 9px !important;
   }
+}
+
+/* DESKTOP SUBPANE CANVAS FLEX RULE */
+#chart-volume-canvas,
+#chart-momentum-canvas,
+#chart-sub2-canvas {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 35px !important;
+  width: 100% !important;
+  position: relative !important;
+  box-sizing: border-box !important;
 }

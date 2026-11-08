@@ -648,16 +648,16 @@ window.PaneSplitterManager = {
     if (mainWrap) mainWrap.style.height = `${this.heights.main}px`;
     if (volPane) {
       volPane.style.height = `${this.heights.vol}px`;
-      volPane.style.display = this.heights.vol > 0 ? 'block' : 'none';
+      volPane.style.display = this.heights.vol > 0 ? 'flex' : 'none';
     }
     if (momPane) {
       momPane.style.height = `${this.heights.mom}px`;
-      momPane.style.display = this.heights.mom > 0 ? 'block' : 'none';
+      momPane.style.display = this.heights.mom > 0 ? 'flex' : 'none';
     }
     if (sub2Pane) {
       const h2 = this.heights.mom2 || 90;
       sub2Pane.style.height = `${h2}px`;
-      sub2Pane.style.display = h2 > 0 ? 'block' : 'none';
+      sub2Pane.style.display = h2 > 0 ? 'flex' : 'none';
     }
 
     if (window.resizeAllCharts) {

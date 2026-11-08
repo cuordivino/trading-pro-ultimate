@@ -30,6 +30,7 @@ let activeMegaCategory = 'all';
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[*] Initializing Apex Terminal Pro V2...');
+  closeTopChapterDrawer();
 
   initMainChart();
   if (window.MarketQuantumEngine) MarketQuantumEngine.init();
@@ -182,6 +183,7 @@ function switchMainTab(tabId, btnElem) {
   // Open drawer smoothly from the top
   if (drawer) {
     drawer.classList.remove('closed');
+    drawer.style.display = '';
   }
 
   // Update drawer header info
@@ -228,21 +230,30 @@ function closeTopChapterDrawer() {
   if (drawer) {
     drawer.classList.add('closed');
     drawer.classList.remove('fullscreen');
+    drawer.style.display = 'none';
   }
   currentOpenChapterTab = null;
 
   document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.tab-nav-btn[data-tab="tab-terminal"]')?.classList.add('active');
 
+  // Strictly deactivate other view panels and activate tab-terminal
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
   const term = document.getElementById('tab-terminal');
   if (term) term.classList.add('active');
+
+  // Synchronize mobile bottom nav
+  document.querySelectorAll('.m-bottom-nav-item').forEach(b => {
+    const isTerm = b.getAttribute('onclick')?.includes('tab-terminal');
+    b.classList.toggle('active', !!isTerm);
+  });
 
   const quickSelect = document.getElementById('drawer-chapter-quick-select');
   if (quickSelect) quickSelect.value = 'tab-terminal';
 
   setTimeout(() => {
-    resizeAllCharts();
-    if (window.mainChart) window.mainChart.timeScale().fitContent();
+    if (window.resizeAllCharts) window.resizeAllCharts();
+    if (window.mainChart && window.mainChart.timeScale) window.mainChart.timeScale().fitContent();
     if (window.OrderFlowEngine) {
       OrderFlowEngine.renderFootprintOverlay();
       OrderFlowEngine.renderDenseTimeGrid();
