@@ -2059,7 +2059,7 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
 /* Bybit 3-Column Terminal Pro Grid */
 .bybit-terminal-grid {
   display: grid;
-  grid-template-columns: 1fr 10px 310px 10px 340px !important;
+  grid-template-columns: 1fr 10px 310px 10px 340px;
   gap: 0 !important;
   margin-top: 10px;
   width: 100% !important;
@@ -2659,10 +2659,7 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     overflow: hidden !important;
   }
 
-  #chart-container {
-    height: 320px !important;
-    width: 100% !important;
-  }
+  #chart-container {\n    height: 100% !important;\n    width: 100% !important;\n  }
 
   #chart-volume-pane {
     height: 75px !important;
@@ -8853,8 +8850,7 @@ body, html, input, select, button, textarea {
 
   /* 2. DEDICATED MASSIVE CANDLESTICK CHART */
   .chart-viewport-wrapper {
-    height: 52vh !important;
-    min-height: 400px !important;
+    height: 390px !important;\n    min-height: 360px !important;\n    max-height: 52vh !important;
     width: 100% !important;
     position: relative !important;
     overflow: hidden !important;

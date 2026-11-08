@@ -787,50 +787,27 @@ if (typeof document !== 'undefined') {
 // ============================================================================
 // 4. COLUMN SPLITTER MANAGER (TAGLI VERTICALI LARGHEZZA GRAFICO / BOOK / ORDINI)
 // ============================================================================
+// 4. COLUMN SPLITTER MANAGER (TAGLI VERTICALI LARGHEZZA GRAFICO / BOOK / ORDINI)
+// ============================================================================
 window.ColumnSplitterManager = {
-  // Layout Modes: '3col' (Chart | Book | Order) or 'wide' (Wide Chart & Book docked below)
-  layoutMode: 'wide',
-
-  toggleLayoutMode: function(mode) {
-    this.layoutMode = mode || (this.layoutMode === 'wide' ? '3col' : 'wide');
-    try { localStorage.setItem('tpu_layout_mode_pref', this.layoutMode); } catch(e) {}
-    this.applyDomWidths();
-    const btn = document.getElementById('btn-toggle-layout-mode');
-    if (btn) btn.innerText = this.layoutMode === 'wide' ? '◫ Grafico Ampio' : '⊞ 3 Colonne';
-    if (window.showToast) window.showToast(`Layout impostato su: ${this.layoutMode === 'wide' ? 'Grafico Ampio (Book sotto)' : '3 Colonne'}`, 'info');
-  },
-
-  STORAGE_KEY: 'tpu_col_widths_v5',
-  widths: {
-    book: 310,
-    order: 340
-  },
+  STORAGE_KEY: 'tpu_bybit_col_widths_v2',
+  widths: { book: 310, order: 340 },
 
   init: function() {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY);
       if (saved) {
-        this.widths = { ...this.widths, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        if (parsed.book) this.widths.book = Math.max(180, Math.min(600, parsed.book));
+        if (parsed.order) this.widths.order = Math.max(220, Math.min(600, parsed.order));
       }
     } catch(e) {}
 
-    this.applyDomWidths();
     this.bindColSplitter('splitter-col-1-2', 'book');
     this.bindColSplitter('splitter-col-2-3', 'order');
+    this.applyDomWidths();
 
     window.addEventListener('resize', () => this.applyDomWidths());
-    window.addEventListener('orientationchange', () => setTimeout(() => this.applyDomWidths(), 100));
-  },
-
-  setColWidth: function(col, px) {
-    const val = parseInt(px, 10);
-    if (isNaN(val)) return;
-    if (col === 'book') this.widths.book = Math.max(180, Math.min(700, val));
-    if (col === 'order') this.widths.order = Math.max(220, Math.min(700, val));
-    this.applyDomWidths();
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.widths));
-    } catch(e) {}
   },
 
   applyDomWidths: function() {
@@ -839,61 +816,111 @@ window.ColumnSplitterManager = {
 
     const bookCol = document.getElementById('bb-col-book');
     const orderCol = document.getElementById('bb-col-order');
-    const chartCol = document.getElementById('bb-col-chart');
+    const chartWrap = document.getElementById('bybit-chart-column-wrap');
     const split1 = document.getElementById('splitter-col-1-2');
     const split2 = document.getElementById('splitter-col-2-3');
+    const slotLateral = document.getElementById('slot-book-lateral');
+    const slotUnder = document.getElementById('slot-book-under-chart');
 
-    // Restore saved layout mode pref
-    try {
-      const savedMode = localStorage.getItem('tpu_layout_mode_pref');
-      if (savedMode) this.layoutMode = savedMode;
-    } catch(e) {}
+    const isMobile = window.innerWidth <= 920;
+    const isBookUnder = (window.BybitLayoutManager && window.BybitLayoutManager.bookPosition === 'under') || isMobile;
 
-    if (window.innerWidth > 920) {
-      if (this.layoutMode === 'wide') {
-        // Bybit Wide Chart Layout: Chart (1fr), Order Form (340px), Book docked below chart
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `1fr 10px ${this.widths.order || 340}px`;
-        grid.style.gap = '0';
-        if (split1) split1.style.display = 'none';
-        if (split2) split2.style.display = 'flex';
-        if (bookCol) {
-          bookCol.style.display = 'flex';
-          bookCol.style.gridColumn = '1 / -1';
-          bookCol.style.marginTop = '12px';
+    if (!isMobile) {
+      if (isBookUnder) {
+        // Bybit Wide Chart Mode: Chart expands to 1fr (100% available space), Order Execution on right
+        grid.style.setProperty('display', 'grid', 'important');
+        grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.order || 340) + 'px', 'important');
+        grid.style.setProperty('gap', '0', 'important');
+
+        if (chartWrap) {
+          chartWrap.style.setProperty('grid-column', '1', 'important');
+          chartWrap.style.setProperty('width', '100%', 'important');
+          chartWrap.style.setProperty('max-width', '100%', 'important');
         }
+
+        if (split1) split1.style.setProperty('display', 'none', 'important');
+        if (slotLateral) slotLateral.style.setProperty('display', 'none', 'important');
+
+        if (split2) {
+          split2.style.setProperty('display', 'flex', 'important');
+          split2.style.setProperty('grid-column', '2', 'important');
+          split2.setAttribute('title', 'Trascina per ridimensionare il Grafico e il Form Ordini');
+        }
+
+        if (orderCol) {
+          orderCol.style.setProperty('display', 'block', 'important');
+          orderCol.style.setProperty('grid-column', '3', 'important');
+          orderCol.style.setProperty('width', (this.widths.order || 340) + 'px', 'important');
+          orderCol.style.setProperty('max-width', (this.widths.order || 340) + 'px', 'important');
+        }
+
+        if (slotUnder && bookCol && bookCol.parentElement !== slotUnder) {
+          slotUnder.appendChild(bookCol);
+        }
+        if (slotUnder) slotUnder.style.setProperty('display', 'block', 'important');
+        if (bookCol) bookCol.classList.add('docked-under');
+
       } else {
-        // Standard 3-Column Layout: Chart (1fr) | Book (310px) | Order Form (340px)
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `1fr 10px ${this.widths.book || 310}px 10px ${this.widths.order || 340}px`;
-        grid.style.gap = '0';
-        if (split1) split1.style.display = 'flex';
-        if (split2) split2.style.display = 'flex';
-        if (bookCol) {
-          bookCol.style.display = 'flex';
-          bookCol.style.gridColumn = 'auto';
-          bookCol.style.marginTop = '0';
+        // Standard 3-Column Layout: Chart (1fr) | Book | Order Execution
+        grid.style.setProperty('display', 'grid', 'important');
+        grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.book || 310) + 'px 10px ' + (this.widths.order || 340) + 'px', 'important');
+        grid.style.setProperty('gap', '0', 'important');
+
+        if (chartWrap) {
+          chartWrap.style.setProperty('grid-column', '1', 'important');
+          chartWrap.style.setProperty('width', '100%', 'important');
+          chartWrap.style.setProperty('max-width', '100%', 'important');
         }
+
+        if (split1) {
+          split1.style.setProperty('display', 'flex', 'important');
+          split1.style.setProperty('grid-column', '2', 'important');
+          split1.setAttribute('title', 'Trascina per ridimensionare il Grafico e l\'Order Book');
+        }
+
+        if (slotLateral && bookCol && bookCol.parentElement !== slotLateral) {
+          slotLateral.appendChild(bookCol);
+        }
+        if (slotLateral) {
+          slotLateral.style.setProperty('display', 'flex', 'important');
+          slotLateral.style.setProperty('grid-column', '3', 'important');
+          slotLateral.style.setProperty('width', (this.widths.book || 310) + 'px', 'important');
+        }
+
+        if (split2) {
+          split2.style.setProperty('display', 'flex', 'important');
+          split2.style.setProperty('grid-column', '4', 'important');
+          split2.setAttribute('title', 'Trascina per ridimensionare l\'Order Book e il Form Ordini');
+        }
+
+        if (orderCol) {
+          orderCol.style.setProperty('display', 'block', 'important');
+          orderCol.style.setProperty('grid-column', '5', 'important');
+          orderCol.style.setProperty('width', (this.widths.order || 340) + 'px', 'important');
+          orderCol.style.setProperty('max-width', (this.widths.order || 340) + 'px', 'important');
+        }
+
+        if (slotUnder) slotUnder.style.setProperty('display', 'none', 'important');
+        if (bookCol) bookCol.classList.remove('docked-under');
       }
     } else {
-      // Mobile / Tablet: Stack Chart, Book, and Order Execution vertically
-      grid.style.display = 'flex';
-      grid.style.flexDirection = 'column';
-      grid.style.gap = '12px';
-      if (split1) split1.style.display = 'none';
-      if (split2) split2.style.display = 'none';
-      if (chartCol) chartCol.style.display = 'block';
-      if (bookCol) {
-        bookCol.style.display = 'flex';
-        bookCol.style.gridColumn = 'auto';
-        bookCol.style.marginTop = '0';
+      // Mobile / Tablet: Stack vertically: Chart -> Book -> Orders
+      grid.style.setProperty('display', 'flex', 'important');
+      grid.style.setProperty('flex-direction', 'column', 'important');
+      grid.style.setProperty('gap', '12px', 'important');
+
+      if (split1) split1.style.setProperty('display', 'none', 'important');
+      if (split2) split2.style.setProperty('display', 'none', 'important');
+      if (slotLateral) slotLateral.style.setProperty('display', 'none', 'important');
+
+      if (slotUnder && bookCol && bookCol.parentElement !== slotUnder) {
+        slotUnder.appendChild(bookCol);
       }
-      if (orderCol) orderCol.style.display = 'block';
+      if (slotUnder) slotUnder.style.setProperty('display', 'block', 'important');
+      if (bookCol) bookCol.classList.add('docked-under');
     }
 
-    if (window.resizeAllCharts) {
-      window.resizeAllCharts();
-    }
+    if (window.resizeAllCharts) window.resizeAllCharts();
   },
 
   bindColSplitter: function(splitterId, type) {
@@ -965,13 +992,10 @@ window.ColumnSplitterManager = {
       }
     }, { passive: false });
 
-    window.addEventListener('touchend', (e) => {
+    window.addEventListener('touchend', () => {
       if (isDragging) onEnd();
     });
-        window.addEventListener('touchend', (e) => {
-      if (isDragging) onEnd();
-    });
-    window.addEventListener('touchcancel', (e) => {
+    window.addEventListener('touchcancel', () => {
       if (isDragging) onEnd();
     });
   }
@@ -987,34 +1011,208 @@ if (typeof document !== 'undefined') {
   });
 }
 
-
 // ============================================================================
-// BYBIT DUAL-MODE LAYOUT MANAGER (SPLIT VERTICALE, TABS, GRAFICO AMPIO, 3 COLONNE)
-// Directly implements official Bybit UX from screenshots media_1794165856984 & media_1794165949596
+// BYBIT OFFICIAL DUAL-MODE LAYOUT MANAGER & POPOVER ENGINE
 // ============================================================================
 window.BybitLayoutManager = {
-  // Mobile Chart View Mode: 'chart-only' (Massimo spazio al grafico) vs 'chart-indicators' (Con oscillatori)
+  layoutMode: 'split',         // 'split' | 'tabs' | 'wide' | '3col'
+  bookPosition: 'under',       // 'under' (Sotto al grafico) | 'lateral' (A lato del grafico)
+  splitSubMode: 'split',       // 'split' (OB sopra, Trades sotto) | 'tabs' (A schede singole)
+  showBidAskRatio: true,
   mobileViewMode: 'chart-indicators',
+  activeTab: 'orderbook',
 
-  toggleMobileViewMode: function() {
-    this.mobileViewMode = this.mobileViewMode === 'chart-only' ? 'chart-indicators' : 'chart-only';
-    try { localStorage.setItem('tpu_mobile_view_mode', this.mobileViewMode); } catch(e) {}
+  init: function() {
+    try {
+      const savedPos = localStorage.getItem('tpu_bybit_book_pos_v2');
+      if (savedPos && ['under', 'lateral'].includes(savedPos)) {
+        this.bookPosition = savedPos;
+      }
+      const savedMode = localStorage.getItem('tpu_bybit_layout_mode_v2');
+      if (savedMode && ['split', 'tabs', 'wide', '3col'].includes(savedMode)) {
+        this.layoutMode = savedMode;
+      }
+      const ratioSaved = localStorage.getItem('tpu_bid_ask_ratio_v1');
+      if (ratioSaved !== null) {
+        this.showBidAskRatio = ratioSaved === 'true';
+      }
+      const mobMode = localStorage.getItem('tpu_mobile_view_mode');
+      if (mobMode && ['chart-only', 'chart-indicators'].includes(mobMode)) {
+        this.mobileViewMode = mobMode;
+      }
+    } catch(e) {}
+
+    this.applyBookPosition();
     this.applyMobileViewMode();
+    this.updateRatioVisibility();
+    this.updateActiveTiles();
+
+    // Close popover when clicking outside
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('bybit-layout-popover-menu');
+      const btn = document.getElementById('btn-bybit-layout-menu');
+      if (popover && popover.style.display !== 'none') {
+        if (!popover.contains(e.target) && (!btn || !btn.contains(e.target))) {
+          popover.style.display = 'none';
+        }
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      this.applyBookPosition();
+      this.applyMobileViewMode();
+    });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        this.applyBookPosition();
+        this.applyMobileViewMode();
+      }, 100);
+    });
+  },
+
+  setLayoutMode: function(mode) {
+    if (!['split', 'tabs', 'wide', '3col'].includes(mode)) return;
+    this.layoutMode = mode;
+    try { localStorage.setItem('tpu_bybit_layout_mode_v2', mode); } catch(e) {}
+
+    if (mode === 'wide') {
+      this.setBookPosition('under');
+    } else if (mode === '3col') {
+      this.setBookPosition('lateral');
+    } else if (mode === 'split') {
+      this.setBookSplitMode('split');
+      this.applyBookPosition();
+    } else if (mode === 'tabs') {
+      this.setBookSplitMode('tabs');
+    }
+
+    this.updateActiveTiles();
+    this.closePopover();
+
+    if (window.showToast) {
+      const modeNames = {
+        'split': 'OB + Trades (Split Verticale)',
+        'tabs': 'Visualizzazione a Schede Singole',
+        'wide': 'Grafico Ampio (Book Sotto)',
+        '3col': '3 Colonne (Grafico | Book | Ordini)'
+      };
+      window.showToast('Layout Bybit applicato: ' + (modeNames[mode] || mode), 'info');
+    }
+  },
+
+  setBookSplitMode: function(subMode) {
+    this.splitSubMode = subMode;
+    try { localStorage.setItem('tpu_bybit_split_submode_v1', subMode); } catch(e) {}
+
+    const viewOb = document.getElementById('bb-view-orderbook');
+    const viewTr = document.getElementById('bb-view-trades');
+    const splitHeader = document.getElementById('bb-split-trades-header');
+
+    if (subMode === 'split') {
+      if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+      if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+      if (splitHeader) splitHeader.style.display = 'flex';
+      const card = document.getElementById('bb-col-book');
+      if (card) card.classList.add('split-mode');
+    } else {
+      if (splitHeader) splitHeader.style.display = 'none';
+      const card = document.getElementById('bb-col-book');
+      if (card) card.classList.remove('split-mode');
+      this.switchBookSubTab(this.activeTab || 'orderbook');
+    }
+  },
+
+  updateActiveTiles: function() {
+    document.querySelectorAll('.bybit-layout-tile').forEach(t => t.classList.remove('active'));
+    const tileMap = {
+      'split': 'tile-mode-split',
+      'tabs': 'tile-mode-tabs',
+      'wide': 'tile-mode-wide',
+      '3col': 'tile-mode-3col'
+    };
+    const activeTileId = tileMap[this.layoutMode] || (this.bookPosition === 'under' ? 'tile-mode-wide' : 'tile-mode-split');
+    const el = document.getElementById(activeTileId);
+    if (el) el.classList.add('active');
+  },
+
+  toggleBookPosition: function() {
+    const nextPos = this.bookPosition === 'under' ? 'lateral' : 'under';
+    this.setBookPosition(nextPos);
+  },
+
+  setBookPosition: function(pos) {
+    if (!['under', 'lateral'].includes(pos)) return;
+    this.bookPosition = pos;
+    this.layoutMode = pos === 'under' ? 'wide' : '3col';
+    try {
+      localStorage.setItem('tpu_bybit_book_pos_v2', pos);
+      localStorage.setItem('tpu_bybit_layout_mode_v2', this.layoutMode);
+    } catch(e) {}
+
+    this.applyBookPosition();
+    this.updateActiveTiles();
+
+    if (window.showToast) {
+      window.showToast('Order Book & Trades posizionati: ' + (pos === 'under' ? 'SOTTO AL GRAFICO' : 'A LATO DEL GRAFICO'), 'info');
+    }
+  },
+
+  applyBookPosition: function() {
+    const lblDockIcon = document.getElementById('lbl-dock-icon');
+    const lblDockText = document.getElementById('lbl-dock-text');
+    const lblChartIcon = document.getElementById('lbl-chart-book-icon');
+    const lblChartText = document.getElementById('lbl-chart-book-text');
+
+    if (this.bookPosition === 'under') {
+      if (lblDockIcon) lblDockIcon.innerText = '◫';
+      if (lblDockText) lblDockText.innerText = 'Torna a Lato';
+      if (lblChartIcon) lblChartIcon.innerText = '◫';
+      if (lblChartText) lblChartText.innerText = 'Book a Lato';
+
+      const viewOb = document.getElementById('bb-view-orderbook');
+      const viewTr = document.getElementById('bb-view-trades');
+      const splitHead = document.getElementById('bb-split-trades-header');
+      if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
+      if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
+      if (splitHead) splitHead.style.display = 'flex';
+    } else {
+      if (lblDockIcon) lblDockIcon.innerText = '⬇';
+      if (lblDockText) lblDockText.innerText = 'Passa Sotto';
+      if (lblChartIcon) lblChartIcon.innerText = '⬇';
+      if (lblChartText) lblChartText.innerText = 'Book Sotto al Grafico';
+
+      if (this.splitSubMode === 'tabs') {
+        this.switchBookSubTab(this.activeTab || 'orderbook');
+      }
+    }
+
+    if (window.ColumnSplitterManager) {
+      window.ColumnSplitterManager.applyDomWidths();
+    }
   },
 
   applyMobileViewMode: function() {
     if (window.innerWidth > 920) return;
     const isOnly = this.mobileViewMode === 'chart-only';
     const vp = document.querySelector('.chart-viewport-wrapper');
+    const container = document.getElementById('chart-container');
     const volPane = document.getElementById('chart-volume-pane');
     const momPane = document.getElementById('chart-momentum-pane');
     const sub2Pane = document.getElementById('chart-sub2-pane');
     const macroWire = document.getElementById('bybit-macro-timeline-ribbon');
     const btn = document.getElementById('btn-mobile-chart-mode');
 
+    const targetHeight = isOnly ? Math.round(window.innerHeight * 0.72) : 390;
+
     if (vp) {
-      vp.style.height = isOnly ? '72vh' : '52vh';
-      vp.style.minHeight = isOnly ? '480px' : '400px';
+      vp.style.setProperty('height', targetHeight + 'px', 'important');
+      vp.style.setProperty('min-height', targetHeight + 'px', 'important');
+      vp.style.setProperty('max-height', targetHeight + 'px', 'important');
+    }
+
+    if (container) {
+      container.style.setProperty('height', '100%', 'important');
+      container.style.setProperty('width', '100%', 'important');
     }
 
     if (volPane) volPane.style.display = isOnly ? 'none' : 'flex';
@@ -1030,172 +1228,16 @@ window.BybitLayoutManager = {
     }
 
     setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
+      if (window.resizeAllCharts) window.resizeAllCharts();
       if (window.mainChart && window.mainChart.timeScale) window.mainChart.timeScale().fitContent();
     }, 50);
   },
 
-
-  // Book Position: 'under' (Sotto al grafico) | 'lateral' (A lato del grafico)
-  bookPosition: 'under',
-
-  init: function() {
-    try {
-      const savedPos = localStorage.getItem('tpu_bybit_book_pos_v2');
-      if (savedPos && ['under', 'lateral'].includes(savedPos)) {
-        this.bookPosition = savedPos;
-      }
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved && ['split', 'tabs', 'wide', '3col'].includes(saved)) {
-        this.layoutMode = saved;
-      }
-      const ratioSaved = localStorage.getItem('tpu_bid_ask_ratio_v1');
-      if (ratioSaved !== null) {
-        this.showBidAskRatio = ratioSaved === 'true';
-      }
-    } catch(e) {}
-
-    this.applyBookPosition();
+  toggleMobileViewMode: function() {
+    this.mobileViewMode = this.mobileViewMode === 'chart-only' ? 'chart-indicators' : 'chart-only';
+    try { localStorage.setItem('tpu_mobile_view_mode', this.mobileViewMode); } catch(e) {}
     this.applyMobileViewMode();
-    this.updateRatioVisibility();
-
-    // Close popover when clicking anywhere outside
-    document.addEventListener('click', (e) => {
-      const popover = document.getElementById('bybit-layout-popover-menu');
-      const btn = document.getElementById('btn-bybit-layout-menu');
-      if (popover && popover.style.display !== 'none') {
-        if (!popover.contains(e.target) && (!btn || !btn.contains(e.target))) {
-          popover.style.display = 'none';
-        }
-      }
-    });
-
-    window.addEventListener('resize', () => this.applyBookPosition());
-    window.addEventListener('orientationchange', () => setTimeout(() => this.applyBookPosition(), 100));
   },
-
-  toggleBookPosition: function() {
-    const nextPos = this.bookPosition === 'under' ? 'lateral' : 'under';
-    this.setBookPosition(nextPos);
-  },
-
-  setBookPosition: function(pos) {
-    if (!['under', 'lateral'].includes(pos)) return;
-    this.bookPosition = pos;
-    try { localStorage.setItem('tpu_bybit_book_pos_v2', pos); } catch(e) {}
-    this.applyBookPosition();
-    this.applyMobileViewMode();
-
-    if (window.showToast) {
-      window.showToast(`Order Book & Trades posizionati: ${pos === 'under' ? 'SOTTO AL GRAFICO' : 'A LATO DEL GRAFICO'}`, 'info');
-    }
-  },
-
-  applyBookPosition: function() {
-    const isMobile = window.innerWidth <= 920;
-    const grid = document.querySelector('.bybit-terminal-grid');
-    const book = document.getElementById('bb-col-book');
-    const slotUnder = document.getElementById('slot-book-under-chart');
-    const slotLateral = document.getElementById('slot-book-lateral');
-    const split1 = document.getElementById('splitter-col-1-2');
-    const split2 = document.getElementById('splitter-col-2-3');
-    const chartWrap = document.getElementById('bybit-chart-column-wrap');
-    const orderCol = document.getElementById('bb-col-order');
-
-    const lblDockIcon = document.getElementById('lbl-dock-icon');
-    const lblDockText = document.getElementById('lbl-dock-text');
-    const lblChartIcon = document.getElementById('lbl-chart-book-icon');
-    const lblChartText = document.getElementById('lbl-chart-book-text');
-
-    if (!book || !grid) return;
-
-    if (isMobile) {
-      // Mobile / Tablet: ALWAYS stacked vertically in order: Chart -> Book -> Order Form
-      grid.style.display = 'flex';
-      grid.style.flexDirection = 'column';
-      grid.style.gap = '12px';
-
-      if (slotUnder && book.parentElement !== slotUnder) {
-        slotUnder.appendChild(book);
-      }
-      if (slotUnder) slotUnder.style.display = 'block';
-      if (slotLateral) slotLateral.style.display = 'none';
-      if (split1) split1.style.display = 'none';
-      if (split2) split2.style.display = 'none';
-      book.classList.add('docked-under');
-      if (lblDockText) lblDockText.innerText = 'Passa Sotto';
-      if (lblChartText) lblChartText.innerText = 'Book Sotto';
-      return;
-    }
-
-    // DESKTOP (> 920px)
-    const orderW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.order : 340;
-    const bookW = (window.ColumnSplitterManager && window.ColumnSplitterManager.widths) ? window.ColumnSplitterManager.widths.book : 310;
-
-    if (this.bookPosition === 'under') {
-      // 1. DOCKED UNDER CHART: Chart gets 1fr (Full width!), Order execution is 340px
-      if (slotUnder && book.parentElement !== slotUnder) {
-        slotUnder.appendChild(book);
-      }
-      if (slotUnder) slotUnder.style.display = 'block';
-      if (slotLateral) slotLateral.style.display = 'none';
-      if (split1) split1.style.display = 'none';
-      if (split2) split2.style.display = 'flex';
-
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = `1fr 10px ${orderW}px`;
-      grid.style.gridTemplateRows = 'auto';
-      grid.style.gap = '0';
-
-      book.classList.add('docked-under');
-
-      // Update button labels
-      if (lblDockIcon) lblDockIcon.innerText = '◫';
-      if (lblDockText) lblDockText.innerText = 'Torna a Lato';
-      if (lblChartIcon) lblChartIcon.innerText = '◫';
-      if (lblChartText) lblChartText.innerText = 'Book a Lato';
-
-      // Inside book under chart: show side-by-side Order Book & Trades
-      const viewOb = document.getElementById('bb-view-orderbook');
-      const viewTr = document.getElementById('bb-view-trades');
-      const splitHead = document.getElementById('bb-split-trades-header');
-      if (viewOb) { viewOb.style.display = 'flex'; viewOb.style.flex = '1'; }
-      if (viewTr) { viewTr.style.display = 'flex'; viewTr.style.flex = '1'; }
-      if (splitHead) splitHead.style.display = 'flex';
-
-    } else {
-      // 2. LATERAL: Chart (1fr) | Splitter | Book (310px) | Splitter | Orders (340px)
-      if (slotLateral && book.parentElement !== slotLateral) {
-        slotLateral.appendChild(book);
-      }
-      if (slotLateral) slotLateral.style.display = 'flex';
-      if (slotUnder) slotUnder.style.display = 'none';
-      if (split1) split1.style.display = 'flex';
-      if (split2) split2.style.display = 'flex';
-
-      grid.style.display = 'grid';
-      grid.style.gridTemplateColumns = `1fr 10px ${bookW}px 10px ${orderW}px`;
-      grid.style.gridTemplateRows = 'auto';
-      grid.style.gap = '0';
-
-      book.classList.remove('docked-under');
-
-      // Update button labels
-      if (lblDockIcon) lblDockIcon.innerText = '⬇';
-      if (lblDockText) lblDockText.innerText = 'Passa Sotto';
-      if (lblChartIcon) lblChartIcon.innerText = '⬇';
-      if (lblChartText) lblChartText.innerText = 'Book Sotto al Grafico';
-    }
-
-    // Trigger chart resize smoothly
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-      if (window.mainChart && window.mainChart.timeScale) {
-        window.mainChart.timeScale().fitContent();
-      }
-    }, 50);
-  },
-
 
   toggleBidAskRatio: function(checked) {
     this.showBidAskRatio = checked;
@@ -1218,6 +1260,7 @@ window.BybitLayoutManager = {
     const popover = document.getElementById('bybit-layout-popover-menu');
     if (!popover) return;
     popover.style.display = (popover.style.display === 'none' || !popover.style.display) ? 'block' : 'none';
+    this.updateActiveTiles();
   },
 
   closePopover: function() {
@@ -1233,14 +1276,14 @@ window.BybitLayoutManager = {
     const tabTr = document.getElementById('bb-tab-tr-btn');
     if (tab === 'orderbook') {
       if (viewOb) viewOb.style.display = 'flex';
-      if (viewTr && this.bookPosition !== 'under') viewTr.style.display = 'none';
+      if (viewTr && this.splitSubMode !== 'split' && this.bookPosition !== 'under') viewTr.style.display = 'none';
       if (tabOb) tabOb.classList.add('active');
-      if (tabTr && this.bookPosition !== 'under') tabTr.classList.remove('active');
+      if (tabTr && this.splitSubMode !== 'split' && this.bookPosition !== 'under') tabTr.classList.remove('active');
     } else {
       if (viewTr) viewTr.style.display = 'flex';
-      if (viewOb && this.bookPosition !== 'under') viewOb.style.display = 'none';
+      if (viewOb && this.splitSubMode !== 'split' && this.bookPosition !== 'under') viewOb.style.display = 'none';
       if (tabTr) tabTr.classList.add('active');
-      if (tabOb && this.bookPosition !== 'under') tabOb.classList.remove('active');
+      if (tabOb && this.splitSubMode !== 'split' && this.bookPosition !== 'under') tabOb.classList.remove('active');
     }
-  },
+  }
 };

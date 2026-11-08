@@ -15,7 +15,7 @@ const OrderFlowEngine = {
   denseGridActive: true,
   denseGridSettings: {
     minPixelGap: 24,         // Minimum pixel gap between time labels
-    lineColor: 'rgba(255, 255, 255, 0.09)',
+    lineColor: 'rgba(255, 255, 255, 0.20)',
     labelColor: '#94a3b8',
     targetMultiplier: 6      // At least 6x denser time resolution
   },
@@ -202,7 +202,7 @@ const OrderFlowEngine = {
     const mainH = mainContainer.clientHeight || 350;
     const volH = (volContainer && volContainer.style.display !== 'none') ? volContainer.clientHeight : 0;
     const momH = (momContainer && momContainer.style.display !== 'none') ? momContainer.clientHeight : 0;
-    const totalHeight = mainH + volH + momH;
+    const totalHeight = mainH;
 
     canvas.width = totalWidth;
     canvas.height = totalHeight;

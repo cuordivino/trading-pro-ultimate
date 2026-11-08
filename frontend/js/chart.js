@@ -152,52 +152,51 @@ function applyTimeframeScaleOptions(tf) {
   const isMonthly = (tfRaw === '1M' || tfLower === '1mese' || tfLower === '1month');
   const isHighTf = isDaily || isWeekly || isMonthly;
 
-  let optimalBarSpacing = 16;
-  let minBarSpacing = 8;
-  let visibleBars = 60;
+  // High-Density Time Scale & Maximum Time Domain Scope per Timeframe
+  let optimalBarSpacing = 8;
+  let minBarSpacing = 3;
+  let visibleBars = 95;
 
   if (isSeconds) {
-    optimalBarSpacing = 18;
-    minBarSpacing = 10;
-    visibleBars = 60;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 95;
   } else if (is1Min) {
-    // 1-minute: wide bars, tick marks every 1 or 2 minutes, crystal clear!
-    optimalBarSpacing = 20;
-    minBarSpacing = 12;
-    visibleBars = 50;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 100;
   } else if (is5Min) {
-    // 5-minute: 22px bar spacing so ticks fall every 10-15 minutes, never 30m or 90m gaps!
-    optimalBarSpacing = 22;
-    minBarSpacing = 12;
-    visibleBars = 45;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 95;
   } else if (tfLower === '15m') {
-    optimalBarSpacing = 14;
-    minBarSpacing = 8;
-    visibleBars = 65;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 95;
   } else if (tfLower === '30m') {
-    optimalBarSpacing = 14;
-    minBarSpacing = 8;
-    visibleBars = 60;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 95;
   } else if (tfLower === '1h') {
-    optimalBarSpacing = 12;
-    minBarSpacing = 6;
-    visibleBars = 65;
+    optimalBarSpacing = 7;
+    minBarSpacing = 2.5;
+    visibleBars = 105;
   } else if (tfLower === '4h') {
-    optimalBarSpacing = 12;
-    minBarSpacing = 6;
-    visibleBars = 55;
+    optimalBarSpacing = 7;
+    minBarSpacing = 2.5;
+    visibleBars = 105;
   } else if (isDaily) {
-    optimalBarSpacing = 12;
-    minBarSpacing = 5;
-    visibleBars = 65;
+    optimalBarSpacing = 7;
+    minBarSpacing = 2;
+    visibleBars = 120;
   } else if (isWeekly) {
-    optimalBarSpacing = 14;
-    minBarSpacing = 6;
-    visibleBars = 50;
+    optimalBarSpacing = 7;
+    minBarSpacing = 2;
+    visibleBars = 85;
   } else if (isMonthly) {
-    optimalBarSpacing = 16;
-    minBarSpacing = 8;
-    visibleBars = 36;
+    optimalBarSpacing = 8;
+    minBarSpacing = 3;
+    visibleBars = 65;
   }
 
   const opts = {
