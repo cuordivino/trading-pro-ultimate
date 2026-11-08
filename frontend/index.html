@@ -540,6 +540,39 @@
             </div>
 
             <!-- Chart Toolbar with Bybit Timeframes -->
+            
+            <!-- ============================================================= -->
+            <!-- BYBIT DEDICATED ASSET & TICKER HEADER (SEPARATO DAL GRAFICO)   -->
+            <!-- ============================================================= -->
+            <div class="bybit-chart-top-header" id="bybit-chart-top-header">
+              <div class="bybit-top-left">
+                <div class="bybit-sym-title-row" onclick="if(window.toggleMegaAssetDropdown) toggleMegaAssetDropdown();" style="cursor:pointer;" title="Clicca per cambiare asset">
+                  <span class="bybit-sym-badge" id="bybit-top-sym">BTCUSDT</span>
+                  <span class="bybit-sym-arrow">▾</span>
+                  <span class="bybit-sym-sub" id="bybit-top-name">Bitcoin Perpetual</span>
+                </div>
+                <div class="bybit-price-row">
+                  <span class="bybit-price-large" id="bybit-top-price">$75,907.50</span>
+                  <span class="bybit-price-chg" id="bybit-top-chg">+0.45%</span>
+                  <span class="bybit-mark-price" id="bybit-top-mark">Mark: $75,907.50</span>
+                </div>
+              </div>
+              <div class="bybit-top-right">
+                <div class="bybit-stat-item">
+                  <span class="bybit-stat-lbl">24h High</span>
+                  <span class="bybit-stat-val" id="bybit-top-high">$76,162.10</span>
+                </div>
+                <div class="bybit-stat-item">
+                  <span class="bybit-stat-lbl">24h Low</span>
+                  <span class="bybit-stat-val" id="bybit-top-low">$75,533.40</span>
+                </div>
+                <div class="bybit-stat-item">
+                  <span class="bybit-stat-lbl">24h Turnover</span>
+                  <span class="bybit-stat-val" id="bybit-top-vol">$897.17M</span>
+                </div>
+              </div>
+            </div>
+
             <div class="chart-toolbar">
               <div class="tf-pill-group">
                 <button class="tf-pill" onclick="changeTimeframe('1s', this)">1s</button>
@@ -656,7 +689,7 @@
             <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
             <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
               <!-- FLOATING BYBIT ON-CHART LIVE LEGEND -->
-              <div class="bybit-chart-legend" id="bybit-chart-legend">
+              <div class="bybit-chart-legend" id="bybit-chart-legend"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:2px; margin-bottom:2px;"><span style="color:#fcd535; font-weight:800; font-size:9px;">📊 INDICATORI ATTIVI</span><button type="button" class="bybit-legend-toggle-btn" onclick="toggleBybitLegendCollapse()" title="Riduci/Espandi pannello indicatori sul grafico">▲/▼</button></div>
                 <div class="bybit-legend-line main">
                   <span class="bybit-leg-sym" id="bybit-leg-sym">BTCUSDT Perpetual</span>
                   <span class="bybit-leg-tf" id="bybit-leg-tf">15</span>
@@ -676,6 +709,27 @@
                 <canvas id="vp-canvas"></canvas>
               </div>
             </div>
+
+            
+            <!-- BYBIT MACRO TIMELINE RIBBON (NOTIZIE ECONOMICHE SUL GRAFICO) -->
+            <div class="bybit-macro-timeline-ribbon" id="bybit-macro-timeline-ribbon">
+              <span style="font-size:10px; font-weight:800; color:#94a3b8; display:inline-flex; align-items:center; gap:4px;">
+                <span>📅 Macro Wire:</span>
+              </span>
+              <button type="button" class="bybit-macro-pin-btn high-impact" onclick="BybitMacroCalendar.openModal('oggi')" title="Clicca per dettagli completi e fonti ufficiali">
+                <span>🌐 3</span> <span>CPI &amp; NFP Oggi</span>
+              </button>
+              <button type="button" class="bybit-macro-pin-btn high-impact" onclick="BybitMacroCalendar.openModal('domani')" title="Uscite di domani">
+                <span>🌐 2</span> <span>Permits &amp; FOMC Domani</span>
+              </button>
+              <button type="button" class="bybit-macro-pin-btn" onclick="BybitMacroCalendar.openModal('prossima')" title="Uscite prossima settimana">
+                <span>🌐 1</span> <span>BCE Lagarde</span>
+              </button>
+              <button type="button" class="btn btn-xs" style="font-size:9.5px; padding:2px 8px; background:#1e293b; color:#38bdf8; border:1px solid #334155; border-radius:4px;" onclick="BybitMacroCalendar.openModal('tutte')">
+                <span>Visualizza Calendario Completo ↗</span>
+              </button>
+            </div>
+
 
             <!-- DRAGGABLE SPLITTER 1: MAIN CHART / VOLUMI -->
             <div class="chart-splitter" id="splitter-vol" title="Trascina su/giù per ridimensionare il pannello Volumi">
@@ -754,6 +808,45 @@
               </div>
               <div id="chart-momentum-canvas" style="width:100%; height:100%;"></div>
             </div>
+
+
+            <!-- DRAGGABLE SPLITTER 3: OSCILLATORE 1 / OSCILLATORE 2 (PARAMETRI SETTABILI) -->
+            <div class="chart-splitter" id="splitter-sub2" title="Trascina su/giù per ridimensionare il Secondo Oscillatore">
+              <div class="splitter-grip"></div>
+            </div>
+
+            <!-- SOTTO IL GRAFICO: PANNELLO 3 (Secondo Oscillatore: Williams %R, KDJ, Stocastico, MACD Hist) -->
+            <div id="chart-sub2-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
+              <div class="subpane-header-bar" id="sub2-pane-header">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; overflow-x:auto;">
+                  <span class="subpane-title">📈 Parametri Settabili 2:</span>
+                  <select id="sub2-mode-select" class="subpane-select" onchange="setSub2Mode(this.value)">
+                    <option value="wr" selected>WR (Williams %R 14/20)</option>
+                    <option value="kdj">KDJ (9, 3, 3 Stochastic)</option>
+                    <option value="cci">CCI (Commodity Channel)</option>
+                    <option value="stoch">Stocastico Lento (%K / %D)</option>
+                    <option value="macd_hist">MACD Istogramma Puro</option>
+                  </select>
+
+                  <span style="font-size:10px; color:var(--text-dim); font-weight:800;">Parametro:</span>
+                  <input type="number" id="sub2-param-input" class="subpane-num-input" value="14" min="2" max="100" title="Periodo Oscillatore 2" onchange="updateSub2Param(this.value)">
+
+                  <span id="sub2-live-badge" class="subpane-live-badge" style="color:#ec4899;">WR14: -28.73</span>
+                  <button type="button" class="subpane-gear-btn" onclick="openIndicatorSettingsModal('WR')" title="Impostazioni avanzate">⚙️</button>
+                </div>
+
+                <div class="pane-height-controls">
+                  <span style="font-size:9px; color:var(--text-muted);">↕:</span>
+                  <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('sub2', -20)" title="Riduci">-</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 65)" title="65px">65px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 90)" title="90px">90px</button>
+                  <button type="button" class="btn-pane-h" onclick="setPaneHeightPreset('sub2', 130)" title="130px">130px</button>
+                  <button type="button" class="btn-pane-h" onclick="adjustPaneHeight('sub2', +20)" title="Aumenta">+</button>
+                </div>
+              </div>
+              <div id="chart-sub2-canvas" style="width:100%; height:100%;"></div>
+            </div>
+
           </div>
         </div>
           </div>
@@ -2363,5 +2456,31 @@
   </div>
 
   <script src="js/master-suite.js?v=4" defer></script>
+
+  <!-- ===================================================================== -->
+  <!-- BYBIT MACRO ECONOMIC CALENDAR MODAL (NOTIZIE PASSATE E FUTURE)        -->
+  <!-- ===================================================================== -->
+  <div id="bybit-macro-calendar-modal" class="bybit-macro-modal-overlay" onclick="if(event.target===this) BybitMacroCalendar.closeModal()">
+    <div class="bybit-macro-modal-dialog">
+      <div class="bybit-macro-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">🌐</span>
+          <span style="font-size:15px; font-weight:800; color:#fff;">Calendario Economico &amp; Notizie Macro (Bybit Wire)</span>
+        </div>
+        <button class="bybit-modal-close" onclick="BybitMacroCalendar.closeModal()">✕</button>
+      </div>
+
+      <div class="bybit-macro-tabs-bar">
+        <button class="bybit-macro-tab-btn active" id="btn-macro-tab-tutte" onclick="BybitMacroCalendar.setTab('tutte')">Tutte le Notizie</button>
+        <button class="bybit-macro-tab-btn" id="btn-macro-tab-prossime" onclick="BybitMacroCalendar.setTab('prossime')">🔴 Prossime Uscite (Future)</button>
+        <button class="bybit-macro-tab-btn" id="btn-macro-tab-passate" onclick="BybitMacroCalendar.setTab('passate')">🟢 Uscite Passate (Rilasciate)</button>
+      </div>
+
+      <div class="bybit-macro-modal-body" id="bybit-macro-modal-list">
+        <!-- Injected via BybitMacroCalendar -->
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

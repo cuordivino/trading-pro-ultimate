@@ -576,7 +576,8 @@ window.PaneSplitterManager = {
   heights: {
     main: 380,
     vol: 90,
-    mom: 105
+    mom: 105,
+    mom2: 90
   },
 
   init: function() {
@@ -590,13 +591,14 @@ window.PaneSplitterManager = {
     this.applyDomHeights();
     this.bindSplitterEvents('splitter-vol', 'volume');
     this.bindSplitterEvents('splitter-mom', 'momentum');
+    this.bindSplitterEvents('splitter-sub2', 'sub2');
   },
 
   getHeights: function() {
     return { ...this.heights };
   },
 
-  setHeights: function(mainH, volH, momH) {
+  setHeights: function(mainH, volH, momH, mom2H) {
     if (mainH !== undefined) this.heights.main = Math.max(180, mainH);
     if (volH !== undefined) this.heights.vol = Math.max(0, volH);
     if (momH !== undefined) this.heights.mom = Math.max(0, momH);
@@ -621,6 +623,12 @@ window.PaneSplitterManager = {
       momPane.style.height = `${this.heights.mom}px`;
       momPane.style.display = this.heights.mom > 0 ? 'block' : 'none';
     }
+    const sub2Pane = document.getElementById('chart-sub2-pane');
+    if (sub2Pane) {
+      const h2 = this.heights.mom2 || 90;
+      sub2Pane.style.height = `${h2}px`;
+      sub2Pane.style.display = h2 > 0 ? 'block' : 'none';
+    }
 
     if (window.resizeAllCharts) {
       window.resizeAllCharts();
@@ -628,6 +636,69 @@ window.PaneSplitterManager = {
   },
 
   bindSplitterEvents: function(splitterId, type) {
+    const el = document.getElementById(splitterId);
+    if (!el) return;
+
+    let startY = 0;
+    let startVolH = 0;
+    let startMomH = 0;
+    let startSub2H = 0;
+    let isDragging = false;
+
+    const onStart = (clientY) => {
+      isDragging = true;
+      startY = clientY;
+      startVolH = this.heights.vol;
+      startMomH = this.heights.mom;
+      startSub2H = this.heights.mom2 || 90;
+      el.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+    };
+
+    const onMove = (clientY) => {
+      if (!isDragging) return;
+      const delta = clientY - startY;
+
+      // NON-DESTRUCTIVE INDEPENDENT RESIZING:
+      // Adjust target pane smoothly without crushing the other panes below!
+      if (type === 'volume') {
+        this.heights.vol = Math.max(35, Math.min(280, startVolH + delta));
+      } else if (type === 'momentum') {
+        this.heights.mom = Math.max(35, Math.min(280, startMomH + delta));
+      } else if (type === 'sub2') {
+        this.heights.mom2 = Math.max(35, Math.min(280, startSub2H + delta));
+      }
+
+      this.applyDomHeights();
+    };
+
+    const onEnd = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      el.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.heights));
+      } catch(e) {}
+    };
+
+    // Desktop Mouse Listeners
+    el.addEventListener('mousedown', (e) => onStart(e.clientY));
+    window.addEventListener('mousemove', (e) => onMove(e.clientY));
+    window.addEventListener('mouseup', onEnd);
+
+    // Mobile Touch Listeners (Prevent scroll collision during touch drag)
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length) onStart(e.touches[0].clientY);
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches && e.touches.length) {
+        onMove(e.touches[0].clientY);
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', onEnd);
+  },
+  _oldBindPlaceholder: function() {
     const el = document.getElementById(splitterId);
     if (!el) return;
 

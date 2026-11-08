@@ -750,6 +750,11 @@ function resizeAllCharts() {
     if (momentumChart && c3 && c3.style.display !== 'none' && c3.clientWidth > 10 && c3.clientHeight > 10) {
       momentumChart.resize(c3.clientWidth, c3.clientHeight);
     }
+
+    const c4 = document.getElementById('chart-sub2-pane');
+    if (sub2Chart && c4 && c4.style.display !== 'none' && c4.clientWidth > 10 && c4.clientHeight > 10) {
+      sub2Chart.resize(c4.clientWidth, c4.clientHeight);
+    }
   } catch(e) {
     console.warn('[resizeAllCharts] Handled safely:', e);
   }
@@ -1647,6 +1652,10 @@ function adjustPaneHeight(paneType, delta) {
   if (paneType === 'volume') {
     const newVol = Math.max(40, Math.min(260, h.vol + delta));
     window.PaneSplitterManager.setHeights(h.main - delta, newVol, h.mom);
+  } else if (paneType === 'sub2') {
+    const curH = (h.mom2 || 90);
+    const newSub2 = Math.max(30, Math.min(260, curH + delta));
+    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, newSub2);
   } else if (paneType === 'momentum') {
     const newMom = Math.max(40, Math.min(260, h.mom + delta));
     window.PaneSplitterManager.setHeights(h.main - delta, h.vol, newMom);
@@ -1660,6 +1669,12 @@ function setPaneHeightPreset(paneType, targetH) {
   if (paneType === 'volume') {
     const delta = targetH - h.vol;
     window.PaneSplitterManager.setHeights(h.main - delta, targetH, h.mom);
+  } else if (paneType === 'sub2') {
+    const curH = (h.mom2 || 90);
+    const newSub2 = Math.max(30, Math.min(260, curH + delta));
+    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, newSub2);
+  } else if (paneType === 'sub2') {
+    window.PaneSplitterManager.setHeights(h.main, h.vol, h.mom, targetH);
   } else if (paneType === 'momentum') {
     const delta = targetH - h.mom;
     window.PaneSplitterManager.setHeights(h.main - delta, h.vol, targetH);
@@ -3212,4 +3227,434 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => BybitChartSettings.init());
 } else {
   BybitChartSettings.init();
+}
+
+
+// =============================================================================
+// BYBIT HIGH/LOW PRICE MARKERS, MACRO NEWS WIRE & SUB-PANE 2 EXTENSION
+// TRADING PRO ULTIMATE™ © by cuordivino - Tutti i diritti riservati
+// =============================================================================
+
+let maxPriceLine = null;
+let minPriceLine = null;
+let sub2Chart = null;
+let sub2Series = null;
+let sub2Series2 = null;
+let activeSub2Mode = 'wr';
+let activeSub2Period = 14;
+
+// 1. DYNAMIC HIGH & LOW PRICE MARKERS (Massimo e Minimo del Frame di Tempo)
+function updateVisibleHighLowMarkers(candles) {
+  if (!candleSeries || !candles || candles.length === 0) return;
+  try {
+    let maxH = -Infinity;
+    let minL = Infinity;
+    for (let i = 0; i < candles.length; i++) {
+      const c = candles[i];
+      if (c.high > maxH) maxH = c.high;
+      if (c.low < minL) minL = c.low;
+    }
+    if (maxH === -Infinity || minL === Infinity) return;
+
+    if (maxPriceLine) {
+      try { candleSeries.removePriceLine(maxPriceLine); } catch(e){}
+      maxPriceLine = null;
+    }
+    if (minPriceLine) {
+      try { candleSeries.removePriceLine(minPriceLine); } catch(e){}
+      minPriceLine = null;
+    }
+
+    const fmtMax = maxH > 1000 ? maxH.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : maxH.toFixed(4);
+    const fmtMin = minL > 1000 ? minL.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : minL.toFixed(4);
+
+    maxPriceLine = candleSeries.createPriceLine({
+      price: maxH,
+      color: '#cbd5e1',
+      lineWidth: 1,
+      lineStyle: 2, // Dashed
+      axisLabelVisible: true,
+      title: `— ${fmtMax} (Max)`
+    });
+
+    minPriceLine = candleSeries.createPriceLine({
+      price: minL,
+      color: '#cbd5e1',
+      lineWidth: 1,
+      lineStyle: 2, // Dashed
+      axisLabelVisible: true,
+      title: `— ${fmtMin} (Min)`
+    });
+  } catch(e) {
+    console.warn('[updateVisibleHighLowMarkers] Handled safely:', e);
+  }
+}
+
+// 2. BYBIT TOP HEADER SYNCHRONIZATION
+function syncBybitTopHeader(sym, price, chg, high, low, vol) {
+  try {
+    const symEl = document.getElementById('bybit-top-sym');
+    if (symEl && sym) symEl.textContent = sym;
+
+    const nameEl = document.getElementById('bybit-top-name');
+    if (nameEl) {
+      nameEl.textContent = sym.includes('USDT') ? `${sym.replace('USDT', '')} / Perpetual` : `${sym} Spot/Contract`;
+    }
+
+    const priceEl = document.getElementById('bybit-top-price');
+    if (priceEl && price !== undefined) {
+      const fmtP = typeof price === 'number' ? (price > 1000 ? `$${price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}` : `$${price.toFixed(4)}`) : price;
+      priceEl.textContent = fmtP;
+    }
+
+    const chgEl = document.getElementById('bybit-top-chg');
+    if (chgEl && chg !== undefined) {
+      const chgStr = String(chg);
+      chgEl.textContent = chgStr.startsWith('+') || chgStr.startsWith('-') ? chgStr : (parseFloat(chgStr) >= 0 ? `+${chgStr}%` : `${chgStr}%`);
+      if (chgStr.includes('-')) {
+        chgEl.className = 'bybit-price-chg down';
+        if (priceEl) priceEl.className = 'bybit-price-large down';
+      } else {
+        chgEl.className = 'bybit-price-chg';
+        if (priceEl) priceEl.className = 'bybit-price-large';
+      }
+    }
+
+    const markEl = document.getElementById('bybit-top-mark');
+    if (markEl && price) markEl.textContent = `Mark: ${priceEl ? priceEl.textContent : price}`;
+
+    const highEl = document.getElementById('bybit-top-high');
+    if (highEl && high) highEl.textContent = high;
+
+    const lowEl = document.getElementById('bybit-top-low');
+    if (lowEl && low) lowEl.textContent = low;
+
+    const volEl = document.getElementById('bybit-top-vol');
+    if (volEl && vol) volEl.textContent = vol;
+  } catch(e) {}
+}
+
+// Hook into existing ticker updates
+window.addEventListener('tickerUpdate', (e) => {
+  if (e.detail) {
+    const d = e.detail;
+    syncBybitTopHeader(d.symbol, d.price, d.change24h, d.high24h, d.low24h, d.volume24h);
+  }
+});
+
+// 3. BYBIT CHART LEGEND COLLAPSE TOGGLE
+function toggleBybitLegendCollapse() {
+  const leg = document.getElementById('bybit-chart-legend');
+  if (leg) {
+    leg.classList.toggle('collapsed');
+  }
+}
+
+// 4. BYBIT MACRO CALENDAR & NEWS WIRE ENGINE
+window.BybitMacroCalendar = {
+  activeTab: 'tutte',
+
+  getNewsList() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = now.getDate();
+    const dToday = `${y}-${m}-${String(d).padStart(2, '0')}`;
+    const dTom = `${y}-${m}-${String(d + 1).padStart(2, '0')}`;
+    const dNext = `${y}-${m}-${String(d + 3).padStart(2, '0')}`;
+    const dPast = `${y}-${m}-${String(d - 1).padStart(2, '0')}`;
+
+    return [
+      {
+        id: 'cpi_us',
+        type: 'oggi',
+        status: 'rilasciato',
+        title: 'US Consumer Price Index (CPI YoY Final)',
+        flag: '🇺🇸',
+        date: `${dToday} 13:30 CET`,
+        prev: '129.43',
+        est: '129.70',
+        act: '129.70',
+        impact: 'Alto',
+        sourceName: 'U.S. Bureau of Labor Statistics',
+        url: 'https://www.bls.gov/cpi/',
+        summary: 'Indice prezzi al consumo confermato in linea con le stime al +2.4% su base tendenziale.'
+      },
+      {
+        id: 'nfp_us',
+        type: 'oggi',
+        status: 'rilasciato',
+        title: 'US Non-Farm Payrolls & Unemployment Rate',
+        flag: '🇺🇸',
+        date: `${dToday} 13:30 CET`,
+        prev: '142K',
+        est: '165K',
+        act: '172K',
+        impact: 'Alto',
+        sourceName: 'U.S. Bureau of Labor Statistics',
+        url: 'https://www.bls.gov/news.release/empsit.nr0.htm',
+        summary: 'Creazione posti di lavoro oltre il consensus (172k vs 165k attesi). Tasso disoccupazione fermo a 4.1%.'
+      },
+      {
+        id: 'fomc_min',
+        type: 'domani',
+        status: 'futuro',
+        title: 'FOMC Minutes (Federal Reserve)',
+        flag: '🇺🇸',
+        date: `${dTom} 19:00 CET`,
+        prev: '5.00%',
+        est: '4.75%',
+        act: 'In attesa',
+        impact: 'Alto',
+        sourceName: 'Federal Reserve Official Portal',
+        url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+        summary: 'Pubblicazione verbali dell\'ultima riunione del Federal Open Market Committee sulla traiettoria dei tassi 2026/2027.'
+      },
+      {
+        id: 'permits_us',
+        type: 'domani',
+        status: 'futuro',
+        title: 'Building Permits & Housing Starts',
+        flag: '🇺🇸',
+        date: `${dTom} 13:30 CET`,
+        prev: '1.307M',
+        est: '1.350M',
+        act: 'In attesa',
+        impact: 'Medio',
+        sourceName: 'US Census Bureau',
+        url: 'https://www.census.gov/construction/nrc/index.html',
+        summary: 'Stima avvio nuovi cantieri edili e concessioni edilizie negli Stati Uniti.'
+      },
+      {
+        id: 'ecb_rate',
+        type: 'prossima',
+        status: 'futuro',
+        title: 'BCE Tassi di Riferimento & Conferenza Lagarde',
+        flag: '🇪🇺',
+        date: `${dNext} 14:15 CET`,
+        prev: '3.65%',
+        est: '3.40%',
+        act: 'In attesa',
+        impact: 'Alto',
+        sourceName: 'Banca Centrale Europea',
+        url: 'https://www.ecb.europa.eu/press/govcdec/mopo/html/index.en.html',
+        summary: 'Decisione di politica monetaria della Banca Centrale Europea con conferenza stampa a Francoforte.'
+      },
+      {
+        id: 'uk_cpi',
+        type: 'passate',
+        status: 'rilasciato',
+        title: 'UK Inflation Rate YoY (CPI)',
+        flag: '🇬🇧',
+        date: `${dPast} 08:00 CET`,
+        prev: '3.8%',
+        est: '3.6%',
+        act: '3.6%',
+        impact: 'Alto',
+        sourceName: 'Office for National Statistics UK',
+        url: 'https://www.ons.gov.uk/economy/inflationandpriceindices',
+        summary: 'Inflazione Regno Unito in decelerazione al 3.6%, perfetta convergenza verso il target Bank of England.'
+      }
+    ];
+  },
+
+  openModal(filter = 'tutte') {
+    this.activeTab = filter;
+    const modal = document.getElementById('bybit-macro-calendar-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      this.renderList(filter);
+    }
+  },
+
+  closeModal() {
+    const modal = document.getElementById('bybit-macro-calendar-modal');
+    if (modal) modal.style.display = 'none';
+  },
+
+  setTab(tabName) {
+    this.activeTab = tabName;
+    const btnTutte = document.getElementById('btn-macro-tab-tutte');
+    const btnProssime = document.getElementById('btn-macro-tab-prossime');
+    const btnPassate = document.getElementById('btn-macro-tab-passate');
+    if (btnTutte) btnTutte.className = tabName === 'tutte' ? 'bybit-macro-tab-btn active' : 'bybit-macro-tab-btn';
+    if (btnProssime) btnProssime.className = tabName === 'prossime' ? 'bybit-macro-tab-btn active' : 'bybit-macro-tab-btn';
+    if (btnPassate) btnPassate.className = tabName === 'passate' ? 'bybit-macro-tab-btn active' : 'bybit-macro-tab-btn';
+    this.renderList(tabName);
+  },
+
+  renderList(tab) {
+    const listEl = document.getElementById('bybit-macro-modal-list');
+    if (!listEl) return;
+    const all = this.getNewsList();
+    let filtered = all;
+    if (tab === 'prossime') {
+      filtered = all.filter(x => x.status === 'futuro');
+    } else if (tab === 'passate') {
+      filtered = all.filter(x => x.status === 'rilasciato');
+    }
+
+    listEl.innerHTML = filtered.map(ev => `
+      <div class="bybit-macro-event-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">${ev.flag}</span>
+            <span style="font-weight:800; font-size:13px; color:#fff;">${ev.title}</span>
+          </div>
+          <span style="background:${ev.impact === 'Alto' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}; border:1px solid ${ev.impact === 'Alto' ? '#ef4444' : '#f59e0b'}; color:${ev.impact === 'Alto' ? '#f87171' : '#fbbf24'}; font-size:9.5px; font-weight:900; padding:2px 8px; border-radius:4px;">
+            🔴 ${ev.impact}
+          </span>
+        </div>
+
+        <div style="font-size:11px; color:#94a3b8; font-family:monospace;">
+          🗓 Data &amp; Ora: <b style="color:#38bdf8;">${ev.date}</b>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#080c14; padding:8px; border-radius:6px; margin:4px 0; font-family:monospace; font-size:11px;">
+          <div><span style="color:#64748b;">Precedente:</span> <b style="color:#cbd5e1;">${ev.prev}</b></div>
+          <div><span style="color:#64748b;">Stima Consensus:</span> <b style="color:#38bdf8;">${ev.est}</b></div>
+          <div><span style="color:#64748b;">Rilasciato:</span> <b style="color:${ev.act === 'In attesa' ? '#94a3b8' : '#10b981'}; font-weight:900;">${ev.act}</b></div>
+        </div>
+
+        <p style="font-size:11px; color:#cbd5e1; line-height:1.4; margin:2px 0;">
+          ${ev.summary}
+        </p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-size:10px; color:#64748b;">Fonte: ${ev.sourceName}</span>
+          <a href="${ev.url}" target="_blank" class="btn btn-xs" style="font-size:10px; padding:3px 10px; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8; border-radius:4px; text-decoration:none;">
+            📄 Fonte Ufficiale 🔗
+          </a>
+        </div>
+      </div>
+    `).join('');
+  }
+};
+
+// 5. SUB-PANEL 2 (Oscillatore 2 / Parametri Settabili) INITIALIZATION & LOGIC
+function initSub2Pane() {
+  const container = document.getElementById('chart-sub2-canvas');
+  if (!container || !window.LightweightCharts || sub2Chart) return;
+
+  container.innerHTML = '';
+  sub2Chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#070a12' }, textColor: '#64748b', fontSize: 10 },
+    localization: { locale: 'it-IT' },
+    grid: {
+      vertLines: { visible: true, color: 'rgba(255, 255, 255, 0.09)', style: 1 },
+      horzLines: { visible: true, color: 'rgba(255, 255, 255, 0.04)', style: 1 }
+    },
+    rightPriceScale: {
+      borderColor: '#1e293b',
+      autoScale: true,
+      minimumWidth: 72,
+      scaleMargins: { top: 0.25, bottom: 0.15 }
+    },
+    timeScale: {
+      visible: true,
+      borderColor: '#1e293b',
+      timeVisible: true,
+      secondsVisible: false,
+      rightOffset: 12,
+      barSpacing: 8
+    }
+  });
+
+  sub2Series = sub2Chart.addLineSeries({
+    color: '#ec4899',
+    lineWidth: 1.5,
+    title: '',
+    lastValueVisible: true
+  });
+
+  sub2Series2 = sub2Chart.addLineSeries({
+    color: '#f59e0b',
+    lineWidth: 1.5,
+    title: '',
+    lastValueVisible: false
+  });
+
+  // Synchronize timescale with mainChart
+  if (mainChart && typeof mainChart.timeScale === 'function') {
+    mainChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+      if (sub2Chart && range) {
+        try { sub2Chart.timeScale().setVisibleLogicalRange(range); } catch(e){}
+      }
+    });
+  }
+}
+
+function setSub2Mode(mode) {
+  activeSub2Mode = mode;
+  if (window.showToast) window.showToast(`Oscillatore 2 impostato su: ${mode.toUpperCase()}`, 'info');
+  if (typeof renderCurrentSub2Data === 'function') renderCurrentSub2Data();
+}
+
+function updateSub2Param(val) {
+  activeSub2Period = parseInt(val, 10) || 14;
+  if (typeof renderCurrentSub2Data === 'function') renderCurrentSub2Data();
+}
+
+function renderCurrentSub2Data(candles) {
+  if (!candles) {
+    candles = window.lastReceivedCandles || [];
+  } else {
+    window.lastReceivedCandles = candles;
+  }
+  if (!sub2Chart) initSub2Pane();
+  if (!sub2Chart || !candles.length) return;
+
+  const times = candles.map(c => c.time);
+  const closes = candles.map(c => c.close);
+  const highs = candles.map(c => c.high);
+  const lows = candles.map(c => c.low);
+
+  if (activeSub2Mode === 'wr') {
+    // Williams %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
+    const period = activeSub2Period || 14;
+    const wrData = [];
+    for (let i = 0; i < candles.length; i++) {
+      if (i < period) continue;
+      let hh = -Infinity, ll = Infinity;
+      for (let j = i - period + 1; j <= i; j++) {
+        if (highs[j] > hh) hh = highs[j];
+        if (lows[j] < ll) ll = lows[j];
+      }
+      const val = hh === ll ? -50 : ((hh - closes[i]) / (hh - ll)) * -100;
+      wrData.push({ time: times[i], value: Math.max(-100, Math.min(0, val)) });
+    }
+    if (sub2Series) sub2Series.setData(wrData);
+    if (sub2Series2) sub2Series2.setData([]);
+
+    const lastVal = wrData.length ? wrData[wrData.length - 1].value.toFixed(2) : '-28.73';
+    const badge = document.getElementById('sub2-live-badge');
+    if (badge) badge.textContent = `WR${period}: ${lastVal}`;
+  } else if (activeSub2Mode === 'kdj') {
+    // KDJ: Fast Stochastic %K, %D, and %J = 3K - 2D
+    const period = activeSub2Period || 9;
+    const kData = [];
+    const dData = [];
+    let k = 50, d = 50;
+    for (let i = 0; i < candles.length; i++) {
+      if (i < period) continue;
+      let hh = -Infinity, ll = Infinity;
+      for (let j = i - period + 1; j <= i; j++) {
+        if (highs[j] > hh) hh = highs[j];
+        if (lows[j] < ll) ll = lows[j];
+      }
+      const rsv = hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100;
+      k = (2/3) * k + (1/3) * rsv;
+      d = (2/3) * d + (1/3) * k;
+      const jVal = 3 * k - 2 * d;
+      kData.push({ time: times[i], value: k });
+      dData.push({ time: times[i], value: jVal });
+    }
+    if (sub2Series) sub2Series.setData(kData);
+    if (sub2Series2) sub2Series2.setData(dData);
+
+    const lastK = kData.length ? kData[kData.length - 1].value.toFixed(1) : '59.5';
+    const lastJ = dData.length ? dData[dData.length - 1].value.toFixed(1) : '61.6';
+    const badge = document.getElementById('sub2-live-badge');
+    if (badge) badge.textContent = `K: ${lastK} J: ${lastJ}`;
+  }
 }

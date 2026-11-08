@@ -7393,3 +7393,307 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     white-space: nowrap !important;
   }
 }
+
+
+/* =============================================================================
+   BYBIT OFFICIAL LAYOUT: INDEPENDENT ASSET HEADER & CLEAN CANDLESTICK SPACE
+   ============================================================================= */
+
+/* Independent Bybit Header above Chart */
+.bybit-chart-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #080c14;
+  border-bottom: 1px solid #1a2233;
+  color: #fff;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bybit-top-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bybit-sym-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bybit-sym-badge {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.bybit-sym-arrow {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.bybit-sym-sub {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.bybit-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bybit-price-large {
+  font-size: 18px;
+  font-weight: 900;
+  font-family: var(--font-mono, monospace);
+  color: #10b981;
+}
+
+.bybit-price-large.down {
+  color: #ef4444;
+}
+
+.bybit-price-chg {
+  font-size: 12px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: #10b981;
+}
+
+.bybit-price-chg.down {
+  color: #ef4444;
+}
+
+.bybit-mark-price {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-family: var(--font-mono, monospace);
+}
+
+.bybit-top-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bybit-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.bybit-stat-lbl {
+  font-size: 9.5px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.bybit-stat-val {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #cbd5e1;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Redesigned Bybit Legend: Compact, clean, collapsible, NEVER covering candles */
+.bybit-chart-legend {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  right: 8px;
+  z-index: 10;
+  font-family: var(--font-mono, monospace);
+  font-size: 9.5px;
+  pointer-events: auto;
+  background: rgba(8, 12, 22, 0.75);
+  backdrop-filter: blur(6px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.bybit-chart-legend.collapsed {
+  max-height: 24px;
+  overflow: hidden;
+  padding: 2px 8px;
+}
+
+.bybit-legend-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 6px;
+}
+
+/* Bybit Macro Timeline Ribbon at bottom of chart */
+.bybit-macro-timeline-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #060911;
+  border-top: 1px solid #141c2b;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bybit-macro-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.bybit-macro-pin-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #fff;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.bybit-macro-pin-btn.high-impact {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
+}
+
+/* Splitters: Touch-friendly thick drag handle */
+.chart-splitter {
+  height: 8px;
+  background: #0f1624;
+  border-top: 1px solid #1e293b;
+  border-bottom: 1px solid #1e293b;
+  cursor: row-resize;
+  position: relative;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  z-index: 15;
+}
+
+.chart-splitter:hover,
+.chart-splitter.dragging {
+  background: #1e293b;
+}
+
+.splitter-grip {
+  width: 36px;
+  height: 3px;
+  background: #475569;
+  border-radius: 2px;
+}
+
+.chart-splitter:hover .splitter-grip,
+.chart-splitter.dragging .splitter-grip {
+  background: #38bdf8;
+}
+
+/* Bybit Macro News Modal */
+.bybit-macro-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+.bybit-macro-modal-dialog {
+  background: #0d121f;
+  border: 1px solid #232e42;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+  color: #fff;
+  overflow: hidden;
+}
+
+.bybit-macro-modal-header {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1a2436;
+}
+
+.bybit-macro-tabs-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #080c14;
+  border-bottom: 1px solid #1a2436;
+}
+
+.bybit-macro-tab-btn {
+  background: transparent;
+  border: 1px solid #243045;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.bybit-macro-tab-btn.active {
+  background: #1e293b;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.bybit-macro-modal-body {
+  padding: 14px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bybit-macro-event-card {
+  background: #111728;
+  border: 1px solid #1e2a3d;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
