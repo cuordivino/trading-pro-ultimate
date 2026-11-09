@@ -324,6 +324,25 @@ async function selectAsset(symbol) {
     chatTitle.innerText = `Conversazione attiva con ${window.currentPersonaSlug.replace('-', ' ').toUpperCase()} su ${symbol}`;
   }
 
+  // 0ms Zero-Latency Hero Banner Update with Verified Baseline Quote
+  const priceElemPre = document.getElementById('active-live-price');
+  const chgBadgePre = document.getElementById('active-chg-badge');
+  const highElemPre = document.getElementById('active-metric-high');
+  const lowElemPre = document.getElementById('active-metric-low');
+  const volElemPre = document.getElementById('active-metric-vol');
+  const baseChg = baseline ? baseline.change : (asset ? (asset.change24h || 0) : 0);
+  const baseHigh = baseline ? baseline.high : +(initialPrice * 1.018).toFixed(initPrec);
+  const baseLow = baseline ? baseline.low : +(initialPrice * 0.982).toFixed(initPrec);
+  const baseVol = baseline ? baseline.volume : (asset ? (asset.volume24h || 2500000) : 2500000);
+  if (priceElemPre) priceElemPre.innerText = `${defaultCurr}${initialPrice.toLocaleString(undefined, { minimumFractionDigits: initPrec, maximumFractionDigits: initPrec })}`;
+  if (chgBadgePre) {
+    chgBadgePre.innerText = `${baseChg >= 0 ? '+' : ''}${baseChg.toFixed(2)}%`;
+    chgBadgePre.className = `pct-chg-pill ${baseChg >= 0 ? 'up' : 'down'}`;
+  }
+  if (highElemPre) highElemPre.innerText = `${defaultCurr}${baseHigh.toLocaleString(undefined, { minimumFractionDigits: initPrec, maximumFractionDigits: initPrec })}`;
+  if (lowElemPre) lowElemPre.innerText = `${defaultCurr}${baseLow.toLocaleString(undefined, { minimumFractionDigits: initPrec, maximumFractionDigits: initPrec })}`;
+  if (volElemPre) volElemPre.innerText = baseVol.toLocaleString();
+
   // Pre-sync BybitEngine immediately so telemetry never retains stale crypto symbol
   if (window.BybitEngine) {
     window.BybitEngine.currentSymbol = symbol;
@@ -839,29 +858,45 @@ window.changeTimeframe = changeTimeframe;
 // ==========================================
 // Curated Global Top Assets for Ticker Tape
 const TICKER_TAPE_CATALOG = [
-  { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', curr: '$', basePrice: 75780.00, chg: -5.48, prec: 2 },
-  { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', curr: '$', basePrice: 2235.50, chg: -4.20, prec: 2 },
-  { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', curr: '$', basePrice: 89.40, chg: -6.15, prec: 2 },
-  { symbol: 'NVDA', name: 'Nvidia', cat: 'us_stock', curr: '$', basePrice: 181.60, chg: -9.26, prec: 2 },
-  { symbol: 'AAPL', name: 'Apple', cat: 'us_stock', curr: '$', basePrice: 344.17, chg: -1.53, prec: 2 },
-  { symbol: 'TSLA', name: 'Tesla', cat: 'us_stock', curr: '$', basePrice: 343.69, chg: -10.77, prec: 2 },
-  { symbol: 'SPY', name: 'S&P 500', cat: 'us_stock', curr: '$', basePrice: 733.00, chg: -4.41, prec: 2 },
-  { symbol: 'MSFT', name: 'Microsoft', cat: 'us_stock', curr: '$', basePrice: 535.93, chg: -3.58, prec: 2 },
-  { symbol: 'AMD', name: 'AMD', cat: 'us_stock', curr: '$', basePrice: 404.40, chg: -17.26, prec: 2 },
-  { symbol: 'ENEL.MI', name: 'Enel', cat: 'eu_stock', curr: '€', basePrice: 9.77, chg: 0.92, prec: 3 },
-  { symbol: 'ENI.MI', name: 'Eni', cat: 'eu_stock', curr: '€', basePrice: 25.35, chg: -0.72, prec: 3 },
-  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', curr: '€', basePrice: 6.26, chg: -0.27, prec: 3 },
-  { symbol: 'UCG.MI', name: 'UniCredit', cat: 'eu_stock', curr: '€', basePrice: 77.18, chg: -1.45, prec: 2 },
-  { symbol: 'RACE.MI', name: 'Ferrari', cat: 'eu_stock', curr: '€', basePrice: 377.30, chg: -1.37, prec: 2 },
-  { symbol: 'STLAM.MI', name: 'Stellantis', cat: 'eu_stock', curr: '€', basePrice: 3.97, chg: -4.49, prec: 3 },
-  { symbol: 'TIT.MI', name: 'Telecom Italia', cat: 'eu_stock', curr: '€', basePrice: 5.76, chg: -1.00, prec: 3 },
-  { symbol: 'GC', name: 'Oro (Gold)', cat: 'forex', curr: '$', basePrice: 4056.00, chg: 0.45, prec: 2 },
-  { symbol: 'SI', name: 'Argento', cat: 'forex', curr: '$', basePrice: 51.65, chg: 1.10, prec: 2 },
-  { symbol: 'CL', name: 'Petrolio WTI', cat: 'forex', curr: '$', basePrice: 91.20, chg: -0.85, prec: 2 },
-  { symbol: 'BRN', name: 'Brent Crude', cat: 'forex', curr: '$', basePrice: 99.20, chg: -0.75, prec: 2 },
-  { symbol: 'EURUSD', name: 'EUR / USD', cat: 'forex', curr: '', basePrice: 1.1177, chg: -0.36, prec: 4 },
-  { symbol: 'GBPUSD', name: 'GBP / USD', cat: 'forex', curr: '', basePrice: 1.3405, chg: -0.33, prec: 4 },
-  { symbol: 'USDJPY', name: 'USD / JPY', cat: 'forex', curr: '¥', basePrice: 157.91, chg: 0.15, prec: 2 }
+  // Criptovalute Top
+  { symbol: 'BTCUSDT', name: 'Bitcoin', cat: 'crypto', curr: '$', basePrice: 75850.00, chg: 2.85, prec: 2 },
+  { symbol: 'ETHUSDT', name: 'Ethereum', cat: 'crypto', curr: '$', basePrice: 2785.00, chg: 1.95, prec: 2 },
+  { symbol: 'SOLUSDT', name: 'Solana', cat: 'crypto', curr: '$', basePrice: 198.50, chg: 4.10, prec: 2 },
+  { symbol: 'SUIUSDT', name: 'Sui', cat: 'crypto', curr: '$', basePrice: 2.285, chg: 5.40, prec: 3 },
+
+  // Borsa Italiana (FTSE MIB)
+  { symbol: 'UCG.MI', name: 'UniCredit', cat: 'eu_stock', curr: '€', basePrice: 81.62, chg: 6.28, prec: 2 },
+  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', curr: '€', basePrice: 6.353, chg: 2.85, prec: 3 },
+  { symbol: 'ENEL.MI', name: 'Enel', cat: 'eu_stock', curr: '€', basePrice: 9.861, chg: 1.73, prec: 3 },
+  { symbol: 'ENI.MI', name: 'Eni', cat: 'eu_stock', curr: '€', basePrice: 24.985, chg: -0.26, prec: 3 },
+  { symbol: 'RACE.MI', name: 'Ferrari', cat: 'eu_stock', curr: '€', basePrice: 372.40, chg: -0.39, prec: 2 },
+  { symbol: 'PST.MI', name: 'Poste Italiane', cat: 'eu_stock', curr: '€', basePrice: 25.09, chg: 2.32, prec: 2 },
+
+  // Borsa Tedesca & Francese
+  { symbol: 'SAP.DE', name: 'SAP', cat: 'de_stock', curr: '€', basePrice: 211.65, chg: 0.43, prec: 2 },
+  { symbol: 'MC.PA', name: 'LVMH', cat: 'fr_stock', curr: '€', basePrice: 402.45, chg: -1.54, prec: 2 },
+  { symbol: 'SHEL.L', name: 'Shell', cat: 'uk_stock', curr: 'p', basePrice: 3701.00, chg: -0.58, prec: 2 },
+  { symbol: '7203.T', name: 'Toyota', cat: 'asia_stock', curr: '¥', basePrice: 3491.00, chg: 4.58, prec: 2 },
+
+  // USA S&P 500 & NASDAQ
+  { symbol: 'SPY', name: 'S&P 500 ETF', cat: 'us_stock', curr: '$', basePrice: 752.84, chg: 2.39, prec: 2 },
+  { symbol: 'QQQ', name: 'Nasdaq-100 ETF', cat: 'us_stock', curr: '$', basePrice: 677.68, chg: 3.29, prec: 2 },
+  { symbol: 'NVDA', name: 'Nvidia', cat: 'us_stock', curr: '$', basePrice: 176.60, chg: -5.38, prec: 2 },
+  { symbol: 'AAPL', name: 'Apple', cat: 'us_stock', curr: '$', basePrice: 351.19, chg: 2.58, prec: 2 },
+  { symbol: 'TSLA', name: 'Tesla', cat: 'us_stock', curr: '$', basePrice: 377.76, chg: 5.45, prec: 2 },
+  { symbol: 'MSFT', name: 'Microsoft', cat: 'us_stock', curr: '$', basePrice: 544.16, chg: 2.55, prec: 2 },
+  { symbol: 'AMD', name: 'AMD', cat: 'us_stock', curr: '$', basePrice: 507.15, chg: 12.94, prec: 2 },
+
+  // Materie Prime
+  { symbol: 'GC', name: 'Oro (Gold)', cat: 'commodities', curr: '$', basePrice: 4112.10, chg: 0.91, prec: 2 },
+  { symbol: 'SI', name: 'Argento (Silver)', cat: 'commodities', curr: '$', basePrice: 52.825, chg: 1.70, prec: 3 },
+  { symbol: 'CL', name: 'Petrolio WTI', cat: 'commodities', curr: '$', basePrice: 87.47, chg: -3.70, prec: 2 },
+  { symbol: 'BRN', name: 'Brent Crude', cat: 'commodities', curr: '$', basePrice: 93.47, chg: -4.93, prec: 2 },
+
+  // Forex
+  { symbol: 'EURUSD', name: 'EUR / USD', cat: 'forex', curr: '$', basePrice: 1.12055, chg: 0.58, prec: 5 },
+  { symbol: 'GBPUSD', name: 'GBP / USD', cat: 'forex', curr: '$', basePrice: 1.3420, chg: 0.53, prec: 4 },
+  { symbol: 'USDJPY', name: 'USD / JPY', cat: 'forex', curr: '¥', basePrice: 158.05, chg: -0.23, prec: 2 }
 ];
 
 async function initCuratedAssets() {

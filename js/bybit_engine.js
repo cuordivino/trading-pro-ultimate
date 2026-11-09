@@ -897,10 +897,20 @@ window.BybitEngine = {
     if (sumLevElem) sumLevElem.innerText = `${lev}x`;
 
     // 6. Stop Loss & Take Profit Previews and R:R
-    const slRaw = document.getElementById('t-sl')?.value || '';
-    const tpRaw = document.getElementById('t-tp')?.value || '';
-    const sl = slRaw ? parseFloat(String(slRaw).replace(',', '.')) : 0;
-    const tp = tpRaw ? parseFloat(String(tpRaw).replace(',', '.')) : 0;
+    const slInputEl = document.getElementById('t-sl');
+    const tpInputEl = document.getElementById('t-tp');
+    let slRaw = slInputEl?.value || '';
+    let tpRaw = tpInputEl?.value || '';
+    let sl = slRaw ? parseFloat(String(slRaw).replace(',', '.')) : 0;
+    let tp = tpRaw ? parseFloat(String(tpRaw).replace(',', '.')) : 0;
+
+    // Sanity check: prevent residual prior asset scale (e.g. BTC 75,000 lingering when UCG 81.62 is active)
+    if (price > 0 && ((sl > price * 3 || (sl > 0 && sl < price * 0.2)) || (tp > price * 3 || (tp > 0 && tp < price * 0.2)))) {
+      sl = +(price * 0.97).toFixed(prec);
+      tp = +(price * 1.06).toFixed(prec);
+      if (slInputEl) slInputEl.value = sl;
+      if (tpInputEl) tpInputEl.value = tp;
+    }
 
     const slPreview = document.getElementById('sl-loss-preview');
     const tpPreview = document.getElementById('tp-gain-preview');

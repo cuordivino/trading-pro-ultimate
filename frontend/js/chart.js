@@ -773,18 +773,24 @@ function resizeAllCharts() {
 
     const c2 = document.getElementById('chart-volume-pane');
     if (volumeChart && c2 && c2.style.display !== 'none' && c2.clientWidth > 10 && c2.clientHeight > 10) {
-      volumeChart.resize(c2.clientWidth, c2.clientHeight);
+      const h2El = document.getElementById('volume-pane-header');
+      const h2Off = h2El ? h2El.offsetHeight : 24;
+      volumeChart.resize(c2.clientWidth, Math.max(35, c2.clientHeight - h2Off));
     }
 
     const c3 = document.getElementById('chart-momentum-pane');
     if (momentumChart && c3 && c3.style.display !== 'none' && c3.clientWidth > 10 && c3.clientHeight > 10) {
-      momentumChart.resize(c3.clientWidth, c3.clientHeight);
+      const h3El = document.getElementById('momentum-pane-header');
+      const h3Off = h3El ? h3El.offsetHeight : 24;
+      momentumChart.resize(c3.clientWidth, Math.max(35, c3.clientHeight - h3Off));
     }
 
     const c4 = document.getElementById('chart-sub2-pane');
     if (sub2Chart && c4 && c4.style.display !== 'none' && c4.clientWidth > 10) {
-      const paneH = c4.clientHeight || parseInt(c4.style.height, 10) || 90;
-      const h = Math.max(35, paneH - 24);
+      const header4 = document.getElementById('sub2-pane-header');
+      const h4Offset = header4 ? header4.offsetHeight : 24;
+      const paneH = c4.clientHeight || parseInt(c4.style.height, 10) || 120;
+      const h = Math.max(35, paneH - h4Offset);
       sub2Chart.resize(c4.clientWidth, h);
     }
   } catch(e) {
@@ -1215,6 +1221,13 @@ function renderChartData(candles) {
   if (candles.length) {
     updateChartLegend(candles[candles.length - 1], prec);
   }
+
+  // Immediately render second oscillator (Williams %R, KDJ, CCI, Stoch, MACD Hist)
+  try {
+    if (typeof renderCurrentSub2Data === 'function') {
+      renderCurrentSub2Data(candles);
+    }
+  } catch(e) {}
 }
 
 // BYBIT ON-CHART LIVE LEGEND UPDATER WITH PRECISE MARKET DESIGNATIONS
@@ -1243,6 +1256,21 @@ function updateChartLegend(candle, explicitPrec) {
     } else if (asset.cat === 'eu_stock') {
       assetTitle = `${sym} (Azione Italia)`;
       exchTitle = 'Borsa Italiana (MTA)';
+    } else if (asset.cat === 'fr_stock') {
+      assetTitle = `${sym} (CAC 40 Francia)`;
+      exchTitle = 'Euronext Paris';
+    } else if (asset.cat === 'de_stock') {
+      assetTitle = `${sym} (DAX 40 Germania)`;
+      exchTitle = 'XETRA Frankfurt';
+    } else if (asset.cat === 'uk_stock') {
+      assetTitle = `${sym} (FTSE 100 UK)`;
+      exchTitle = 'London Stock Exchange';
+    } else if (asset.cat === 'asia_stock') {
+      assetTitle = `${sym} (Borsa Orientale)`;
+      exchTitle = asset.exchange || 'Tokyo / HKEX / KRX';
+    } else if (asset.cat === 'commodities') {
+      assetTitle = `${sym} (${asset.name.split('(')[0].trim()})`;
+      exchTitle = asset.exchange || 'COMEX / NYMEX / ICE';
     } else if (asset.cat === 'forex') {
       const commSyms = ['GC', 'SI', 'PL', 'PA', 'CL', 'BRN', 'NG', 'RB', 'HO', 'HG', 'ALI', 'ZN', 'NI', 'ZW', 'ZC', 'ZS', 'KC', 'CC', 'SB', 'CT', 'XAUUSD', 'XAGUSD', 'USOIL', 'BRENT', 'NATGAS'];
       if (commSyms.includes(sym)) {
@@ -3233,6 +3261,12 @@ window.BybitChartSettings = {
     this.currentHeight = val;
     this.isFullScreen = false;
     this.applyHeight(val, save);
+    if (window.PaneSplitterManager) {
+      window.PaneSplitterManager.heights.main = val;
+      try {
+        localStorage.setItem(window.PaneSplitterManager.STORAGE_KEY, JSON.stringify(window.PaneSplitterManager.heights));
+      } catch(e) {}
+    }
   },
 
   toggleFullScreen() {
@@ -3643,9 +3677,11 @@ function initSub2Pane() {
   const container = document.getElementById('chart-sub2-canvas');
   if (!container || !window.LightweightCharts || sub2Chart) return;
 
-  const w = container.clientWidth || (pane ? pane.clientWidth : 800) || 800;
-  const paneH = (pane ? (pane.clientHeight || parseInt(pane.style.height, 10)) : 90) || 90;
-  const h = Math.max(45, paneH - 26);
+  const headerEl = document.getElementById('sub2-pane-header');
+  const headerH = headerEl ? headerEl.offsetHeight : 26;
+  const paneH = (pane ? (pane.clientHeight || parseInt(pane.style.height, 10)) : 120) || 120;
+  const h = Math.max(35, paneH - headerH);
+  const w = container.clientWidth || (pane ? pane.clientWidth : 0) || (typeof window !== 'undefined' ? window.innerWidth : 800) || 800;
 
   container.innerHTML = '';
   sub2Chart = LightweightCharts.createChart(container, {
@@ -3740,7 +3776,7 @@ function updateSub2Param(val) {
 }
 
 function renderCurrentSub2Data(candles) {
-  if (!candles) {
+  if (!candles || !candles.length) {
     candles = window.currentCandles || window.currentChartCandles || window.lastReceivedCandles || [];
   } else {
     window.currentCandles = candles;
@@ -3748,7 +3784,20 @@ function renderCurrentSub2Data(candles) {
     window.lastReceivedCandles = candles;
   }
   if (!sub2Chart) initSub2Pane();
-  if (!sub2Chart || !candles || !candles.length) return;
+  if (!candles || !candles.length) {
+    if (typeof loadCandleHistory === 'function') loadCandleHistory();
+    return;
+  }
+  if (!sub2Chart) return;
+
+  // Auto-resize sub2 to container dimensions before setting series
+  const c4Pane = document.getElementById('chart-sub2-pane');
+  if (c4Pane && c4Pane.clientWidth > 10) {
+    const h4El = document.getElementById('sub2-pane-header');
+    const h4Off = h4El ? h4El.offsetHeight : 24;
+    const pH = c4Pane.clientHeight || parseInt(c4Pane.style.height, 10) || 120;
+    sub2Chart.resize(c4Pane.clientWidth, Math.max(35, pH - h4Off));
+  }
 
   const times = candles.map(c => c.time);
   const closes = candles.map(c => c.close);

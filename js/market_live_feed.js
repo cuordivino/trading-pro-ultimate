@@ -24,24 +24,30 @@
   // Validated baseline prices for immediate instant zero-latency display
   const VALIDATED_BASELINES = {
     // 1. S&P 500 & US Large Caps
-    'SPY': { price: 752.57, change: 2.35, high: 752.96, low: 741.02, volume: 54200000, curr: '$', exch: 'NYSE Arca', name: 'SPDR S&P 500 ETF' },
-    'AAPL': { price: 349.40, change: 2.05, high: 351.42, low: 344.78, volume: 48900000, curr: '$', exch: 'NASDAQ', name: 'Apple Inc.' },
-    'NVDA': { price: 176.86, change: -5.24, high: 179.92, low: 170.24, volume: 82400000, curr: '$', exch: 'NASDAQ', name: 'NVIDIA Corporation' },
-    'MSFT': { price: 425.80, change: 1.15, high: 428.50, low: 422.10, volume: 22100000, curr: '$', exch: 'NASDAQ', name: 'Microsoft Corporation' },
+    'SPY': { price: 752.84, change: 2.39, high: 753.38, low: 741.02, volume: 54200000, curr: '$', exch: 'NYSE Arca / AMEX', name: 'SPDR S&P 500 ETF Trust' },
+    'AAPL': { price: 351.19, change: 2.58, high: 351.42, low: 344.78, volume: 48900000, curr: '$', exch: 'NASDAQ', name: 'Apple Inc.' },
+    'NVDA': { price: 176.60, change: -5.38, high: 179.92, low: 170.24, volume: 82400000, curr: '$', exch: 'NASDAQ', name: 'NVIDIA Corporation' },
+    'MSFT': { price: 544.16, change: 2.55, high: 547.49, low: 538.70, volume: 22100000, curr: '$', exch: 'NASDAQ', name: 'Microsoft Corporation' },
     'AMZN': { price: 208.50, change: 1.45, high: 210.20, low: 206.10, volume: 38500000, curr: '$', exch: 'NASDAQ', name: 'Amazon.com Inc.' },
     'GOOGL': { price: 182.40, change: 0.85, high: 184.10, low: 181.20, volume: 24600000, curr: '$', exch: 'NASDAQ', name: 'Alphabet Inc. (Class A)' },
     'META': { price: 586.20, change: 1.95, high: 591.00, low: 580.50, volume: 16800000, curr: '$', exch: 'NASDAQ', name: 'Meta Platforms Inc.' },
-    'TSLA': { price: 248.50, change: 3.80, high: 252.40, low: 242.00, volume: 68900000, curr: '$', exch: 'NASDAQ', name: 'Tesla Inc.' },
-    'JPM': { price: 224.60, change: 0.95, high: 226.20, low: 222.80, volume: 11200000, curr: '$', exch: 'NYSE', name: 'JPMorgan Chase & Co.' },
+    'TSLA': { price: 377.76, change: 5.45, high: 380.08, low: 360.02, volume: 68900000, curr: '$', exch: 'NASDAQ', name: 'Tesla Inc.' },
+    'JPM': { price: 342.68, change: 2.45, high: 343.41, low: 335.00, volume: 11200000, curr: '$', exch: 'NYSE', name: 'JPMorgan Chase & Co.' },
     'BRK.B': { price: 458.00, change: 0.40, high: 460.50, low: 456.20, volume: 3800000, curr: '$', exch: 'NYSE', name: 'Berkshire Hathaway Inc.' },
     'LLY': { price: 824.50, change: 1.60, high: 832.00, low: 818.00, volume: 2900000, curr: '$', exch: 'NYSE', name: 'Eli Lilly and Company' },
     'V': { price: 288.40, change: 0.70, high: 290.10, low: 286.50, volume: 6400000, curr: '$', exch: 'NYSE', name: 'Visa Inc.' },
     'WMT': { price: 83.60, change: 0.55, high: 84.40, low: 82.90, volume: 15400000, curr: '$', exch: 'NYSE', name: 'Walmart Inc.' },
     'XOM': { price: 118.20, change: -0.85, high: 119.80, low: 117.40, volume: 14200000, curr: '$', exch: 'NYSE', name: 'Exxon Mobil Corporation' },
+    'CVX': { price: 158.40, change: 0.45, high: 160.20, low: 156.80, volume: 9200000, curr: '$', exch: 'NYSE', name: 'Chevron Corporation' },
+    'C': { price: 68.50, change: 1.15, high: 69.40, low: 67.80, volume: 14500000, curr: '$', exch: 'NYSE', name: 'Citigroup Inc.' },
+    'T': { price: 22.50, change: 0.35, high: 22.80, low: 22.20, volume: 28000000, curr: '$', exch: 'NYSE', name: 'AT&T Inc.' },
+    'DIS': { price: 117.20, change: 0.45, high: 118.80, low: 116.10, volume: 8900000, curr: '$', exch: 'NYSE', name: 'The Walt Disney Company' },
+    'DIA': { price: 490.50, change: 0.85, high: 492.20, low: 488.10, volume: 4500000, curr: '$', exch: 'NYSE Arca / AMEX', name: 'SPDR Dow Jones Industrial Average ETF' },
+    'IWM': { price: 271.03, change: 1.10, high: 273.50, low: 268.80, volume: 18500000, curr: '$', exch: 'NYSE Arca / AMEX', name: 'iShares Russell 2000 ETF' },
 
     // 2. NASDAQ-100 Tech
-    'QQQ': { price: 677.18, change: 3.21, high: 678.85, low: 662.02, volume: 64500000, curr: '$', exch: 'NASDAQ', name: 'Invesco QQQ Trust' },
-    'AMD': { price: 148.50, change: 4.25, high: 151.20, low: 144.10, volume: 56400000, curr: '$', exch: 'NASDAQ', name: 'Advanced Micro Devices Inc.' },
+    'QQQ': { price: 677.68, change: 3.29, high: 678.85, low: 662.02, volume: 64500000, curr: '$', exch: 'NASDAQ', name: 'Invesco QQQ Trust' },
+    'AMD': { price: 507.15, change: 12.94, high: 509.65, low: 468.21, volume: 56400000, curr: '$', exch: 'NASDAQ', name: 'Advanced Micro Devices Inc.' },
     'AVGO': { price: 178.40, change: 2.10, high: 181.50, low: 175.20, volume: 18400000, curr: '$', exch: 'NASDAQ', name: 'Broadcom Inc.' },
     'QCOM': { price: 168.20, change: 1.80, high: 170.40, low: 165.80, volume: 12800000, curr: '$', exch: 'NASDAQ', name: 'QUALCOMM Incorporated' },
     'INTC': { price: 24.80, change: -1.20, high: 25.40, low: 24.30, volume: 46200000, curr: '$', exch: 'NASDAQ', name: 'Intel Corporation' },
@@ -49,16 +55,17 @@
     'CSCO': { price: 56.80, change: 0.65, high: 57.30, low: 56.20, volume: 18500000, curr: '$', exch: 'NASDAQ', name: 'Cisco Systems Inc.' },
     'NFLX': { price: 760.50, change: 2.80, high: 768.00, low: 752.00, volume: 3800000, curr: '$', exch: 'NASDAQ', name: 'Netflix Inc.' },
     'ADBE': { price: 508.20, change: 1.30, high: 514.00, low: 502.50, volume: 3100000, curr: '$', exch: 'NASDAQ', name: 'Adobe Inc.' },
+    'COST': { price: 915.00, change: 0.45, high: 922.00, low: 910.00, volume: 1800000, curr: '$', exch: 'NASDAQ', name: 'Costco Wholesale Corp.' },
 
     // 3. Borsa Italiana (FTSE MIB)
-    'UCG.MI': { price: 81.62, change: 6.28, high: 81.88, low: 79.18, volume: 6830600, curr: '€', exch: 'Borsa Italiana', name: 'UniCredit S.p.A.' },
-    'ISP.MI': { price: 6.353, change: 2.85, high: 6.353, low: 6.188, volume: 54200000, curr: '€', exch: 'Borsa Italiana', name: 'Intesa Sanpaolo S.p.A.' },
-    'ENEL.MI': { price: 9.861, change: 1.73, high: 9.863, low: 9.619, volume: 24600000, curr: '€', exch: 'Borsa Italiana', name: 'Enel S.p.A.' },
-    'ENI.MI': { price: 25.33, change: -0.72, high: 25.68, low: 25.12, volume: 14800000, curr: '€', exch: 'Borsa Italiana', name: 'Eni S.p.A.' },
-    'RACE.MI': { price: 372.40, change: -0.39, high: 375.00, low: 370.40, volume: 580000, curr: '€', exch: 'Borsa Italiana', name: 'Ferrari N.V.' },
-    'PST.MI': { price: 13.85, change: 0.80, high: 14.02, low: 13.72, volume: 4800000, curr: '€', exch: 'Borsa Italiana', name: 'Poste Italiane S.p.A.' },
-    'STLAM.MI': { price: 12.48, change: -1.85, high: 12.82, low: 12.35, volume: 16500000, curr: '€', exch: 'Borsa Italiana', name: 'Stellantis N.V.' },
-    'TIT.MI': { price: 0.2650, change: -0.90, high: 0.2695, low: 0.2620, volume: 85000000, curr: '€', exch: 'Borsa Italiana', name: 'Telecom Italia S.p.A.' },
+    'UCG.MI': { price: 81.62, change: 6.28, high: 81.88, low: 79.18, volume: 10119849, curr: '€', exch: 'Borsa Italiana', name: 'UniCredit S.p.A.' },
+    'ISP.MI': { price: 6.353, change: 2.85, high: 6.353, low: 6.188, volume: 53659734, curr: '€', exch: 'Borsa Italiana', name: 'Intesa Sanpaolo S.p.A.' },
+    'ENEL.MI': { price: 9.861, change: 1.73, high: 9.863, low: 9.619, volume: 19223042, curr: '€', exch: 'Borsa Italiana', name: 'Enel S.p.A.' },
+    'ENI.MI': { price: 24.985, change: -0.26, high: 25.055, low: 24.73, volume: 7759237, curr: '€', exch: 'Borsa Italiana', name: 'Eni S.p.A.' },
+    'RACE.MI': { price: 372.40, change: -0.39, high: 375.00, low: 370.40, volume: 396372, curr: '€', exch: 'Borsa Italiana', name: 'Ferrari N.V.' },
+    'PST.MI': { price: 25.09, change: 2.32, high: 25.13, low: 24.49, volume: 2848752, curr: '€', exch: 'Borsa Italiana', name: 'Poste Italiane S.p.A.' },
+    'STLAM.MI': { price: 3.9575, change: -1.55, high: 4.0245, low: 3.956, volume: 29534183, curr: '€', exch: 'Borsa Italiana', name: 'Stellantis N.V.' },
+    'TIT.MI': { price: 5.738, change: 0.67, high: 5.763, low: 5.658, volume: 2292626, curr: '€', exch: 'Borsa Italiana', name: 'Telecom Italia S.p.A.' },
     'MONC.MI': { price: 54.80, change: 1.40, high: 55.40, low: 53.90, volume: 1120000, curr: '€', exch: 'Borsa Italiana', name: 'Moncler S.p.A.' },
     'LDO.MI': { price: 24.65, change: 2.15, high: 24.95, low: 24.10, volume: 3400000, curr: '€', exch: 'Borsa Italiana', name: 'Leonardo S.p.A.' },
     'PRY.MI': { price: 64.20, change: 1.65, high: 64.90, low: 63.30, volume: 1850000, curr: '€', exch: 'Borsa Italiana', name: 'Prysmian S.p.A.' },
@@ -73,11 +80,13 @@
     'SRG.MI': { price: 4.48, change: 0.20, high: 4.52, low: 4.45, volume: 7800000, curr: '€', exch: 'Borsa Italiana', name: 'Snam S.p.A.' },
     'TRN.MI': { price: 7.85, change: 0.35, high: 7.92, low: 7.80, volume: 6400000, curr: '€', exch: 'Borsa Italiana', name: 'Terna S.p.A.' },
     'HER.MI': { price: 3.48, change: 0.60, high: 3.52, low: 3.44, volume: 3200000, curr: '€', exch: 'Borsa Italiana', name: 'Hera S.p.A.' },
+    'CPR.MI': { price: 7.85, change: 1.15, high: 7.95, low: 7.72, volume: 4500000, curr: '€', exch: 'Borsa Italiana', name: 'Campari S.p.A.' },
+    'DIA.MI': { price: 80.64, change: -1.87, high: 82.10, low: 80.20, volume: 104873, curr: '€', exch: 'Borsa Italiana', name: 'Diasorin S.p.A.' },
 
     // 4. Borsa Francese (CAC 40)
-    'MC.PA': { price: 402.45, change: -1.54, high: 405.15, low: 395.95, volume: 460000, curr: '€', exch: 'Euronext Paris', name: 'LVMH Moët Hennessy' },
-    'OR.PA': { price: 446.80, change: -0.67, high: 448.75, low: 445.50, volume: 320000, curr: '€', exch: 'Euronext Paris', name: "L'Oréal S.A." },
-    'TTE.PA': { price: 78.75, change: -1.23, high: 79.57, low: 77.99, volume: 4200000, curr: '€', exch: 'Euronext Paris', name: 'TotalEnergies SE' },
+    'MC.PA': { price: 402.45, change: -1.54, high: 405.15, low: 395.95, volume: 536014, curr: '€', exch: 'Euronext Paris', name: 'LVMH Moët Hennessy' },
+    'OR.PA': { price: 446.80, change: -0.67, high: 448.75, low: 445.50, volume: 451296, curr: '€', exch: 'Euronext Paris', name: "L'Oréal S.A." },
+    'TTE.PA': { price: 78.75, change: -1.23, high: 79.57, low: 77.99, volume: 4548514, curr: '€', exch: 'Euronext Paris', name: 'TotalEnergies SE' },
     'AIR.PA': { price: 144.20, change: 0.95, high: 145.80, low: 142.90, volume: 1450000, curr: '€', exch: 'Euronext Paris', name: 'Airbus SE' },
     'RMS.PA': { price: 2140.00, change: -0.80, high: 2165.00, low: 2120.00, volume: 48000, curr: '€', exch: 'Euronext Paris', name: 'Hermès International' },
     'SAN.PA': { price: 92.40, change: 0.45, high: 93.10, low: 91.80, volume: 2200000, curr: '€', exch: 'Euronext Paris', name: 'Sanofi S.A.' },
@@ -87,9 +96,9 @@
     'SAF.PA': { price: 212.80, change: 1.40, high: 215.20, low: 210.40, volume: 920000, curr: '€', exch: 'Euronext Paris', name: 'Safran S.A.' },
 
     // 5. Borsa Tedesca (DAX 40)
-    'SAP.DE': { price: 211.65, change: 0.43, high: 215.80, low: 211.50, volume: 1850000, curr: '€', exch: 'XETRA Frankfurt', name: 'SAP SE' },
-    'SIE.DE': { price: 271.00, change: 2.79, high: 271.85, low: 262.90, volume: 1420000, curr: '€', exch: 'XETRA Frankfurt', name: 'Siemens AG' },
-    'ALV.DE': { price: 457.00, change: 1.31, high: 457.00, low: 447.00, volume: 850000, curr: '€', exch: 'XETRA Frankfurt', name: 'Allianz SE' },
+    'SAP.DE': { price: 211.65, change: 0.43, high: 215.80, low: 211.50, volume: 1587218, curr: '€', exch: 'XETRA Frankfurt', name: 'SAP SE' },
+    'SIE.DE': { price: 271.00, change: 2.79, high: 271.85, low: 262.90, volume: 969932, curr: '€', exch: 'XETRA Frankfurt', name: 'Siemens AG' },
+    'ALV.DE': { price: 457.00, change: 1.31, high: 457.00, low: 447.00, volume: 372032, curr: '€', exch: 'XETRA Frankfurt', name: 'Allianz SE' },
     'DTE.DE': { price: 28.50, change: 0.60, high: 28.75, low: 28.30, volume: 8400000, curr: '€', exch: 'XETRA Frankfurt', name: 'Deutsche Telekom AG' },
     'MBG.DE': { price: 56.80, change: -0.90, high: 57.60, low: 56.20, volume: 3200000, curr: '€', exch: 'XETRA Frankfurt', name: 'Mercedes-Benz Group AG' },
     'BMW.DE': { price: 74.20, change: -1.10, high: 75.30, low: 73.60, volume: 1650000, curr: '€', exch: 'XETRA Frankfurt', name: 'Bayerische Motoren Werke AG' },
@@ -101,9 +110,9 @@
     'MUV2.DE': { price: 482.00, change: 0.90, high: 486.00, low: 478.00, volume: 380000, curr: '€', exch: 'XETRA Frankfurt', name: 'Münchener Rückversicherungs-AG' },
 
     // 6. Borsa Inglese (FTSE 100)
-    'SHEL.L': { price: 3701.00, change: -0.58, high: 3720.50, low: 3649.50, volume: 8400000, curr: 'p', exch: 'London Stock Exchange', name: 'Shell plc' },
-    'AZN.L': { price: 14066.00, change: 0.98, high: 14184.00, low: 13918.00, volume: 1850000, curr: 'p', exch: 'London Stock Exchange', name: 'AstraZeneca PLC' },
-    'HSBA.L': { price: 1337.20, change: 2.50, high: 1337.50, low: 1298.20, volume: 16200000, curr: 'p', exch: 'London Stock Exchange', name: 'HSBC Holdings plc' },
+    'SHEL.L': { price: 3701.00, change: -0.58, high: 3720.50, low: 3649.50, volume: 5317833, curr: 'p', exch: 'London Stock Exchange', name: 'Shell plc' },
+    'AZN.L': { price: 14066.00, change: 0.98, high: 14184.00, low: 13918.00, volume: 1519518, curr: 'p', exch: 'London Stock Exchange', name: 'AstraZeneca PLC' },
+    'HSBA.L': { price: 1337.20, change: 2.50, high: 1337.50, low: 1298.20, volume: 12079342, curr: 'p', exch: 'London Stock Exchange', name: 'HSBC Holdings plc' },
     'ULVR.L': { price: 4780.00, change: 0.40, high: 4810.00, low: 4755.00, volume: 2400000, curr: 'p', exch: 'London Stock Exchange', name: 'Unilever PLC' },
     'BP.L': { price: 395.00, change: -0.90, high: 399.50, low: 392.00, volume: 24000000, curr: 'p', exch: 'London Stock Exchange', name: 'BP p.l.c.' },
     'RIO.L': { price: 4980.00, change: -0.30, high: 5040.00, low: 4945.00, volume: 1950000, curr: 'p', exch: 'London Stock Exchange', name: 'Rio Tinto Group' },
@@ -113,35 +122,35 @@
     'RR.L': { price: 565.00, change: 3.10, high: 572.00, low: 552.00, volume: 14600000, curr: 'p', exch: 'London Stock Exchange', name: 'Rolls-Royce Holdings plc' },
 
     // 7. Asia / Orientale
-    '7203.T': { price: 3491.00, change: 4.58, high: 3491.00, low: 3333.00, volume: 28500000, curr: '¥', exch: 'Tokyo Stock Exchange', name: 'Toyota Motor Corporation' },
+    '7203.T': { price: 3491.00, change: 4.58, high: 3491.00, low: 3333.00, volume: 36132200, curr: '¥', exch: 'Tokyo Stock Exchange', name: 'Toyota Motor Corporation' },
     '6758.T': { price: 2850.00, change: 1.85, high: 2885.00, low: 2820.00, volume: 12400000, curr: '¥', exch: 'Tokyo Stock Exchange', name: 'Sony Group Corporation' },
     '9984.T': { price: 9420.00, change: 3.20, high: 9550.00, low: 9310.00, volume: 8400000, curr: '¥', exch: 'Tokyo Stock Exchange', name: 'SoftBank Group Corp.' },
     '8035.T': { price: 24500.00, change: 2.75, high: 24850.00, low: 24100.00, volume: 3200000, curr: '¥', exch: 'Tokyo Stock Exchange', name: 'Tokyo Electron Limited' },
     '005930.KS': { price: 58500.00, change: 1.20, high: 59200.00, low: 58000.00, volume: 16800000, curr: '₩', exch: 'Korea Exchange', name: 'Samsung Electronics Co., Ltd.' },
-    '0700.HK': { price: 418.40, change: -0.33, high: 428.40, low: 416.00, volume: 22400000, curr: 'HK$', exch: 'Hong Kong Stock Exchange', name: 'Tencent Holdings Limited' },
+    '0700.HK': { price: 418.40, change: -0.33, high: 428.40, low: 416.00, volume: 16369186, curr: 'HK$', exch: 'Hong Kong Stock Exchange', name: 'Tencent Holdings Limited' },
     '9988.HK': { price: 96.50, change: 1.45, high: 98.20, low: 95.10, volume: 48500000, curr: 'HK$', exch: 'Hong Kong Stock Exchange', name: 'Alibaba Group Holding Limited' },
-    'TSM': { price: 195.50, change: 2.85, high: 198.40, low: 191.60, volume: 18400000, curr: '$', exch: 'NYSE', name: 'Taiwan Semiconductor Manufacturing Co. (ADR)' },
+    'TSM': { price: 195.50, change: 2.85, high: 198.40, low: 191.60, volume: 18400000, curr: '$', exch: 'NYSE / Taiwan', name: 'Taiwan Semiconductor Manufacturing Co. (ADR)' },
 
     // 8. Materie Prime / Commodities
-    'GC': { price: 4113.70, change: 0.95, high: 4143.30, low: 4062.50, volume: 285000, curr: '$', exch: 'COMEX Futures', name: 'Oro (Gold Futures 100oz)' },
-    'GOLD': { price: 2685.00, change: 0.85, high: 2705.00, low: 2672.00, volume: 480000, curr: '$', exch: 'London Bullion / COMEX Spot', name: 'Oro Spot (XAU/USD)' },
-    'SI': { price: 52.68, change: 1.41, high: 53.47, low: 51.42, volume: 145000, curr: '$', exch: 'COMEX Futures', name: 'Argento (Silver Futures)' },
-    'SILVER': { price: 31.85, change: 1.25, high: 32.40, low: 31.50, volume: 320000, curr: '$', exch: 'COMEX Spot', name: 'Argento Spot (XAG/USD)' },
-    'CL': { price: 87.70, change: -3.45, high: 91.42, low: 86.19, volume: 680000, curr: '$', exch: 'NYMEX', name: 'Petrolio Greggio WTI Futures' },
-    'BRN': { price: 91.20, change: -3.10, high: 94.80, low: 89.80, volume: 490000, curr: '$', exch: 'ICE Europe', name: 'Petrolio Greggio Brent Futures' },
-    'NG': { price: 2.8520, change: 1.65, high: 2.9240, low: 2.7850, volume: 340000, curr: '$', exch: 'NYMEX', name: 'Gas Naturale Henry Hub' },
+    'GC': { price: 4112.10, change: 0.91, high: 4143.30, low: 4062.50, volume: 147279, curr: '$', exch: 'COMEX Futures', name: 'Oro (Gold Futures 100oz)' },
+    'GOLD': { price: 4105.29, change: 0.88, high: 4134.18, low: 4054.49, volume: 480000, curr: '$', exch: 'London Bullion / COMEX Spot', name: 'Oro Spot (XAU/USD)' },
+    'SI': { price: 52.825, change: 1.70, high: 53.465, low: 51.415, volume: 42046, curr: '$', exch: 'COMEX Futures', name: 'Argento (Silver Futures)' },
+    'SILVER': { price: 52.818, change: 1.76, high: 53.458, low: 51.409, volume: 320000, curr: '$', exch: 'COMEX Spot', name: 'Argento Spot (XAG/USD)' },
+    'CL': { price: 87.47, change: -3.70, high: 91.42, low: 86.19, volume: 221617, curr: '$', exch: 'NYMEX', name: 'Petrolio Greggio WTI Futures' },
+    'BRN': { price: 93.47, change: -4.93, high: 98.43, low: 92.80, volume: 321758, curr: '$', exch: 'ICE Europe', name: 'Petrolio Greggio Brent Futures' },
+    'NG': { price: 3.196, change: 6.60, high: 3.239, low: 2.988, volume: 194269, curr: '$', exch: 'NYMEX', name: 'Gas Naturale Henry Hub' },
     'HG': { price: 4.3540, change: 0.80, high: 4.4120, low: 4.3180, volume: 125000, curr: '$', exch: 'COMEX', name: 'Rame (Copper Grade A)' },
     'PL': { price: 985.00, change: 0.65, high: 996.00, low: 978.00, volume: 38000, curr: '$', exch: 'NYMEX', name: 'Platino Futures' },
     'PA': { price: 1025.00, change: -0.40, high: 1042.00, low: 1015.00, volume: 24000, curr: '$', exch: 'NYMEX', name: 'Palladio Futures' },
-    'ZW': { price: 565.00, change: 0.75, high: 572.00, low: 560.00, volume: 95000, curr: '¢', exch: 'CBOT', name: 'Grano Tenero (Wheat)' },
+    'ZW': { price: 589.00, change: -0.38, high: 594.00, low: 586.25, volume: 94759, curr: '¢', exch: 'CBOT', name: 'Grano Tenero (Wheat)' },
     'ZC': { price: 425.00, change: -0.50, high: 429.00, low: 422.00, volume: 185000, curr: '¢', exch: 'CBOT', name: 'Mais Giallo (Corn)' },
     'ZS': { price: 995.00, change: -0.80, high: 1008.00, low: 991.00, volume: 160000, curr: '¢', exch: 'CBOT', name: 'Soia (Soybeans)' },
-    'KC': { price: 265.00, change: 1.10, high: 269.50, low: 262.00, volume: 68000, curr: '¢', exch: 'ICE', name: 'Caffè Arabica' },
-    'CC': { price: 7850.00, change: 2.40, high: 8020.00, low: 7710.00, volume: 45000, curr: '$', exch: 'ICE', name: 'Cacao (Cocoa Futures)' },
+    'KC': { price: 266.70, change: -4.75, high: 273.00, low: 266.65, volume: 27646, curr: '¢', exch: 'ICE', name: 'Caffè Arabica' },
+    'CC': { price: 5113.00, change: -0.81, high: 5343.00, low: 5091.00, volume: 25322, curr: '$', exch: 'ICE', name: 'Cacao (Cocoa Futures)' },
     'SB': { price: 21.50, change: 0.35, high: 21.85, low: 21.25, volume: 115000, curr: '¢', exch: 'ICE', name: 'Zucchero Greggio (Sugar No. 11)' },
 
     // 9. Forex Interbank
-    'EURUSD': { price: 1.1203, change: 0.56, high: 1.1209, low: 1.1135, volume: 135000, curr: '$', exch: 'Interbank Forex', name: 'Euro / US Dollar' },
+    'EURUSD': { price: 1.12055, change: 0.58, high: 1.12088, low: 1.11351, volume: 135000, curr: '$', exch: 'Interbank Forex', name: 'Euro / US Dollar' },
     'GBPUSD': { price: 1.3420, change: 0.53, high: 1.3426, low: 1.3346, volume: 88000, curr: '$', exch: 'Interbank Forex', name: 'British Pound / US Dollar' },
     'USDJPY': { price: 158.05, change: -0.23, high: 158.53, low: 157.85, volume: 115000, curr: '¥', exch: 'Interbank Forex', name: 'US Dollar / Japanese Yen' },
     'USDCHF': { price: 0.8650, change: -0.15, high: 0.8685, low: 0.8630, volume: 48000, curr: 'CHF', exch: 'Interbank Forex', name: 'US Dollar / Swiss Franc' },
@@ -209,12 +218,12 @@
       return { market: 'hongkong', ticker: `HKEX:${bare}`, curr: 'HK$', exch: 'Hong Kong Stock Exchange' };
     }
 
-    // 6. Materie Prime / Futures
+    // 6. Materie Prime / Futures (Direct TV Scanner Tickers)
     const commMap = {
       'GC': 'COMEX:GC1!', 'GOLD': 'TVC:GOLD', 'GC=F': 'COMEX:GC1!', 'XAUUSD': 'TVC:GOLD',
       'SI': 'COMEX:SI1!', 'SILVER': 'TVC:SILVER', 'SI=F': 'COMEX:SI1!', 'XAGUSD': 'TVC:SILVER',
-      'CL': 'NYMEX:CL1!', 'WTI': 'TVC:USOIL', 'CL=F': 'NYMEX:CL1!', 'USOIL': 'TVC:USOIL',
-      'BRN': 'ICEEUR:B1!', 'BRENT': 'TVC:UKOIL', 'BZ=F': 'ICEEUR:B1!', 'UKOIL': 'TVC:UKOIL',
+      'CL': 'NYMEX:CL1!', 'WTI': 'NYMEX:CL1!', 'CL=F': 'NYMEX:CL1!', 'USOIL': 'NYMEX:CL1!',
+      'BRN': 'ICEEUR:BRN1!', 'BRENT': 'ICEEUR:BRN1!', 'BZ=F': 'ICEEUR:BRN1!', 'UKOIL': 'ICEEUR:BRN1!',
       'NG': 'NYMEX:NG1!', 'NATGAS': 'NYMEX:NG1!', 'NG=F': 'NYMEX:NG1!',
       'HG': 'COMEX:HG1!', 'COPPER': 'COMEX:HG1!', 'HG=F': 'COMEX:HG1!',
       'PL': 'NYMEX:PL1!', 'PA': 'NYMEX:PA1!',
@@ -222,7 +231,9 @@
       'KC': 'ICEUS:KC1!', 'CC': 'ICEUS:CC1!', 'SB': 'ICEUS:SB1!'
     };
     if (commMap[s]) {
-      return { market: commMap[s].startsWith('TVC:') ? 'cfd' : 'futures', ticker: commMap[s], curr: '$', exch: 'Futures & Commodities' };
+      const ticker = commMap[s];
+      const mkt = ticker.startsWith('TVC:') ? 'cfd' : 'futures';
+      return { market: mkt, ticker: ticker, curr: (['ZW', 'ZC', 'ZS', 'KC', 'SB'].includes(s) ? '¢' : '$'), exch: 'Futures & Commodities' };
     }
 
     // 7. Forex
@@ -237,7 +248,12 @@
       return { market: 'crypto', ticker: `BYBIT:${clean}`, curr: '$', exch: 'Bybit / Binance Linear' };
     }
 
-    // 9. S&P 500 / NASDAQ Default (US Market)
+    // 9. ETF on AMEX/Arca
+    if (['SPY', 'DIA', 'IWM'].includes(s)) {
+      return { market: 'america', ticker: `AMEX:${s}`, curr: '$', exch: 'NYSE Arca / AMEX' };
+    }
+
+    // 10. S&P 500 / NASDAQ Default (US Market)
     const exch = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'QQQ', 'AMD', 'AVGO', 'QCOM', 'INTC', 'MU', 'CSCO', 'NFLX', 'ADBE'].includes(s) ? 'NASDAQ' : 'NYSE';
     return { market: 'america', ticker: `${exch}:${s}`, curr: '$', exch: exch };
   }

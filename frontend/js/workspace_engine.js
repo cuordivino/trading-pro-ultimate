@@ -577,7 +577,7 @@ window.PaneSplitterManager = {
     main: 380,
     vol: 90,
     mom: 115,
-    mom2: 90
+    mom2: 120
   },
 
   init: function() {
@@ -615,7 +615,10 @@ window.PaneSplitterManager = {
     const val = parseInt(px, 10);
     if (isNaN(val)) return;
 
-    if (pane === 'main') this.heights.main = Math.max(180, Math.min(2400, val));
+    if (pane === 'main') {
+      this.heights.main = Math.max(180, Math.min(2400, val));
+      if (window.BybitChartSettings) window.BybitChartSettings.currentHeight = this.heights.main;
+    }
     else if (pane === 'volume') this.heights.vol = Math.max(30, Math.min(1200, val));
     else if (pane === 'momentum') this.heights.mom = Math.max(30, Math.min(1200, val));
     else if (pane === 'sub2') this.heights.mom2 = Math.max(30, Math.min(1200, val));
@@ -1050,8 +1053,8 @@ window.BybitLayoutManager = {
     this.updateRatioVisibility();
     this.updateActiveTiles();
 
-    // Close popover when clicking outside
-    document.addEventListener('click', (e) => {
+    // Close popover when clicking or touching outside
+    const closeIfOutside = (e) => {
       const popover = document.getElementById('bybit-layout-popover-menu');
       const btn = document.getElementById('btn-bybit-layout-menu');
       if (popover && popover.style.display !== 'none') {
@@ -1059,7 +1062,9 @@ window.BybitLayoutManager = {
           popover.style.display = 'none';
         }
       }
-    });
+    };
+    document.addEventListener('click', closeIfOutside);
+    document.addEventListener('touchstart', closeIfOutside, { passive: true });
 
     window.addEventListener('resize', () => {
       this.applyBookPosition();
@@ -1205,12 +1210,13 @@ window.BybitLayoutManager = {
     const macroWire = document.getElementById('bybit-macro-timeline-ribbon');
     const btn = document.getElementById('btn-mobile-chart-mode');
 
-    const targetHeight = isOnly ? Math.round(window.innerHeight * 0.72) : 390;
+    const userH = (window.PaneSplitterManager && window.PaneSplitterManager.heights && window.PaneSplitterManager.heights.main) ? window.PaneSplitterManager.heights.main : 380;
+    const targetHeight = isOnly ? Math.round(window.innerHeight * 0.72) : Math.max(300, userH);
 
     if (vp) {
       vp.style.setProperty('height', targetHeight + 'px', 'important');
-      vp.style.setProperty('min-height', targetHeight + 'px', 'important');
-      vp.style.setProperty('max-height', targetHeight + 'px', 'important');
+      vp.style.setProperty('min-height', (isOnly ? targetHeight : 240) + 'px', 'important');
+      vp.style.removeProperty('max-height');
     }
 
     if (container) {

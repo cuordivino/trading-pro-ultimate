@@ -726,6 +726,17 @@
             </div>
 
             <!-- Candlestick Chart Viewport (Candele Giapponesi + VWAP + EMA 9/21/200 + Bollinger + Local Volume Profile) -->
+                        <!-- DEDICATED MOBILE CHART HEIGHT BAR (100% VISIBLE ON IPHONE) -->
+            <div class="mobile-chart-height-bar" id="mobile-chart-height-bar">
+              <span class="mobile-h-label">Altezza:</span>
+              <button type="button" class="btn-m-h" onclick="BybitChartSettings.setHeight(380)">380px</button>
+              <button type="button" class="btn-m-h" onclick="BybitChartSettings.setHeight(520)">520px</button>
+              <button type="button" class="btn-m-h" onclick="BybitChartSettings.setHeight(750)">750px</button>
+              <button type="button" class="btn-m-h" onclick="BybitChartSettings.setHeight(1000)">1000px</button>
+              <button type="button" class="btn-m-h" onclick="BybitChartSettings.setHeight(1400)">1400px</button>
+              <button type="button" class="btn-m-h full" onclick="BybitChartSettings.toggleFullScreen()" title="Schermo Intero">⛶</button>
+            </div>
+
             <div class="chart-viewport-wrapper" style="position:relative; width:100%; height:380px; overflow:hidden;">
               <!-- FLOATING BYBIT ON-CHART LIVE LEGEND -->
               <div class="bybit-chart-legend" id="bybit-chart-legend" onclick="this.classList.toggle('expanded')"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:2px; margin-bottom:2px;"><span style="color:#fcd535; font-weight:800; font-size:9px;">📊 INDICATORI ATTIVI</span><button type="button" class="bybit-legend-toggle-btn" onclick="toggleBybitLegendCollapse()" title="Riduci/Espandi pannello indicatori sul grafico">▲/▼</button></div>
@@ -778,7 +789,7 @@
             <!-- SOTTO IL GRAFICO: PANNELLO 1 (Volumi a barre verticali + Media Mobile dei Volumi) -->
             <div id="chart-volume-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
               <div class="subpane-header-bar" id="volume-pane-header">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap;">
+                <div class="subpane-info-row">
                   <span class="subpane-title">📊 Volumi Istituzionali</span>
                   <span id="pane-vol-live" class="subpane-live-badge">Vol: --</span>
                   <span style="color:#fcd535; font-size:10px; font-weight:800;">● Media:</span>
@@ -811,7 +822,7 @@
             <!-- SOTTO IL GRAFICO: PANNELLO 2 (Oscillatore Momentum RSI / MACD / Aroon / ADX) -->
             <div id="chart-momentum-pane" class="chart-sub-pane active" style="height:115px; position:relative;">
               <div class="subpane-header-bar" id="momentum-pane-header">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div class="subpane-info-row">
                   <span class="subpane-title">⚡ Oscillatore:</span>
                   <select id="momentum-mode-select" class="subpane-select" onchange="setMomentumMode(this.value)">
                     <option value="cvd">CVD (Cumulative Volume Delta)</option>
@@ -860,9 +871,9 @@
             </div>
 
             <!-- SOTTO IL GRAFICO: PANNELLO 3 (Secondo Oscillatore: Williams %R, KDJ, Stocastico, MACD Hist) -->
-            <div id="chart-sub2-pane" class="chart-sub-pane active" style="height:90px; position:relative;">
+            <div id="chart-sub2-pane" class="chart-sub-pane active" style="height:120px; position:relative;">
               <div class="subpane-header-bar" id="sub2-pane-header">
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div class="subpane-info-row">
                   <span class="subpane-title">📈 Parametri Settabili 2:</span>
                   <select id="sub2-mode-select" class="subpane-select" onchange="setSub2Mode(this.value)">
                     <option value="wr" selected>WR (Williams %R 14/20)</option>
