@@ -697,7 +697,7 @@ function attachMultiChartSync() {
     try {
       if (volumeChart && typeof volumeChart.timeScale === 'function') volumeChart.timeScale().setVisibleLogicalRange(range);
       if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
-      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
+      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function' && window.currentCandles && window.currentCandles.length > 1) { try { sub2Chart.timeScale().setVisibleLogicalRange(range); } catch(e) {} }
     } catch(e) {}
     releaseSync();
   });
@@ -708,7 +708,7 @@ function attachMultiChartSync() {
     try {
       if (mainChart && typeof mainChart.timeScale === 'function') mainChart.timeScale().setVisibleLogicalRange(range);
       if (momentumChart && typeof momentumChart.timeScale === 'function') momentumChart.timeScale().setVisibleLogicalRange(range);
-      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function') sub2Chart.timeScale().setVisibleLogicalRange(range);
+      if (typeof sub2Chart !== 'undefined' && sub2Chart && typeof sub2Chart.timeScale === 'function' && window.currentCandles && window.currentCandles.length > 1) { try { sub2Chart.timeScale().setVisibleLogicalRange(range); } catch(e) {} }
     } catch(e) {}
     releaseSync();
   });
@@ -3701,7 +3701,10 @@ function initSub2Pane() {
   });
 
   sub2HistSeries = sub2Chart.addHistogramSeries({
-    priceFormat: { type: 'volume' },
+    priceFormat: {
+      type: 'custom',
+      formatter: (val) => (val >= 0 ? '+' : '') + Number(val).toFixed(2)
+    },
     priceScaleId: 'right',
     lastValueVisible: true,
     priceLineVisible: false
@@ -3921,6 +3924,21 @@ function renderCurrentSub2Data(candles) {
     }
   }
 
+  // Synchronize sub2 visible range with mainChart immediately so indicator line is visible in viewport!
+  try {
+    if (mainChart && typeof mainChart.timeScale === 'function') {
+      const r = mainChart.timeScale().getVisibleLogicalRange();
+      if (r && sub2Chart && typeof sub2Chart.timeScale === 'function') {
+        sub2Chart.timeScale().setVisibleLogicalRange(r);
+      }
+    } else if (sub2Chart && typeof sub2Chart.timeScale === 'function') {
+      sub2Chart.timeScale().fitContent();
+    }
+    if (sub2Chart && typeof sub2Chart.priceScale === 'function') {
+      sub2Chart.priceScale('right').applyOptions({ autoScale: true });
+    }
+  } catch(e) {}
+
   if (window.resizeAllCharts) window.resizeAllCharts();
 }
 
@@ -3937,10 +3955,23 @@ function renderCurrentSub2Data(candles) {
 // Guarantees candlestick chart, volume, legend and price line
 // update synchronously in 0ms latency with Bybit ticks & WebSocket
 // ==========================================
-function onRealtimePriceTick(price, volume, timestamp) {
+function onRealtimePriceTick(price, volume, timestamp, tickSym) {
   price = parseFloat(price);
   if (!price || isNaN(price) || price <= 0) return;
   if (!candleSeries || !window.currentCandles || !window.currentCandles.length) return;
+
+  // Strict symbol isolation: reject tick if symbol does not match active asset
+  if (tickSym && window.currentSymbol && tickSym.toUpperCase().trim() !== window.currentSymbol.toUpperCase().trim()) {
+    return;
+  }
+
+  // Strict price scale sanity check: drop tick if price diverges by >50% from active asset scale
+  if (window.currentLivePrice && window.currentLivePrice > 0) {
+    const ratio = price / window.currentLivePrice;
+    if (ratio < 0.2 || ratio > 5.0) {
+      return;
+    }
+  }
 
   const tf = window.activeTimeframe || '15m';
   const tfSec = typeof getTimeframeSeconds === 'function' ? getTimeframeSeconds(tf) : 900;
@@ -4038,8 +4069,22 @@ function onRealtimePriceTick(price, volume, timestamp) {
   }
 }
 
-function onRealtimeKlineUpdate(klineData) {
+function onRealtimeKlineUpdate(klineData, tickSym) {
   if (!klineData || !candleSeries || !window.currentCandles || !window.currentCandles.length) return;
+
+  // Strict symbol isolation: reject kline if symbol does not match active asset
+  if (tickSym && window.currentSymbol && tickSym.toUpperCase().trim() !== window.currentSymbol.toUpperCase().trim()) {
+    return;
+  }
+
+  const cTest = parseFloat(klineData.close);
+  if (window.currentLivePrice && window.currentLivePrice > 0 && !isNaN(cTest) && cTest > 0) {
+    const ratio = cTest / window.currentLivePrice;
+    if (ratio < 0.2 || ratio > 5.0) {
+      return;
+    }
+  }
+
   const startSec = Math.floor(parseInt(klineData.start, 10) / 1000);
   if (!startSec || isNaN(startSec)) return;
 

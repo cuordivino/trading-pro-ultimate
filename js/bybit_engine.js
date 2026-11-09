@@ -75,28 +75,42 @@ window.BybitEngine = {
   },
 
   initNonCryptoAsset: function(asset) {
-    const base = (asset && asset.basePrice) ? asset.basePrice : ((window.activePrice && window.activeSymbol === this.currentSymbol) ? window.activePrice : 100);
+    const baseline = window.MarketLiveFeed ? window.MarketLiveFeed.getBaselineQuote(this.currentSymbol) : null;
+    const base = baseline ? baseline.price : ((asset && asset.basePrice) ? asset.basePrice : ((window.activePrice && window.activeSymbol === this.currentSymbol) ? window.activePrice : 100));
     const prec = window.getDynamicPrecision ? window.getDynamicPrecision(base, this.currentSymbol) : 2;
     const f = Math.pow(10, prec);
-    const chgPct = (asset && asset.change24h !== undefined) ? (asset.change24h / 100) : 0.0125;
-    const vol24h = (asset && asset.volume24h) ? asset.volume24h : (asset && asset.cat === 'eu_stock' ? 2500000 : 48000000);
+    const chgPct = baseline ? (baseline.change / 100) : ((asset && asset.change24h !== undefined) ? (asset.change24h / 100) : 0.0125);
+    const vol24h = baseline ? baseline.volume : ((asset && asset.volume24h) ? asset.volume24h : 2500000);
 
     this.tickerData = {
       lastPrice: base,
       indexPrice: base,
       markPrice: base,
       price24hPcnt: chgPct,
-      highPrice24h: Math.round((base * 1.018) * f) / f,
-      lowPrice24h: Math.round((base * 0.982) * f) / f,
+      highPrice24h: baseline ? baseline.high : Math.round((base * 1.018) * f) / f,
+      lowPrice24h: baseline ? baseline.low : Math.round((base * 0.982) * f) / f,
       volume24h: vol24h,
       turnover24h: base * vol24h,
       fundingRate: 0,
       nextFundingTime: Date.now() + 14400000,
       openInterest: 0
     };
+
+    window.currentLivePrice = base;
+    window.activePrice = base;
+
+    // Reset order form inputs to this asset's scale immediately so no residual BTC prices remain
+    const entryInput = document.getElementById('t-entry');
+    const slInput = document.getElementById('t-sl');
+    const tpInput = document.getElementById('t-tp');
+    if (entryInput) entryInput.value = base.toFixed(prec);
+    if (slInput) slInput.value = (base * 0.97).toFixed(prec);
+    if (tpInput) tpInput.value = (base * 1.06).toFixed(prec);
+
     this.renderBybitTelemetry();
     this.generateSyntheticOrderBook(base);
     this.generateSyntheticRecentTrades(base);
+    this.recalcBybitOrderMetrics();
   },
 
   updateNonCryptoTick: function() {
@@ -283,7 +297,7 @@ window.BybitEngine = {
             const klines = Array.isArray(msg.data) ? msg.data : [msg.data];
             klines.forEach(k => {
               if (window.onRealtimeKlineUpdate) {
-                window.onRealtimeKlineUpdate(k);
+                window.onRealtimeKlineUpdate(k, this.currentSymbol);
               }
             });
           } else if (msg.topic && msg.topic.startsWith('tickers') && msg.data) {
@@ -295,7 +309,7 @@ window.BybitEngine = {
               const p = parseFloat(d.lastPrice);
               this.tickerData.lastPrice = p;
               if (window.onRealtimePriceTick) {
-                window.onRealtimePriceTick(p, parseFloat(d.volume24h) || 0);
+                window.onRealtimePriceTick(p, parseFloat(d.volume24h) || 0, null, this.currentSymbol);
               }
             }
             if (d.markPrice) this.tickerData.markPrice = parseFloat(d.markPrice);
@@ -318,7 +332,7 @@ window.BybitEngine = {
 
             if (msg.data.length && window.onRealtimePriceTick) {
               const latestTrade = msg.data[0];
-              window.onRealtimePriceTick(parseFloat(latestTrade.p), parseFloat(latestTrade.v), latestTrade.T);
+              window.onRealtimePriceTick(parseFloat(latestTrade.p), parseFloat(latestTrade.v), latestTrade.T, this.currentSymbol);
             }
           }
         } catch (err) {}
@@ -617,13 +631,14 @@ window.BybitEngine = {
   },
 
   setQuickSlPct: function(pct) {
-    const price = this.tickerData.lastPrice || 80000;
+    const price = this.tickerData.lastPrice || window.currentLivePrice || (this.activeAsset ? this.activeAsset.basePrice : 100);
     const side = window.currentTradeSide || 'LONG';
     const factor = side === 'LONG' ? (1 - pct / 100) : (1 + pct / 100);
     const sl = price * factor;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, this.currentSymbol) : 2;
     const slInput = document.getElementById('t-sl');
     if (slInput) {
-      slInput.value = sl.toFixed(2);
+      slInput.value = sl.toFixed(prec);
       this.onSlTpChanged();
     }
   },
@@ -642,13 +657,14 @@ window.BybitEngine = {
   },
 
   setQuickTpPct: function(pct) {
-    const price = this.tickerData.lastPrice || 80000;
+    const price = this.tickerData.lastPrice || window.currentLivePrice || (this.activeAsset ? this.activeAsset.basePrice : 100);
     const side = window.currentTradeSide || 'LONG';
     const factor = side === 'LONG' ? (1 + pct / 100) : (1 - pct / 100);
     const tp = price * factor;
+    const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, this.currentSymbol) : 2;
     const tpInput = document.getElementById('t-tp');
     if (tpInput) {
-      tpInput.value = tp.toFixed(2);
+      tpInput.value = tp.toFixed(prec);
       this.onSlTpChanged();
     }
   },

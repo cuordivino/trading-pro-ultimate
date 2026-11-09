@@ -9058,3 +9058,101 @@ body, html, input, select, button, textarea {
     height: 20px !important;
   }
 }
+
+
+/* ==========================================================================
+   IPHONE & MOBILE ULTRA-RESPONSIVE FIXES (ZERO-OVERFLOW, PINNED CONTROLS)
+   Guarantees height controls, subcharts, and toolbar presets are 100% visible
+   ========================================================================== */
+
+/* 1. Main chart top bar horizontal scroll on narrow mobile screens */
+.chart-action-toolbar, .bybit-chart-top-bar, .chart-top-bar, .bybit-top-bar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+}
+.chart-action-toolbar::-webkit-scrollbar,
+.bybit-chart-top-bar::-webkit-scrollbar,
+.chart-top-bar::-webkit-scrollbar,
+.bybit-top-bar::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* 2. Subpane headers: never wrap, scrollable left side + sticky right height controls */
+.subpane-header-bar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  white-space: nowrap !important;
+  position: relative !important;
+}
+.subpane-header-bar::-webkit-scrollbar {
+  display: none !important;
+}
+.subpane-header-bar > div:first-child {
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+}
+
+/* 3. Pinned Height Controls: Always visible on screen on iPhone & mobile */
+.pane-height-controls {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  gap: 3px !important;
+  padding-left: 6px !important;
+  padding-right: 4px !important;
+  position: sticky !important;
+  right: 0 !important;
+  background: rgba(10, 15, 29, 0.96) !important;
+  z-index: 8 !important;
+  box-shadow: -8px 0 12px rgba(7, 10, 18, 0.9) !important;
+}
+.pane-height-controls .btn-pane-h {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px !important;
+  padding: 2px 5px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  line-height: 14px !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+}
+.pane-height-controls .btn-pane-h:hover,
+.pane-height-controls .btn-pane-h:active {
+  background: rgba(56, 189, 248, 0.3) !important;
+  color: #38bdf8 !important;
+  border-color: #38bdf8 !important;
+}
+
+/* 4. Subpane canvas guaranteed layout and rendering */
+#chart-sub2-pane, #chart-volume-pane, #chart-momentum-pane {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#chart-sub2-canvas, #chart-volume-canvas, #chart-momentum-canvas {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: calc(100% - 26px) !important;
+  min-height: 35px !important;
+  position: relative !important;
+}

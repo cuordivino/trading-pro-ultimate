@@ -54,11 +54,11 @@ window.GlobalMarketAssets = [
   { symbol: 'NI', name: 'Nichel (Nickel Class 1)', cat: 'forex', exchange: 'LME / CME', basePrice: 16250.0, currency: '$', precision: 2, change24h: -0.3, volume24h: 45000, sector: 'Metalli Industriali (Base Metals)' },
 
   // Materie Prime Agricole (CBOT / ICE)
-  { symbol: 'ZW', name: 'Grano Tenero (Wheat Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 5.99, currency: '¢', precision: 2, change24h: 0.75, volume24h: 95000, sector: 'Materie Prime Agricole (Grains)' },
-  { symbol: 'ZC', name: 'Mais Giallo (Corn Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 4.41, currency: '¢', precision: 2, change24h: -0.75, volume24h: 185000, sector: 'Materie Prime Agricole (Grains)' },
-  { symbol: 'ZS', name: 'Soia (Soybeans Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 205.2, currency: '¢', precision: 2, change24h: -7.78, volume24h: 392.52, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'ZW', name: 'Grano Tenero (Wheat Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 572.00, currency: '¢', precision: 2, change24h: 0.75, volume24h: 95000, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'ZC', name: 'Mais Giallo (Corn Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 432.00, currency: '¢', precision: 2, change24h: -0.50, volume24h: 185000, sector: 'Materie Prime Agricole (Grains)' },
+  { symbol: 'ZS', name: 'Soia (Soybeans Futures)', cat: 'forex', exchange: 'CBOT / ICE', basePrice: 1018.00, currency: '¢', precision: 2, change24h: -0.65, volume24h: 160000, sector: 'Materie Prime Agricole (Grains)' },
   { symbol: 'KC', name: 'Caffè Arabica (Coffee "C" Contract)', cat: 'forex', exchange: 'ICE', basePrice: 277.4, currency: '¢', precision: 2, change24h: -1.25, volume24h: 68000, sector: 'Soft Commodities' },
-  { symbol: 'CC', name: 'Cacao (Cocoa Futures)', cat: 'forex', exchange: 'ICE', basePrice: 0.10397, currency: '$', precision: 2, change24h: 1.37, volume24h: 91657818.0, sector: 'Soft Commodities' },
+  { symbol: 'CC', name: 'Cacao (Cocoa Futures)', cat: 'forex', exchange: 'ICE', basePrice: 8950.00, currency: '$', precision: 2, change24h: 1.37, volume24h: 45000, sector: 'Soft Commodities' },
   { symbol: 'SB', name: 'Zucchero Greggio (Sugar No. 11)', cat: 'forex', exchange: 'ICE', basePrice: 21.85, currency: '¢', precision: 2, change24h: 0.65, volume24h: 115000, sector: 'Soft Commodities' },
   { symbol: 'CT', name: 'Cotone (Cotton No. 2)', cat: 'forex', exchange: 'ICE', basePrice: 0.1212, currency: '¢', precision: 2, change24h: -4.49, volume24h: 48480930.0, sector: 'Soft Commodities' },
 
@@ -110,18 +110,18 @@ window.GlobalMarketAssets = [
   { symbol: 'DAL.MI', name: "D'Amico International Shipping", cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 4.95, currency: '€', precision: 2, sector: 'STAR • Trasporti Marittimi' },
   { symbol: 'DIA.MI', name: 'Diasorin S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 80.64, currency: '€', precision: 2, change24h: -1.87, volume24h: 104873, sector: 'FTSE MIB • Salute & Biomedicale' },
   { symbol: 'EAV.MI', name: 'Enav S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 1.21, currency: '€', precision: 4, change24h: 0, volume24h: 0, sector: 'Euronext Milan • Controllo Traffico Aereo' },
-  { symbol: 'ENEL.MI', name: 'Enel S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.768, currency: '€', precision: 3, change24h: 0.92, volume24h: 23386611, sector: 'FTSE MIB • Utility / Energia' },
-  { symbol: 'ENI.MI', name: 'Eni S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 25.355, currency: '€', precision: 2, change24h: -0.72, volume24h: 8689384, sector: 'FTSE MIB • Petrolifero' },
+  { symbol: 'ENEL.MI', name: 'Enel S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.861, currency: '€', precision: 3, change24h: 0.92, volume24h: 24500000, sector: 'FTSE MIB — Utilities & Rinnovabili' },
+  { symbol: 'ENI.MI', name: 'Eni S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 25.333, currency: '€', precision: 3, change24h: -0.72, volume24h: 14200000, sector: 'FTSE MIB — Petrolifero & Energia' },
   { symbol: 'ERG.MI', name: 'Erg S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 22.08, currency: '€', precision: 2, change24h: -0.36, volume24h: 212070, sector: 'Euronext Milan • Energia Green' },
   { symbol: 'ELUX.MI', name: 'EssilorLuxottica', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 218.40, currency: '€', precision: 2, change24h: 1.25, volume24h: 5000000, sector: 'FTSE MIB • Ottica / Beni di Consumo' },
-  { symbol: 'RACE.MI', name: 'Ferrari N.V.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 377.3, currency: '€', precision: 2, change24h: -1.37, volume24h: 738602, sector: 'FTSE MIB • Automotive / Lusso' },
+  { symbol: 'RACE.MI', name: 'Ferrari N.V.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 372.40, currency: '€', precision: 2, change24h: 1.15, volume24h: 420000, sector: 'FTSE MIB — Luxury Automotive' },
   { symbol: 'FB.MI', name: 'Fila S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.60, currency: '€', precision: 2, change24h: 1.25, volume24h: 5000000, sector: 'STAR • Beni di Consumo' },
   { symbol: 'FBK.MI', name: 'FinecoBank', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 22.73, currency: '€', precision: 2, change24h: 2.43, volume24h: 4155341, sector: 'FTSE MIB • Banche Online' },
   { symbol: 'GAB.MI', name: 'Gabetti Property Solutions', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 0.368, currency: '€', precision: 4, change24h: -3.41, volume24h: 141419, sector: 'Euronext Milan • Immobiliare' },
   { symbol: 'GEO.MI', name: 'Geox S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 0.2715, currency: '€', precision: 4, change24h: 0.56, volume24h: 139074, sector: 'Euronext Milan • Calzature' },
   { symbol: 'IM.MI', name: 'Immsi S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 0.540, currency: '€', precision: 3, change24h: 1.25, volume24h: 5000000, sector: 'Euronext Milan • Holding Industriale' },
   { symbol: 'IP.MI', name: 'Interpump Group', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 38.54, currency: '€', precision: 2, change24h: 0.73, volume24h: 245538, sector: 'FTSE MIB • Industria' },
-  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 6.265, currency: '€', precision: 3, change24h: -0.27, volume24h: 59146341, sector: 'FTSE MIB • Banche' },
+  { symbol: 'ISP.MI', name: 'Intesa Sanpaolo S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 6.353, currency: '€', precision: 3, change24h: 0.52, volume24h: 59146341, sector: 'FTSE MIB — Banche' },
   { symbol: 'INW.MI', name: 'Infrastrutture Wireless (INWIT)', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 7.29, currency: '€', precision: 3, change24h: -0.82, volume24h: 1452336, sector: 'FTSE MIB • Telecomunicazioni' },
   { symbol: 'IRE.MI', name: 'Iren S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 2.438, currency: '€', precision: 4, change24h: -0.41, volume24h: 1583448, sector: 'Euronext Milan • Multi-utility' },
   { symbol: 'IVG.MI', name: 'Iveco Group N.V.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 14.355, currency: '€', precision: 3, change24h: -0.14, volume24h: 540950, sector: 'FTSE MIB • Veicoli Industriali' },
@@ -153,7 +153,7 @@ window.GlobalMarketAssets = [
   { symbol: 'TRN.MI', name: 'Terna S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.86, currency: '€', precision: 3, change24h: 1.21, volume24h: 4560944, sector: 'FTSE MIB • Reti Elettriche' },
   { symbol: 'TOD.MI', name: "Tod's S.p.A.", cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 43.00, currency: '€', precision: 2, sector: 'Euronext Milan • Calzature Lusso' },
   { symbol: 'TXT.MI', name: 'Txt E-Solutions', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 47.3, currency: '€', precision: 2, change24h: -3.47, volume24h: 41955, sector: 'STAR • Software & Tech' },
-  { symbol: 'UCG.MI', name: 'UniCredit S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 77.18, currency: '€', precision: 2, change24h: -1.46, volume24h: 6830603, sector: 'FTSE MIB • Banche' },
+  { symbol: 'UCG.MI', name: 'UniCredit S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 81.62, currency: '€', precision: 2, change24h: 6.28, volume24h: 6830603, sector: 'FTSE MIB — Banche' },
   { symbol: 'UNI.MI', name: 'Unipol Gruppo', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 25.85, currency: '€', precision: 2, change24h: -2.27, volume24h: 1827585, sector: 'FTSE MIB • Assicurazioni' },
   { symbol: 'VLA.MI', name: 'Valsoia S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.80, currency: '€', precision: 2, change24h: 1.25, volume24h: 5000000, sector: 'Euronext Milan • Alimentare Sano' },
   { symbol: 'ZUC.MI', name: 'Zucchi S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 0.38, currency: '€', precision: 4, change24h: -1.04, volume24h: 4730, sector: 'Euronext Milan • Tessile Casa' },
@@ -248,7 +248,7 @@ window.GlobalMarketAssets = [
   { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', cat: 'etf', exchange: 'NYSE Arca', basePrice: 735.23, currency: '$', precision: 2, change24h: -4.14, volume24h: 39170.77, sector: 'ETF • S&P 500 Benchmark' },
   { symbol: 'QQQ', name: 'Invesco QQQ Trust (NASDAQ 100)', cat: 'etf', exchange: 'NASDAQ', basePrice: 655.4, currency: '$', precision: 2, change24h: -4.58, volume24h: 166274.3, sector: 'ETF • Tech Benchmark' },
   { symbol: 'IWM', name: 'iShares Russell 2000 ETF', cat: 'etf', exchange: 'NYSE Arca', basePrice: 271.03, currency: '$', precision: 2, change24h: -4.87, volume24h: 1553.9, sector: 'ETF • Small Cap' },
-  { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average', cat: 'etf', exchange: 'NYSE Arca', basePrice: 0.14035, currency: '$', precision: 2, change24h: -3.87, volume24h: 1100708.0, sector: 'ETF • Blue Chips' },
+  { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average ETF', cat: 'etf', exchange: 'NYSE Arca', basePrice: 490.50, currency: '$', precision: 2, change24h: 0.85, volume24h: 4500000, sector: 'ETF — Blue Chips' },
 
   // S&P MidCap 400 & NASDAQ (Compendio Multimercato Globale)
   { symbol: 'CHTR', name: 'Charter Communications Inc.', cat: 'us_stock', exchange: 'NASDAQ', basePrice: 125.86, currency: '$', precision: 2, change24h: 4.67, volume24h: 4494649, sector: 'NASDAQ-100 • Telecomunicazioni' },
@@ -297,7 +297,51 @@ window.GlobalMarketAssets = [
   { symbol: 'PEPEUSDT', name: 'Pepe (Internet Culture High Beta)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00000980, currency: '$', precision: 8, change24h: 1.25, volume24h: 85000000, sector: 'Meme & Token di Comunità' },
   { symbol: 'BONKUSDT', name: 'Bonk (Meme Nativo Solana)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.00002250, currency: '$', precision: 8, change24h: 1.25, volume24h: 85000000, sector: 'Meme & Token di Comunità' },
   { symbol: 'WIFUSDT', name: 'dogwifhat (Solana Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.1652, currency: '$', precision: 4, change24h: -3.79, volume24h: 53882980.0, sector: 'Meme & Token di Comunità' },
-  { symbol: 'FLOKIUSDT', name: 'Floki (Gaming & Utility Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.000155, currency: '$', precision: 6, change24h: 1.25, volume24h: 85000000, sector: 'Meme & Token di Comunità' }
+  { symbol: 'FLOKIUSDT', name: 'Floki (Gaming & Utility Meme)', cat: 'crypto', exchange: 'OKX / Bybit', basePrice: 0.000155, currency: '$', precision: 6, change24h: 1.25, volume24h: 85000000, sector: 'Meme & Token di Comunità' },
+
+  // =========================================================================
+  // 4. BORSA FRANCESE — CAC 40 (EURONEXT PARIS)
+  // =========================================================================
+  { symbol: 'MC.PA', name: 'LVMH Moët Hennessy Louis Vuitton', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 402.45, currency: '€', precision: 2, change24h: 2.15, volume24h: 480000, sector: 'CAC 40 — Luxury Goods' },
+  { symbol: 'OR.PA', name: "L'Oréal S.A.", cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 446.80, currency: '€', precision: 2, change24h: 0.85, volume24h: 320000, sector: 'CAC 40 — Consumer & Beauty' },
+  { symbol: 'TTE.PA', name: 'TotalEnergies SE', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 78.75, currency: '€', precision: 2, change24h: -0.45, volume24h: 2850000, sector: 'CAC 40 — Energy & Oil' },
+  { symbol: 'AIR.PA', name: 'Airbus SE', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 162.40, currency: '€', precision: 2, change24h: 1.40, volume24h: 1250000, sector: 'CAC 40 — Aerospace & Defense' },
+  { symbol: 'RMS.PA', name: 'Hermès International', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 2145.00, currency: '€', precision: 2, change24h: 1.80, volume24h: 110000, sector: 'CAC 40 — Luxury Ultra' },
+  { symbol: 'SAN.PA', name: 'Sanofi S.A.', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 98.60, currency: '€', precision: 2, change24h: 0.35, volume24h: 1650000, sector: 'CAC 40 — Healthcare & Pharma' },
+  { symbol: 'BNP.PA', name: 'BNP Paribas S.A.', cat: 'fr_stock', exchange: 'Euronext Paris', basePrice: 72.80, currency: '€', precision: 2, change24h: 1.10, volume24h: 3100000, sector: 'CAC 40 — Banking & Financial' },
+
+  // =========================================================================
+  // 5. BORSA TEDESCA — DAX 40 (XETRA FRANKFURT)
+  // =========================================================================
+  { symbol: 'SAP.DE', name: 'SAP SE', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 211.65, currency: '€', precision: 2, change24h: 1.85, volume24h: 1950000, sector: 'DAX 40 — Enterprise Cloud Software' },
+  { symbol: 'SIE.DE', name: 'Siemens AG', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 271.00, currency: '€', precision: 2, change24h: 2.10, volume24h: 1450000, sector: 'DAX 40 — Industrial Tech' },
+  { symbol: 'ALV.DE', name: 'Allianz SE', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 457.00, currency: '€', precision: 2, change24h: 0.95, volume24h: 850000, sector: 'DAX 40 — Insurance & Asset Mgmt' },
+  { symbol: 'DTE.DE', name: 'Deutsche Telekom AG', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 31.85, currency: '€', precision: 2, change24h: 0.45, volume24h: 4200000, sector: 'DAX 40 — Telecoms' },
+  { symbol: 'MBG.DE', name: 'Mercedes-Benz Group AG', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 58.40, currency: '€', precision: 2, change24h: 1.25, volume24h: 2100000, sector: 'DAX 40 — Automotive' },
+  { symbol: 'BMW.DE', name: 'Bayerische Motoren Werke AG (BMW)', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 79.20, currency: '€', precision: 2, change24h: 1.10, volume24h: 1650000, sector: 'DAX 40 — Automotive' },
+  { symbol: 'BAYN.DE', name: 'Bayer AG', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 22.40, currency: '€', precision: 2, change24h: -1.20, volume24h: 3800000, sector: 'DAX 40 — Pharma & CropScience' },
+  { symbol: 'BAS.DE', name: 'BASF SE', cat: 'de_stock', exchange: 'XETRA Frankfurt', basePrice: 44.80, currency: '€', precision: 2, change24h: 0.70, volume24h: 2200000, sector: 'DAX 40 — Chemicals' },
+
+  // =========================================================================
+  // 6. BORSA INGLESE — FTSE 100 (LONDON STOCK EXCHANGE)
+  // =========================================================================
+  { symbol: 'SHEL.L', name: 'Shell plc', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 3701.00, currency: 'p', precision: 2, change24h: -0.58, volume24h: 8400000, sector: 'FTSE 100 — Energy' },
+  { symbol: 'AZN.L', name: 'AstraZeneca PLC', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 14066.00, currency: 'p', precision: 2, change24h: 0.98, volume24h: 1850000, sector: 'FTSE 100 — Pharmaceuticals' },
+  { symbol: 'HSBA.L', name: 'HSBC Holdings plc', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 1337.20, currency: 'p', precision: 2, change24h: 2.50, volume24h: 16200000, sector: 'FTSE 100 — Banking' },
+  { symbol: 'ULVR.L', name: 'Unilever PLC', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 4780.00, currency: 'p', precision: 2, change24h: 0.40, volume24h: 2400000, sector: 'FTSE 100 — Consumer Goods' },
+  { symbol: 'BP.L', name: 'BP p.l.c.', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 395.00, currency: 'p', precision: 2, change24h: -0.90, volume24h: 24000000, sector: 'FTSE 100 — Energy' },
+  { symbol: 'RIO.L', name: 'Rio Tinto Group', cat: 'uk_stock', exchange: 'London Stock Exchange', basePrice: 4980.00, currency: 'p', precision: 2, change24h: -0.30, volume24h: 1950000, sector: 'FTSE 100 — Mining' },
+
+  // =========================================================================
+  // 7. ASIA / BORSA ORIENTALE (TOKYO, KOREA, HONG KONG, TAIWAN)
+  // =========================================================================
+  { symbol: '7203.T', name: 'Toyota Motor Corporation', cat: 'asia_stock', exchange: 'Tokyo Stock Exchange', basePrice: 3491.00, currency: '¥', precision: 2, change24h: 4.58, volume24h: 28500000, sector: 'Asia — Automotive' },
+  { symbol: '6758.T', name: 'Sony Group Corporation', cat: 'asia_stock', exchange: 'Tokyo Stock Exchange', basePrice: 2850.00, currency: '¥', precision: 2, change24h: 1.85, volume24h: 12400000, sector: 'Asia — Tech & Entertainment' },
+  { symbol: '9984.T', name: 'SoftBank Group Corp.', cat: 'asia_stock', exchange: 'Tokyo Stock Exchange', basePrice: 9420.00, currency: '¥', precision: 2, change24h: 3.20, volume24h: 8400000, sector: 'Asia — Tech Investment' },
+  { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.', cat: 'asia_stock', exchange: 'Korea Exchange', basePrice: 58500.00, currency: '₩', precision: 2, change24h: 1.20, volume24h: 16800000, sector: 'Asia — Semis & Mobile' },
+  { symbol: '0700.HK', name: 'Tencent Holdings Limited', cat: 'asia_stock', exchange: 'Hong Kong Stock Exchange', basePrice: 418.40, currency: 'HK$', precision: 2, change24h: -0.33, volume24h: 22400000, sector: 'Asia — Internet & AI' },
+  { symbol: '9988.HK', name: 'Alibaba Group Holding Limited', cat: 'asia_stock', exchange: 'Hong Kong Stock Exchange', basePrice: 96.50, currency: 'HK$', precision: 2, change24h: 1.45, volume24h: 48500000, sector: 'Asia — E-commerce & Cloud' },
+  { symbol: 'TSM', name: 'Taiwan Semiconductor Manufacturing (TSMC)', cat: 'asia_stock', exchange: 'NYSE / Taiwan', basePrice: 195.50, currency: '$', precision: 2, change24h: 2.85, volume24h: 18400000, sector: 'Asia — Semiconductor Foundry' }
 ];
 
 // Commodity & Cross Aliases Mapping for Ultra-Accurate Search & Selection
@@ -424,12 +468,15 @@ window.getAssetBySymbol = function(symbol) {
 
   const cleanBare = s.replace('.MI', '').replace('/', '').replace('-PERP', '').replace('USDT', '').replace('=F', '').replace('=X', '');
 
-  // 1. Exact, Alias or Clean Match in GlobalMarketAssets
-  const found = window.GlobalMarketAssets.find(a => {
-    const aSym = a.symbol.toUpperCase();
-    const aBare = aSym.replace('.MI', '').replace('/', '').replace('USDT', '').replace('=F', '').replace('=X', '');
-    return aSym === s || aBare === cleanBare || aBare === bare || aSym === bare || aSym === `${cleanBare}.MI` || aSym.replace('.MI', '') === s;
-  });
+  // 1. Strict Exact Match First (Prevents US tickers like DIA from colliding with DIA.MI)
+  let found = window.GlobalMarketAssets.find(a => a.symbol.toUpperCase() === s);
+  if (!found) {
+    found = window.GlobalMarketAssets.find(a => {
+      const aSym = a.symbol.toUpperCase();
+      const aBare = aSym.replace('.MI', '').replace('/', '').replace('USDT', '').replace('=F', '').replace('=X', '');
+      return aBare === cleanBare || aBare === bare || aSym === bare || aSym === `${cleanBare}.MI`;
+    });
+  }
 
   if (found) {
     found.precision = window.getDynamicPrecision(found.basePrice, found.symbol);
