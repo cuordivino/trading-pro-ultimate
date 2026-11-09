@@ -1,0 +1,551 @@
+/* ==========================================================================
+   TRADING PRO ULTIMATE™ — INSTITUTIONAL PORTFOLIO MANAGEMENT CSS
+   © by cuordivino - Tutti i diritti riservati
+   ========================================================================== */
+
+.pf-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px 60px 20px;
+  box-sizing: border-box;
+}
+
+/* 1. Header Bar */
+.pf-glass-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 16px;
+  padding: 24px 28px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: 20px;
+}
+
+.pf-gold-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 20px;
+  padding: 3px 12px;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.pf-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.pf-subtext {
+  font-size: 13.5px;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 800px;
+  line-height: 1.5;
+}
+
+/* Mode Commutator (Demo vs Reale) */
+.pf-mode-commutator {
+  display: flex;
+  background: #030509;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 8px;
+}
+
+.pf-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.pf-mode-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pf-mode-btn.active-demo {
+  color: #00f2a1;
+  background: rgba(0, 242, 161, 0.16);
+  border-color: #00f2a1;
+  box-shadow: 0 0 14px rgba(0, 242, 161, 0.35);
+}
+
+.pf-mode-btn.active-live {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.16);
+  border-color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+}
+
+.pf-mode-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.pf-mode-dot.green { background: #00f2a1; box-shadow: 0 0 8px #00f2a1; }
+.pf-mode-dot.amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+
+/* 2. Action Bars */
+.pf-demo-actions-bar,
+.pf-live-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.pf-demo-actions-bar {
+  background: rgba(0, 242, 161, 0.08);
+  border: 1px solid rgba(0, 242, 161, 0.25);
+}
+
+.pf-live-actions-bar {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.pf-btn-preset {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pf-btn-preset:hover {
+  background: rgba(0, 242, 161, 0.2);
+  border-color: #00f2a1;
+  color: #00f2a1;
+}
+
+.pf-btn-action {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pf-btn-action:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+.pf-btn-action.gold {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #000;
+  font-weight: 900;
+}
+
+/* 3. Telemetry Metrics HUD */
+.pf-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.pf-metric-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px;
+  backdrop-filter: blur(8px);
+}
+
+.pf-met-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.pf-met-val {
+  font-size: 22px;
+  font-weight: 900;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  color: #fff;
+  margin-bottom: 4px;
+}
+.pf-met-val.cyan { color: #38bdf8; }
+.pf-met-val.green { color: #00f2a1; }
+.pf-met-val.red { color: #f43f5e; }
+.pf-met-val.gold { color: #ffd700; }
+
+.pf-met-sub {
+  font-size: 11px;
+  font-weight: 700;
+}
+.pf-met-sub.green { color: #00f2a1; }
+.pf-met-sub.red { color: #f43f5e; }
+.pf-met-sub.neutral { color: #94a3b8; }
+
+/* 4. Export PDF Banner */
+.pf-export-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(30, 41, 59, 0.6));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 14px;
+  padding: 16px 22px;
+  margin-bottom: 24px;
+}
+
+.pf-pdf-icon {
+  font-size: 26px;
+  background: rgba(14, 165, 233, 0.2);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.pf-btn-download-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
+  transition: all 0.2s ease;
+}
+.pf-btn-download-pdf:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+}
+
+/* 5. Visual Charts Sector */
+.pf-visual-charts-sector {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.pf-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 18px;
+  box-sizing: border-box;
+  grid-column: span 6;
+}
+
+.pf-card-wide {
+  grid-column: span 12;
+}
+
+.pf-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.pf-card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.06em;
+}
+
+.pf-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin: 3px 0 0 0;
+}
+
+.pf-card-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+.pf-card-badge.green { background: rgba(0, 242, 161, 0.15); color: #00f2a1; border: 1px solid #00f2a1; }
+.pf-card-badge.red { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid #f43f5e; }
+.pf-card-badge.blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+
+.pf-canvas-wrapper {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.pf-canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.pf-chart-legend-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pf-leg-item {
+  font-size: 11.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.pf-dot.cyan { background: #0ea5e9; }
+.pf-dot.gold { background: #ffd700; }
+.pf-dot.grey { background: #64748b; }
+
+.pf-donut-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.pf-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.pf-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-right: 6px;
+}
+.pf-legend-label {
+  color: #cbd5e1;
+  flex: 1;
+}
+.pf-legend-val {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  color: #fff;
+}
+
+/* 6. Tabs & Tables */
+.pf-tabs-container {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.pf-subtabs-nav {
+  display: flex;
+  background: rgba(11, 17, 32, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.pf-subtab-btn {
+  padding: 14px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.pf-subtab-btn:hover {
+  color: #fff;
+}
+.pf-subtab-btn.active {
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.pf-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.pf-table th {
+  background: rgba(11, 17, 32, 0.6);
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pf-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+.pf-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pf-pill-type {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+}
+.pf-pill-type.buy { background: rgba(0, 242, 161, 0.15); color: #00f2a1; border: 1px solid rgba(0, 242, 161, 0.4); }
+.pf-pill-type.sell { background: rgba(244, 63, 94, 0.15); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4); }
+
+.pf-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.pf-status-badge.win { background: rgba(0, 242, 161, 0.15); color: #00f2a1; }
+.pf-status-badge.loss { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
+
+.pf-btn-table-close {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #f43f5e;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pf-btn-table-close:hover {
+  background: #f43f5e;
+  color: #fff;
+}
+
+/* 7. Brokers Grid */
+.pf-brokers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.pf-broker-card {
+  background: rgba(11, 17, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.pf-badge-live {
+  font-size: 10px;
+  font-weight: 800;
+  color: #00f2a1;
+  background: rgba(0, 242, 161, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pf-broker-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 10px;
+}
+
+.pf-btn-small {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.pf-btn-small.outline {
+  background: transparent;
+  color: #94a3b8;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+  .pf-card {
+    grid-column: span 12;
+  }
+  .pf-glass-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .pf-mode-commutator {
+    width: 100%;
+  }
+  .pf-mode-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

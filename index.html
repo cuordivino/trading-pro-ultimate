@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -69,6 +69,8 @@
   <link rel="stylesheet" href="css/master-suite.css?v=4">
 
   <link rel="stylesheet" href="css/supreme-suite.css">
+  <link rel="stylesheet" href="css/portfolio.css">
+  <link rel="stylesheet" href="css/news_newspaper.css">
 </head>
 <body>
 
@@ -177,6 +179,9 @@
       <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
         <span>📈</span> Terminale
       </button>
+      <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-portfolio-manager" onclick="switchMainTab('tab-portfolio-manager', this); if(window.PortfolioEngine) PortfolioEngine.renderPortfolioSector();" style="border-color:#00f2a1; color:#00f2a1; font-weight:800; background:rgba(0, 242, 161, 0.15); box-shadow:0 0 14px rgba(0, 242, 161, 0.4);">
+        <span>💼</span> Gestione Portafoglio (Demo & Reale)
+      </button>
       <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-supreme-suite" onclick="switchMainTab('tab-supreme-suite', this)" style="border-color:#f59e0b; color:#fbbf24; font-weight:800; background:rgba(245, 158, 11, 0.14); box-shadow:0 0 12px rgba(245, 158, 11, 0.35);">
         <span>🤖</span> Supreme Suite & 5 Agenti IA
       </button>
@@ -229,8 +234,8 @@
 
     <!-- RIGHT STATUS ACTIONS -->
     <div class="header-right-actions">
-      <button id="tab-demo-btn" class="account-tab active-demo" onclick="if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('demo')" title="Conto Demo Istituzionale €30,000" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(0,242,161,0.15); border:1px solid #00f2a1; color:#00f2a1;">🟢 Demo €30k</button>
-      <button id="tab-live-btn" class="account-tab" onclick="if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('live')" title="Conto Reale Multi-Broker API" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24;">🔒 Reale Live</button>
+      <button id="tab-demo-btn" class="account-tab active-demo" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('demo'); if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('demo');" title="Conto Demo Istituzionale €30,000" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(0,242,161,0.15); border:1px solid #00f2a1; color:#00f2a1;">🟢 Demo €30k</button>
+      <button id="tab-live-btn" class="account-tab" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('live'); if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('live');" title="Conto Reale Multi-Broker API" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24;">🔒 Reale Live</button>
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:#00f2a1; color:#00f2a1; cursor:pointer;" onclick="if(window.ApiManager) ApiManager.openModal()" title="Gestione Connessione API Broker (OKX, Bybit, Kraken, Telegram)">
         🔑 API Broker
       </button>
@@ -351,6 +356,11 @@
         <!-- TAB: MARKET QUANTUM CO-PILOT (COMMERCIAL MULTI-AGENT QUANTUM SUITE) -->
     <div id="tab-market-quantum" class="view-panel">
       <div id="market-quantum-container"></div>
+    </div>
+
+    <!-- DEDICATED INSTITUTIONAL PORTFOLIO MANAGEMENT HUB (DEMO €30,000 & CONTO REALE LIVE API) -->
+    <div id="tab-portfolio-manager" class="view-panel">
+      <!-- Injected via portfolio_engine.js: PortfolioEngine.renderPortfolioSector() -->
     </div>
 
     <div id="tab-terminal" class="view-panel active">
@@ -2799,5 +2809,7 @@
 
   <script src="js/supreme-suite.js"></script>
   <script src="js/timesfm_engine.js"></script>
+  <script src="js/portfolio_engine.js"></script>
+  <script src="js/news_newspaper_engine.js"></script>
 </body>
 </html>

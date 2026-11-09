@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    CHART.JS - LightweightCharts Pro Integration V3 (Sector & Institutional)
    Candlesticks + VWAP + EMA 9/21/200 + Bollinger Bands + Parabolic SAR
    Panel 1: Volume Vertical Bars + Volume 20 Moving Average

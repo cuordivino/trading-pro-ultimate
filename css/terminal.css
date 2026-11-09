@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    APEX TRADING PRO ULTIMATE × INVESTOR SKILLS AI
    Sviluppato e Ideato da cuordivino - Tutti i Diritti Riservati © 2024-2026
    Futuristic Institutional Financial Terminal - V3 Master Edition
@@ -2659,7 +2659,10 @@ input:checked + .slider-toggle:before { transform: translateX(14px); }
     overflow: hidden !important;
   }
 
-  #chart-container {\n    height: 100% !important;\n    width: 100% !important;\n  }
+  #chart-container {
+    height: 100% !important;
+    width: 100% !important;
+  }
 
   #chart-volume-pane {
     height: 75px !important;
@@ -8877,7 +8880,9 @@ body, html, input, select, button, textarea {
 
   /* 2. DEDICATED MASSIVE CANDLESTICK CHART */
   .chart-viewport-wrapper {
-    height: 390px !important;\n    min-height: 360px !important;\n    max-height: 52vh !important;
+    height: 390px !important;
+    min-height: 360px !important;
+    max-height: 52vh !important;
     width: 100% !important;
     position: relative !important;
     overflow: hidden !important;

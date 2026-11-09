@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TRADING PRO ULTIMATE — DRAWING ENGINE
  * Professional TradingView-Style Interactive Drawing Tools
  * Supports: Crosshair, Trendline, Horizontal Ray, Fibonacci Retracement,
@@ -53,8 +53,6 @@ window.DrawingEngine = {
     document.querySelectorAll('.tv-tool-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tool === tool);
     });
-
-    const overlay = document.getElementById('tv-drawing-canvas');
     if (overlay) {
       overlay.style.cursor = tool === 'crosshair' ? 'crosshair' : (tool === 'brush' ? 'crosshair' : 'crosshair');
     }

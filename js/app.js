@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    APP.JS - Master Application Controller V2 Pro (Hybrid Cloud/Static)
    Dropdowns Engine, Window Systems, Telemetry, Mega-Search
    ========================================================================== */
@@ -120,6 +120,7 @@ function toggleDrawer(id) {
 // TOP CHAPTER DROPDOWN NAVIGATION ("APERTURA A TENDINA IN ALTO")
 // ==========================================================================
 const CHAPTER_META = {
+  'tab-portfolio-manager': { icon: '💼', title: 'Gestione Portafoglio Istituzionale (Demo €30k & Reale API Multi-Broker)' },
   'tab-market-quantum': { icon: '⚡', title: 'Market Quantum Co-Pilot (Multi-Agent & Risk)' },
   'tab-supreme-suite': { icon: '🤖', title: 'Supreme Suite & 5 Agenti IA (Conti Demo/Live & Connettori Broker)' },
   'tab-terminal': { icon: '📈', title: 'Terminale Pro (Grafico Candele & Ordini)' },
@@ -205,7 +206,9 @@ function switchMainTab(tabId, btnElem) {
   }
 
   // Trigger chapter renders
-  if (tabId === 'tab-market-quantum' && window.MarketQuantumEngine) {
+  if (tabId === 'tab-portfolio-manager' && window.PortfolioEngine) {
+    PortfolioEngine.renderPortfolioSector();
+  } else if (tabId === 'tab-market-quantum' && window.MarketQuantumEngine) {
     MarketQuantumEngine.renderCockpit();
   } else if ((tabId === 'tab-casario-quant' || tabId === 'tab-model-portfolios' || tabId === 'tab-macro-radar') && window.CasarioQuantEngine) {
     CasarioQuantEngine.renderUI();

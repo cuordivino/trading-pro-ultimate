@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TRADING PRO ULTIMATE™ × cuordivino — MASTERPIECE COMPLETE SUITE ENGINE (v4.2)
  * Full-Chain Sequential Flow, MotionSites Liquid Glass 2026, and 5 Autonomous AI Agents Ensemble.
  * Signature: © La_mEnte_arDente / cuordivino — Tutti i diritti riservati.
@@ -542,6 +542,10 @@
 
     root.appendChild(wrapper);
     renderProfileView("prudente");
+
+    if (window.NewspaperEngine && typeof window.NewspaperEngine.renderNewspaperSection === "function") {
+      window.NewspaperEngine.renderNewspaperSection();
+    }
 
     // Bind profile clicks
     wrapper.querySelectorAll(".profile-tab-btn").forEach(btn => {

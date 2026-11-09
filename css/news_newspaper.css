@@ -1,0 +1,399 @@
+/**
+ * TRADING PRO ULTIMATE™ — cuordivino — AUTOMATED 6-HOUR AI NEWSPAPER & ARCHIVE STYLESHEET
+ * High-end institutional financial newspaper styling, countdown ticker,
+ * audio briefing player, 30-day historical archive cards and responsive layouts.
+ */
+
+.np-main-card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(7, 10, 18, 0.98)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 14px !important;
+  padding: 24px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.08) !important;
+  color: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+.np-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 20px;
+  margin-bottom: 22px;
+}
+
+.np-badge-progress {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 242, 161, 0.15);
+  border: 1px solid rgba(0, 242, 161, 0.4);
+  color: #00f2a1;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.np-badge-agent {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.np-main-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 10px 0 6px 0;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.np-edition-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.np-edition-meta b {
+  color: #f1f5f9;
+}
+
+/* 6-HOUR COUNTDOWN TICKER BOX */
+.np-countdown-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.12);
+  border-radius: 10px;
+  padding: 12px 18px;
+  text-align: right;
+  min-width: 250px;
+}
+
+.np-cd-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.np-cd-timer {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  margin: 4px 0 2px 0;
+  letter-spacing: 1px;
+}
+
+.np-cd-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* AUDIO BRIEFING PLAYER */
+.audio-briefing-player {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+}
+
+.audio-play-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00f2a1, #0284c7);
+  border: none;
+  color: #000;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 242, 161, 0.35);
+  flex-shrink: 0;
+}
+
+.audio-play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 242, 161, 0.5);
+}
+
+.audio-wave-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.audio-wave-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00f2a1, #38bdf8);
+  border-radius: 3px;
+  transition: width 0.15s linear;
+}
+
+/* HEADLINE CARD / FIRST PAGE */
+.np-headline-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.np-tag-headline {
+  display: inline-block;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.np-headline-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  line-height: 1.35;
+}
+
+.np-headline-summary {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.np-btn-export-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(30, 58, 138, 0.3));
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.np-btn-export-pdf:hover {
+  background: rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ALPHA SETUP BOX */
+.np-alpha-setup-box {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(0, 242, 161, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.np-setup-levels {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.np-setup-levels b {
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ARCHIVE SECTION & GRID */
+.np-archive-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 24px;
+  margin-top: 30px;
+}
+
+.np-archive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.np-search-box input {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 9px 16px;
+  font-size: 12.5px;
+  width: 280px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.np-search-box input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.np-archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.np-archive-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.np-archive-card:hover {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.np-archive-card.active-edition {
+  border-color: #00f2a1;
+  background: rgba(0, 242, 161, 0.05);
+}
+
+.np-archive-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.np-card-number {
+  font-weight: 800;
+  font-size: 12px;
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.np-card-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.np-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.np-card-summary {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.np-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.np-btn-card-action {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #cbd5e1;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.np-btn-card-action:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+/* RESPONSIVE ADAPTATIONS */
+@media (max-width: 768px) {
+  .np-main-card {
+    padding: 16px !important;
+  }
+  .np-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .np-countdown-box {
+    text-align: left;
+    min-width: unset;
+  }
+  .np-cd-label {
+    justify-content: flex-start;
+  }
+  .np-archive-grid {
+    grid-template-columns: 1fr;
+  }
+  .np-search-box input {
+    width: 100%;
+  }
+}
