@@ -121,6 +121,7 @@ function toggleDrawer(id) {
 // ==========================================================================
 const CHAPTER_META = {
   'tab-market-quantum': { icon: '⚡', title: 'Market Quantum Co-Pilot (Multi-Agent & Risk)' },
+  'tab-supreme-suite': { icon: '🤖', title: 'Supreme Suite & 5 Agenti IA (Conti Demo/Live & Connettori Broker)' },
   'tab-terminal': { icon: '📈', title: 'Terminale Pro (Grafico Candele & Ordini)' },
   'tab-model-portfolios': { icon: '💼', title: 'Portafogli Modello & Gestiti (IA) — Conservativo, Bilanciato, Crescita' },
   'tab-macro-radar': { icon: '🌐', title: 'Panoramica Macro e Mercati (Regimi, Sentiment, Radar a Tendine)' },
@@ -548,6 +549,10 @@ async function pollActiveQuote() {
     if (slInput) slInput.value = (q.price * 0.97).toFixed(prec);
     if (tpInput) tpInput.value = (q.price * 1.06).toFixed(prec);
     recalcPosition();
+  }
+
+  if (window.onRealtimePriceTick && q && q.price) {
+    try { window.onRealtimePriceTick(q.price, q.volume); } catch(e) {}
   }
 }
 

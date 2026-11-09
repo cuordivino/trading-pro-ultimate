@@ -490,6 +490,96 @@ def calculate_quantum_size():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ==========================================
+# GOOGLE RESEARCH TIMESFM FOUNDATION ENDPOINTS
+# ==========================================
+try:
+    from timesfm_service import timesfm_service
+except Exception as e:
+    print(f"[*] Notice: timesfm_service import error: {e}")
+    timesfm_service = None
+
+@app.route('/api/timesfm/forecast', methods=['POST'])
+def api_timesfm_forecast():
+    """
+    Executes Google TimesFM Zero-Shot Foundation Model Time Series Forecasting.
+    Payload: { candles: [...], horizon: 24, freq: '15m', quantiles: [0.1..0.9] }
+    """
+    if not timesfm_service:
+        return jsonify({'success': False, 'error': 'TimesFM service not available'}), 503
+    try:
+        data = request.get_json() or {}
+        candles = data.get('candles', [])
+        horizon = int(data.get('horizon', 24))
+        freq = str(data.get('freq', '15m'))
+        quantiles = data.get('quantiles', None)
+
+        if not candles and 'symbol' in data:
+            sym = data['symbol']
+            candles = market_data.get_candles(sym, timeframe=freq, limit=min(512, horizon * 10))
+
+        result = timesfm_service.forecast_timeseries(candles, horizon=horizon, freq=freq, quantiles=quantiles)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/timesfm/strategy', methods=['POST', 'GET'])
+def api_timesfm_strategy():
+    """
+    Generates Optimal Investment Strategy & Sizing derived from TimesFM Predictions.
+    Payload/Params: { symbol: 'BTCUSDT', candles: [...], horizon: 24, freq: '15m', capital: 30000.0, risk_pct: 1.5 }
+    """
+    if not timesfm_service:
+        return jsonify({'success': False, 'error': 'TimesFM service not available'}), 503
+    try:
+        if request.method == 'POST':
+            data = request.get_json() or {}
+        else:
+            data = request.args.to_dict()
+
+        sym = data.get('symbol', 'BTCUSDT')
+        horizon = int(data.get('horizon', 24))
+        freq = str(data.get('freq', '15m'))
+        capital = float(data.get('capital', 30000.0))
+        risk_pct = float(data.get('risk_pct', 1.5))
+        candles = data.get('candles', [])
+
+        if not candles:
+            candles = market_data.get_candles(sym, timeframe=freq, limit=min(512, horizon * 10))
+
+        strategy = timesfm_service.generate_strategy(
+            candles=candles,
+            symbol=sym,
+            horizon=horizon,
+            freq=freq,
+            capital=capital,
+            risk_pct=risk_pct
+        )
+        return jsonify(strategy)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/timesfm/bigquery_sql', methods=['GET'])
+def api_timesfm_bigquery_sql():
+    """Returns official BigQuery ML SQL template for TimesFM deployment."""
+    if not timesfm_service:
+        return jsonify({'success': False, 'error': 'TimesFM service not available'}), 503
+    try:
+        sym = request.args.get('symbol', 'BTCUSDT')
+        horizon = int(request.args.get('horizon', 48))
+        freq = request.args.get('freq', '15m')
+        sql = timesfm_service.generate_bigquery_sql(sym, horizon, freq)
+        return jsonify({
+            "success": True,
+            "symbol": sym,
+            "horizon": horizon,
+            "freq": freq,
+            "bigquery_sql": sql
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"[*] Starting Trading Pro Ultimate + InvestorSkills AI on port {port}...")

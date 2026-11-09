@@ -41,6 +41,17 @@ let aroonSeries = null;
 let adxSeries = null;
 let activeMomentumMode = 'rsi'; // 'rsi' | 'macd' | 'aroon' | 'adx'
 
+// Sub-chart Panel 3: Oscillatore 2 (Williams %R, KDJ, CCI, Stocastico Lento, MACD Hist)
+let sub2Chart = null;
+let sub2Series = null;
+let sub2Series2 = null;
+let sub2HistSeries = null;
+let activeSub2Mode = 'wr';
+let activeSub2Period = 14;
+let maxPriceLine = null;
+let minPriceLine = null;
+let isMultiChartSyncAttached = false;
+
 // Multi-chart synchronization guard
 let isSyncingRange = false;
 
@@ -3294,16 +3305,8 @@ if (document.readyState === 'loading') {
 // TRADING PRO ULTIMATE™ © by cuordivino - Tutti i diritti riservati
 // =============================================================================
 
-let maxPriceLine = null;
-let minPriceLine = null;
-let sub2Chart = null;
-let sub2Series = null;
-let sub2Series2 = null;
-let sub2HistSeries = null;
-let activeSub2Mode = 'wr';
-let activeSub2Period = 14;
+// (sub2 & high/low variables declared at top of chart.js to prevent TDZ ReferenceErrors)
 
-// 1. DYNAMIC HIGH & LOW PRICE MARKERS (Massimo e Minimo del Frame di Tempo)
 function updateVisibleHighLowMarkers(candles) {
   if (!candleSeries || !candles || candles.length === 0) return;
   try {
@@ -3636,11 +3639,18 @@ window.BybitMacroCalendar = {
 
 // 5. SUB-PANEL 2 (Oscillatore 2 / Parametri Settabili) INITIALIZATION & LOGIC
 function initSub2Pane() {
+  const pane = document.getElementById('chart-sub2-pane');
   const container = document.getElementById('chart-sub2-canvas');
   if (!container || !window.LightweightCharts || sub2Chart) return;
 
+  const w = container.clientWidth || (pane ? pane.clientWidth : 800) || 800;
+  const paneH = (pane ? (pane.clientHeight || parseInt(pane.style.height, 10)) : 90) || 90;
+  const h = Math.max(45, paneH - 26);
+
   container.innerHTML = '';
   sub2Chart = LightweightCharts.createChart(container, {
+    width: w,
+    height: h,
     layout: { background: { color: '#070a12' }, textColor: '#64748b', fontSize: 10 },
     localization: {
       locale: 'it-IT',
@@ -3692,7 +3702,7 @@ function initSub2Pane() {
 
   sub2HistSeries = sub2Chart.addHistogramSeries({
     priceFormat: { type: 'volume' },
-    priceScaleId: '',
+    priceScaleId: 'right',
     lastValueVisible: true,
     priceLineVisible: false
   });
@@ -3921,3 +3931,168 @@ function renderCurrentSub2Data(candles) {
       }
     });
   }
+
+// ==========================================
+// REAL-TIME SIMULTANEOUS CHART PRICE TICK SYNCHRONIZER
+// Guarantees candlestick chart, volume, legend and price line
+// update synchronously in 0ms latency with Bybit ticks & WebSocket
+// ==========================================
+function onRealtimePriceTick(price, volume, timestamp) {
+  price = parseFloat(price);
+  if (!price || isNaN(price) || price <= 0) return;
+  if (!candleSeries || !window.currentCandles || !window.currentCandles.length) return;
+
+  const tf = window.activeTimeframe || '15m';
+  const tfSec = typeof getTimeframeSeconds === 'function' ? getTimeframeSeconds(tf) : 900;
+  const nowSec = timestamp ? Math.floor(timestamp / 1000) : Math.floor(Date.now() / 1000);
+  const candlePeriodStart = Math.floor(nowSec / tfSec) * tfSec;
+
+  const lastIdx = window.currentCandles.length - 1;
+  const lastCandle = window.currentCandles[lastIdx];
+  if (!lastCandle) return;
+
+  let updatedCandle = null;
+
+  if (candlePeriodStart <= lastCandle.time) {
+    // Current in-progress candle
+    lastCandle.high = Math.max(lastCandle.high, price);
+    lastCandle.low = Math.min(lastCandle.low, price);
+    lastCandle.close = price;
+    if (volume) lastCandle.volume = (lastCandle.volume || 0) + parseFloat(volume);
+    updatedCandle = {
+      time: lastCandle.time,
+      open: lastCandle.open,
+      high: lastCandle.high,
+      low: lastCandle.low,
+      close: lastCandle.close
+    };
+  } else {
+    // New candle period rolled over!
+    const newCandle = {
+      time: candlePeriodStart,
+      open: price,
+      high: price,
+      low: price,
+      close: price,
+      volume: volume ? parseFloat(volume) : 0.1
+    };
+    window.currentCandles.push(newCandle);
+    window.currentChartCandles = window.currentCandles;
+    window.lastReceivedCandles = window.currentCandles;
+    updatedCandle = {
+      time: newCandle.time,
+      open: newCandle.open,
+      high: newCandle.high,
+      low: newCandle.low,
+      close: newCandle.close
+    };
+  }
+
+  try {
+    candleSeries.update(updatedCandle);
+  } catch(e) {}
+
+  // Update volume histogram simultaneously
+  if (volumeHistogramSeries) {
+    try {
+      const volVal = lastCandle.volume || 10;
+      const isUp = lastCandle.close >= lastCandle.open;
+      volumeHistogramSeries.update({
+        time: lastCandle.time,
+        value: volVal,
+        color: isUp ? 'rgba(0, 242, 161, 0.7)' : 'rgba(244, 63, 94, 0.7)'
+      });
+    } catch(e) {}
+  }
+
+  // Update on-chart legend in real time (OHLC and percentages)
+  try {
+    if (typeof updateChartLegend === 'function') {
+      updateChartLegend(lastCandle);
+    }
+  } catch(e) {}
+
+  window.currentLivePrice = price;
+  window.activePrice = price;
+
+  // Real-time synchronization of top badges
+  const topPriceEl = document.getElementById('bybit-top-price');
+  const sym = window.currentSymbol || 'BTCUSDT';
+  const asset = window.getAssetBySymbol ? window.getAssetBySymbol(sym) : null;
+  const defaultCurr = (sym.endsWith('.MI') || (asset && asset.cat === 'eu_stock')) ? '€' : ((asset && asset.currency) ? asset.currency : '$');
+  const prec = window.getDynamicPrecision ? window.getDynamicPrecision(price, sym) : (asset ? (asset.precision || 2) : 2);
+  if (topPriceEl) {
+    topPriceEl.innerText = `${defaultCurr}${price.toLocaleString(undefined, { minimumFractionDigits: prec, maximumFractionDigits: prec })}`;
+  }
+
+  // Throttle subpane indicator updates to prevent UI stutter
+  if (!window._subpaneTickTimer) {
+    window._subpaneTickTimer = setTimeout(() => {
+      window._subpaneTickTimer = null;
+      try {
+        if (typeof renderCurrentSub2Data === 'function') {
+          renderCurrentSub2Data(window.currentCandles);
+        }
+      } catch(e) {}
+    }, 250);
+  }
+}
+
+function onRealtimeKlineUpdate(klineData) {
+  if (!klineData || !candleSeries || !window.currentCandles || !window.currentCandles.length) return;
+  const startSec = Math.floor(parseInt(klineData.start, 10) / 1000);
+  if (!startSec || isNaN(startSec)) return;
+
+  const o = parseFloat(klineData.open);
+  const h = parseFloat(klineData.high);
+  const l = parseFloat(klineData.low);
+  const c = parseFloat(klineData.close);
+  const v = parseFloat(klineData.volume) || 0;
+
+  const lastIdx = window.currentCandles.length - 1;
+  const lastCandle = window.currentCandles[lastIdx];
+
+  const candObj = { time: startSec, open: o, high: h, low: l, close: c, volume: v };
+
+  if (lastCandle && startSec === lastCandle.time) {
+    window.currentCandles[lastIdx] = candObj;
+  } else if (lastCandle && startSec > lastCandle.time) {
+    window.currentCandles.push(candObj);
+  }
+
+  window.currentChartCandles = window.currentCandles;
+  window.lastReceivedCandles = window.currentCandles;
+
+  try {
+    candleSeries.update({ time: startSec, open: o, high: h, low: l, close: c });
+  } catch(e) {}
+
+  if (volumeHistogramSeries) {
+    try {
+      volumeHistogramSeries.update({
+        time: startSec,
+        value: v,
+        color: c >= o ? 'rgba(0, 242, 161, 0.7)' : 'rgba(244, 63, 94, 0.7)'
+      });
+    } catch(e) {}
+  }
+
+  try {
+    if (typeof updateChartLegend === 'function') {
+      updateChartLegend(candObj);
+    }
+  } catch(e) {}
+
+  window.currentLivePrice = c;
+  window.activePrice = c;
+}
+
+window.onRealtimePriceTick = onRealtimePriceTick;
+window.onRealtimeKlineUpdate = onRealtimeKlineUpdate;
+
+
+// Global window exposure for sub2 oscillator controls
+window.setSub2Mode = setSub2Mode;
+window.updateSub2Param = updateSub2Param;
+window.initSub2Pane = initSub2Pane;
+window.renderCurrentSub2Data = renderCurrentSub2Data;

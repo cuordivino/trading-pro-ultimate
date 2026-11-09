@@ -8997,3 +8997,59 @@ body, html, input, select, button, textarea {
   position: relative !important;
   box-sizing: border-box !important;
 }
+
+
+/* ==========================================================================
+   BOOK-UNDER WIDE CHART EXPANSION & ZERO-GAP RULES
+   ========================================================================== */
+.bybit-terminal-grid.book-under {
+  grid-template-columns: 1fr 10px 340px !important;
+}
+.bybit-terminal-grid.book-under .slot-book-lateral,
+.bybit-terminal-grid.book-under #splitter-col-1-2 {
+  display: none !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.bybit-terminal-grid.book-under #bybit-chart-column-wrap {
+  grid-column: 1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.bybit-terminal-grid.book-under #splitter-col-2-3 {
+  grid-column: 2 !important;
+  display: flex !important;
+}
+.bybit-terminal-grid.book-under #bb-col-order {
+  grid-column: 3 !important;
+}
+
+/* MOBILE HEADER & COMPACT HEIGHT CONTROLS */
+@media (max-width: 860px) {
+  .subpane-header-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    padding: 0 4px !important;
+  }
+  .pane-height-controls {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+  .pane-height-controls .btn-pane-h {
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+  }
+}

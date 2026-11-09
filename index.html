@@ -68,6 +68,7 @@
   <link rel="stylesheet" href="css/terminal.css?v=2.9.0">
   <link rel="stylesheet" href="css/master-suite.css?v=4">
 
+  <link rel="stylesheet" href="css/supreme-suite.css">
 </head>
 <body>
 
@@ -176,6 +177,9 @@
       <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
         <span>📈</span> Terminale
       </button>
+      <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-supreme-suite" onclick="switchMainTab('tab-supreme-suite', this)" style="border-color:#f59e0b; color:#fbbf24; font-weight:800; background:rgba(245, 158, 11, 0.14); box-shadow:0 0 12px rgba(245, 158, 11, 0.35);">
+        <span>🤖</span> Supreme Suite & 5 Agenti IA
+      </button>
             <button class="tab-nav-btn ai-glow highlight-portfolio-nav" data-tab="tab-market-quantum" onclick="switchMainTab('tab-market-quantum', this); if(window.MarketQuantumEngine) MarketQuantumEngine.renderCockpit();" style="border-color:#06b6d4; color:#06b6d4; font-weight:800; background:rgba(6, 182, 212, 0.12); box-shadow:0 0 12px rgba(6, 182, 212, 0.35);">
         <span>⚡</span> Market Quantum Co-Pilot
       </button>
@@ -225,6 +229,8 @@
 
     <!-- RIGHT STATUS ACTIONS -->
     <div class="header-right-actions">
+      <button id="tab-demo-btn" class="account-tab active-demo" onclick="if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('demo')" title="Conto Demo Istituzionale €30,000" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(0,242,161,0.15); border:1px solid #00f2a1; color:#00f2a1;">🟢 Demo €30k</button>
+      <button id="tab-live-btn" class="account-tab" onclick="if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('live')" title="Conto Reale Multi-Broker API" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24;">🔒 Reale Live</button>
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:#00f2a1; color:#00f2a1; cursor:pointer;" onclick="if(window.ApiManager) ApiManager.openModal()" title="Gestione Connessione API Broker (OKX, Bybit, Kraken, Telegram)">
         🔑 API Broker
       </button>
@@ -626,6 +632,14 @@
 
               <button type="button" class="btn-tune-macro" id="btn-toggle-forecast-cone" style="background:rgba(56,189,248,0.15); border-color:#38bdf8; color:#38bdf8; font-weight:700;" onclick="if(window.OrderFlowEngine) OrderFlowEngine.toggleForecastCone()" title="Mostra Previsione &amp; Ventaglio Proiettivo (Forecast Cone)">
                 <span>🎯</span> Mostra previsione
+              </button>
+
+              <button type="button" class="btn-tune-macro" id="btn-timesfm-forecast" style="background:rgba(14,165,233,0.18); border-color:#0ea5e9; color:#38bdf8; font-weight:700;" onclick="if(window.TimesFMEngine) TimesFMEngine.toggleForecast()" title="Google TimesFM Previsione Quantili (Q10..Q90)">
+                <span>🤖</span> TimesFM Forecast
+              </button>
+
+              <button type="button" class="btn-tune-macro" id="btn-timesfm-strat" style="background:rgba(0,242,161,0.15); border-color:#00f2a1; color:#00f2a1; font-weight:700;" onclick="if(window.TimesFMEngine) TimesFMEngine.openStrategyModal()" title="Strategia di Investimento Ottimale Google TimesFM">
+                <span>📈</span> TimesFM Strategia
               </button>
 
 
@@ -1925,7 +1939,171 @@
       </div>
     </div>
 
-  </main>
+  
+    <!-- SUPREME SUITE & 5 AUTONOMOUS AI AGENTS VIEW PANEL -->
+    <div id="tab-supreme-suite" class="view-panel">
+      <div class="tpu-flow-container" style="max-width:1300px; margin:0 auto; padding:20px;">
+        <div class="tpu-glass-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div>
+              <span class="gold-badge">⚡ TRADING PRO ULTIMATE™ • SUPREME SUITE v8.0</span>
+              <h2 style="font-size:24px; font-weight:900; color:#fff; margin:8px 0 4px 0;">Terminale Istituzionale, 5 Agenti IA & Multi-Broker API</h2>
+              <p style="font-size:13px; color:#94a3b8; margin:0;">Conto Demo da €30.000 precaricato, Conto Reale protetto con connessione API diretta e Schiera di 5 Agenti IA Autonomi h24.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button onclick="if(window.TimesFMEngine) TimesFMEngine.openStrategyModal()" class="cinematic-cta-btn" style="padding:10px 18px; font-size:12px; background:linear-gradient(135deg, #0ea5e9, #0284c7); color:#fff; border-radius:8px; border:none; cursor:pointer; font-weight:800;">
+                🤖 Strategia Google TimesFM
+              </button>
+              <button onclick="switchMainTab('tab-terminal')" style="padding:10px 18px; font-size:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; cursor:pointer; font-weight:700;">
+                📈 Torna al Grafico
+              </button>
+            </div>
+          </div>
+
+          <!-- Dual Account Switcher Bar -->
+          <div class="account-switch-bar" style="display:flex; gap:12px; margin-bottom:20px;">
+            <button id="tab-demo-btn-panel" class="account-tab active-demo" onclick="TPUSupremeAccounts.switchMode('demo')" style="flex:1; padding:14px; font-size:14px; font-weight:800; border-radius:10px; cursor:pointer;">
+              🟢 Conto DEMO (€30.000.00)
+            </button>
+            <button id="tab-live-btn-panel" class="account-tab" onclick="TPUSupremeAccounts.switchMode('live')" style="flex:1; padding:14px; font-size:14px; font-weight:800; border-radius:10px; cursor:pointer;">
+              🔒 Conto REALE (Multi-Broker API Live)
+            </button>
+          </div>
+
+          <!-- Live Authentication Box (Hidden by default) -->
+          <div id="live-auth-container" style="display:none; background:rgba(245,158,11,0.08); border:1px solid #f59e0b; border-radius:14px; padding:20px; margin-bottom:24px;">
+            <h3 style="color:#fbbf24; font-size:16px; margin:0 0 8px 0;">Autenticazione Conto Reale Istituzionale</h3>
+            <p style="font-size:13px; color:#cbd5e1; margin-bottom:14px;">Inserisci la password di protezione del Conto Reale per connettere in sicurezza i tuoi conti broker.</p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <input type="password" id="live-account-password" placeholder="Password Conto Reale" style="flex:1; min-width:200px; padding:12px; background:#030509; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:8px; font-size:13px;">
+              <button onclick="TPUSupremeAccounts.authenticateLive()" class="cinematic-cta-btn" style="padding:12px 24px; font-weight:800; background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none; border-radius:8px; cursor:pointer;">
+                Sblocca Conto Reale
+              </button>
+            </div>
+          </div>
+
+          <div id="terminal-active-mode-display" style="padding:12px 18px; background:rgba(14,165,233,0.1); border:1px solid rgba(56,189,248,0.3); border-radius:8px; color:#38bdf8; font-weight:700; margin-bottom:24px; font-size:13px;">
+            🟢 Modalità DEMO Attiva (Capitale Virtuale: €30,000.00)
+          </div>
+
+          <!-- 5 Autonomous AI Agents HUD -->
+          <div class="tpu-glass-card" style="margin-bottom:28px; border-color:rgba(14, 165, 233, 0.4); padding:20px; background:rgba(15, 23, 42, 0.65); border-radius:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+              <span class="gold-badge" style="font-size:12px;">🤖 Schiera 5 Agenti IA Autonomi • Supervisione in Tempo Reale</span>
+              <span style="font-size:12px; color:#10b981; font-weight:800;">● SISTEMA AUTONOMO ONLINE</span>
+            </div>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:18px;">
+              Coordinati da un Agente Supervisore centrale, 4 agenti operativi gestiscono assistenza clienti 24/7 (PDF &amp; audio), social media &amp; giornale di bordo, ricerca fonti globali e bollettini cloud storicizzati a 30 giorni.
+            </p>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+              <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(56,189,248,0.25); border-radius:10px;">
+                <div style="font-weight:800; color:#38bdf8; margin-bottom:4px; font-size:13px;">🛡️ 1. Agente Supervisore</div>
+                <div style="font-size:11.5px; color:#cbd5e1;">Direzione della corrispondenza e coordinamento IA</div>
+                <div style="margin-top:10px; font-size:11px; color:#10b981; font-weight:700;" id="agent-status-supervisor">Stato: Operativo (14%)</div>
+              </div>
+              <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(245,158,11,0.25); border-radius:10px;">
+                <div style="font-weight:800; color:#f59e0b; margin-bottom:4px; font-size:13px;">💬 2. Agente Assistenza 24/7</div>
+                <div style="font-size:11.5px; color:#cbd5e1;">Supporto clienti continuo, report PDF &amp; audio</div>
+                <div style="margin-top:10px; font-size:11px; color:#10b981; font-weight:700;" id="agent-status-assistant">Stato: In ascolto 24/7 (28%)</div>
+              </div>
+              <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(56,189,248,0.25); border-radius:10px;">
+                <div style="font-weight:800; color:#38bdf8; margin-bottom:4px; font-size:13px;">📱 3. Agente Social Media</div>
+                <div style="font-size:11.5px; color:#cbd5e1;">Telegram, Instagram, YouTube, Substack &amp; Journal</div>
+                <div style="margin-top:10px; font-size:11px; color:#10b981; font-weight:700;" id="agent-status-social">Stato: Pubblicazione auto (42%)</div>
+              </div>
+              <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(245,158,11,0.25); border-radius:10px;">
+                <div style="font-weight:800; color:#f59e0b; margin-bottom:4px; font-size:13px;">🔍 4. Agente Ricerca Fonti</div>
+                <div style="font-size:11.5px; color:#cbd5e1;">Azionario, Forex, Commodities &amp; Cripto globali</div>
+                <div style="margin-top:10px; font-size:11px; color:#10b981; font-weight:700;" id="agent-status-researcher">Stato: Scansione globale (51%)</div>
+              </div>
+              <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(56,189,248,0.25); border-radius:10px;">
+                <div style="font-weight:800; color:#38bdf8; margin-bottom:4px; font-size:13px;">☁️ 5. Agente Bollettino Cloud</div>
+                <div style="font-size:11.5px; color:#cbd5e1;">Archivio 30 giorni + Mini-video &amp; podcast audio</div>
+                <div style="margin-top:10px; font-size:11px; color:#10b981; font-weight:700;" id="agent-status-bulletin">Stato: Redazione h24 (33%)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-Broker API Connectors -->
+          <div class="tpu-glass-card" style="padding:20px; margin-bottom:28px; background:rgba(15, 23, 42, 0.65); border-radius:14px;">
+            <h3 style="color:#fff; font-size:16px; margin:0 0 16px 0;">🔌 Connettori Multi-Broker Istituzionali &amp; Exchange</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+              <div class="api-connector-box" style="display:flex; justify-content:space-between; align-items:center; padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
+                <div>
+                  <strong style="color:#fff; font-size:13px;">Fineco Bank</strong>
+                  <div style="font-size:11px; color:#94a3b8;">OAuth2 per azioni, ETF, forex e certificati.</div>
+                </div>
+                <button onclick="TPUSupremeAccounts.connectBrokerAPI('Fineco Bank')" class="cinematic-cta-btn" style="padding:8px 14px; font-size:11px; background:#0ea5e9; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Collega Fineco</button>
+              </div>
+
+              <div class="api-connector-box" style="display:flex; justify-content:space-between; align-items:center; padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
+                <div>
+                  <strong style="color:#fff; font-size:13px;">Coinbase Advanced</strong>
+                  <div style="font-size:11px; color:#94a3b8;">API REST &amp; WebSocket crypto istituzionale.</div>
+                </div>
+                <button onclick="TPUSupremeAccounts.connectBrokerAPI('Coinbase Advanced')" class="cinematic-cta-btn" style="padding:8px 14px; font-size:11px; background:#0052ff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Collega Coinbase</button>
+              </div>
+
+              <div class="api-connector-box" style="display:flex; justify-content:space-between; align-items:center; padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
+                <div>
+                  <strong style="color:#fff; font-size:13px;">Interactive Brokers (IBKR)</strong>
+                  <div style="font-size:11px; color:#94a3b8;">TWS API multi-currency globale istituzionale.</div>
+                </div>
+                <button onclick="TPUSupremeAccounts.connectBrokerAPI('Interactive Brokers')" class="cinematic-cta-btn" style="padding:8px 14px; font-size:11px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:700;">Collega IBKR</button>
+              </div>
+
+              <div class="api-connector-box" style="display:flex; justify-content:space-between; align-items:center; padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
+                <div>
+                  <strong style="color:#fff; font-size:13px;">Binance Pro API</strong>
+                  <div style="font-size:11px; color:#94a3b8;">Futures &amp; Spot HFT routing crittografato.</div>
+                </div>
+                <button onclick="TPUSupremeAccounts.connectBrokerAPI('Binance Pro')" class="cinematic-cta-btn" style="padding:8px 14px; font-size:11px; background:#f59e0b; color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:800;">Collega Binance</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Margin & Risk Position Calculator -->
+          <div class="tpu-glass-card" style="padding:20px; background:rgba(15, 23, 42, 0.65); border-radius:14px;">
+            <h3 style="color:#fff; font-size:16px; margin:0 0 16px 0;">📊 Calcolatore di Margine &amp; Rischio (Supreme Sizer)</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:18px;">
+              <div>
+                <label style="display:block; font-size:11.5px; color:#94a3b8; margin-bottom:4px;">Capitale Operativo (€)</label>
+                <input type="number" id="calc-capitale" value="30000" oninput="TPUNavigator.recalculateTerminal()" style="width:100%; padding:10px; background:#070a12; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:6px; font-size:13px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:11.5px; color:#94a3b8; margin-bottom:4px;">Rischio per Trade (%)</label>
+                <input type="number" id="calc-risk-pct" value="1.5" step="0.1" oninput="TPUNavigator.recalculateTerminal()" style="width:100%; padding:10px; background:#070a12; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:6px; font-size:13px;">
+              </div>
+              <div>
+                <label style="display:block; font-size:11.5px; color:#94a3b8; margin-bottom:4px;">Leva Finanziaria (x)</label>
+                <input type="number" id="calc-leverage" value="5" min="1" max="100" oninput="TPUNavigator.recalculateTerminal()" style="width:100%; padding:10px; background:#070a12; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:6px; font-size:13px;">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; background:rgba(7, 10, 18, 0.7); padding:16px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
+              <div>
+                <span style="font-size:11px; color:#94a3b8; display:block;">Capitale Netto:</span>
+                <span id="res-net-portfolio" style="font-size:16px; font-weight:800; color:#fff;">€30,000.00</span>
+              </div>
+              <div>
+                <span style="font-size:11px; color:#94a3b8; display:block;">Margine Impegnato:</span>
+                <span id="res-margine" style="font-size:16px; font-weight:800; color:#38bdf8;">€6,000.00</span>
+              </div>
+              <div>
+                <span style="font-size:11px; color:#94a3b8; display:block;">Rischio Massimo:</span>
+                <span id="res-risk-max" style="font-size:16px; font-weight:800; color:#f43f5e;">€450.00</span>
+              </div>
+              <div>
+                <span style="font-size:11px; color:#94a3b8; display:block;">Kill-Switch Guard:</span>
+                <span style="font-size:14px; font-weight:800; color:#10b981;">ATTIVO (-3%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+</main>
 
   
   <!-- MASTER EMOTIONAL & COMMUNITY SUITE ROOT -->
@@ -2619,5 +2797,7 @@
     </div>
   </div>
 
+  <script src="js/supreme-suite.js"></script>
+  <script src="js/timesfm_engine.js"></script>
 </body>
 </html>

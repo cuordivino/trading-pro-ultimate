@@ -828,6 +828,7 @@ window.ColumnSplitterManager = {
     if (!isMobile) {
       if (isBookUnder) {
         // Bybit Wide Chart Mode: Chart expands to 1fr (100% available space), Order Execution on right
+        grid.classList.add('book-under');
         grid.style.setProperty('display', 'grid', 'important');
         grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.order || 340) + 'px', 'important');
         grid.style.setProperty('gap', '0', 'important');
@@ -862,6 +863,7 @@ window.ColumnSplitterManager = {
 
       } else {
         // Standard 3-Column Layout: Chart (1fr) | Book | Order Execution
+        grid.classList.remove('book-under');
         grid.style.setProperty('display', 'grid', 'important');
         grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.book || 310) + 'px 10px ' + (this.widths.order || 340) + 'px', 'important');
         grid.style.setProperty('gap', '0', 'important');
@@ -947,9 +949,10 @@ window.ColumnSplitterManager = {
       if (type === 'book') {
         this.widths.book = Math.max(180, Math.min(700, startW - delta));
       } else if (type === 'order') {
-        this.widths.order = Math.max(220, Math.min(700, startW - delta));
+        this.widths.order = Math.max(220, Math.min(800, startW - delta));
       }
       this.applyDomWidths();
+      if (window.resizeAllCharts) window.resizeAllCharts();
     };
 
     const onEnd = () => {
@@ -1286,4 +1289,18 @@ window.BybitLayoutManager = {
       if (tabOb && this.splitSubMode !== 'split' && this.bookPosition !== 'under') tabOb.classList.remove('active');
     }
   }
+};
+
+
+// Mobile Quick Height Cycler (65 -> 120 -> 200 -> 350 -> 65)
+window.cyclePaneHeightPreset = function(pane) {
+  if (!window.PaneSplitterManager) return;
+  const current = (window.PaneSplitterManager.heights[pane === 'sub2' ? 'mom2' : (pane === 'volume' ? 'vol' : 'mom')]) || 90;
+  let next = 120;
+  if (current <= 75) next = 120;
+  else if (current <= 130) next = 200;
+  else if (current <= 220) next = 350;
+  else next = 65;
+  window.PaneSplitterManager.setPaneHeight(pane, next);
+  if (window.showToast) window.showToast(`Altezza: ${next}px`, 'info');
 };

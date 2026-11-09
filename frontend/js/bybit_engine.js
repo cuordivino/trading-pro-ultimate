@@ -229,6 +229,24 @@ window.BybitEngine = {
   },
 
   // 4. BYBIT WEBSOCKET FOR ZERO-LATENCY TICKS
+  getKlineInterval: function(tf) {
+    tf = (tf || window.activeTimeframe || '15m').toLowerCase();
+    if (tf === '1s' || tf === '1m') return '1';
+    if (tf === '3m') return '3';
+    if (tf === '5m') return '5';
+    if (tf === '15m') return '15';
+    if (tf === '30m') return '30';
+    if (tf === '1h') return '60';
+    if (tf === '2h') return '120';
+    if (tf === '4h') return '240';
+    if (tf === '6h') return '360';
+    if (tf === '12h') return '720';
+    if (tf === '1d' || tf === 'd') return 'D';
+    if (tf === '1w' || tf === 'w') return 'W';
+    if (tf === '1m_month' || tf === '1mese') return 'M';
+    return '15';
+  },
+
   initWebSocket: function() {
     try {
       if (this.ws) {
@@ -243,11 +261,13 @@ window.BybitEngine = {
       this.ws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
       
       this.ws.onopen = () => {
+        const interval = this.getKlineInterval();
         const subMsg = {
           op: 'subscribe',
           args: [
             `tickers.${this.currentSymbol}`,
-            `publicTrade.${this.currentSymbol}`
+            `publicTrade.${this.currentSymbol}`,
+            `kline.${interval}.${this.currentSymbol}`
           ]
         };
         if (this.ws && typeof this.ws.send === "function") { try { this.ws.send(JSON.stringify(subMsg)); } catch(e) {} }
@@ -257,14 +277,27 @@ window.BybitEngine = {
         try {
           const msg = JSON.parse(event.data);
           const isCurrentCrypto = this.currentSymbol && (this.activeAsset ? this.activeAsset.cat === 'crypto' : this.currentSymbol.endsWith('USDT'));
-          if (!isCurrentCrypto) return; // Strict guard: never process crypto ticks on non-crypto assets!
+          if (!isCurrentCrypto) return;
 
-          if (msg.topic && msg.topic.startsWith('tickers') && msg.data) {
+          if (msg.topic && msg.topic.startsWith('kline') && msg.data) {
+            const klines = Array.isArray(msg.data) ? msg.data : [msg.data];
+            klines.forEach(k => {
+              if (window.onRealtimeKlineUpdate) {
+                window.onRealtimeKlineUpdate(k);
+              }
+            });
+          } else if (msg.topic && msg.topic.startsWith('tickers') && msg.data) {
             const topicSym = msg.topic.split('.')[1];
             if (topicSym && topicSym !== this.currentSymbol) return;
 
             const d = msg.data;
-            if (d.lastPrice) this.tickerData.lastPrice = parseFloat(d.lastPrice);
+            if (d.lastPrice) {
+              const p = parseFloat(d.lastPrice);
+              this.tickerData.lastPrice = p;
+              if (window.onRealtimePriceTick) {
+                window.onRealtimePriceTick(p, parseFloat(d.volume24h) || 0);
+              }
+            }
             if (d.markPrice) this.tickerData.markPrice = parseFloat(d.markPrice);
             if (d.indexPrice) this.tickerData.indexPrice = parseFloat(d.indexPrice);
             if (d.fundingRate) this.tickerData.fundingRate = parseFloat(d.fundingRate);
@@ -277,11 +310,16 @@ window.BybitEngine = {
               id: tr.i || Math.random(),
               price: parseFloat(tr.p),
               size: parseFloat(tr.v),
-              side: tr.S, // 'Buy' or 'Sell'
+              side: tr.S,
               time: new Date(tr.T).toTimeString().split(' ')[0]
             }));
             this.recentTrades = [...newTrades, ...this.recentTrades].slice(0, 25);
             this.renderRecentTrades();
+
+            if (msg.data.length && window.onRealtimePriceTick) {
+              const latestTrade = msg.data[0];
+              window.onRealtimePriceTick(parseFloat(latestTrade.p), parseFloat(latestTrade.v), latestTrade.T);
+            }
           }
         } catch (err) {}
       };
