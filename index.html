@@ -71,6 +71,7 @@
   <link rel="stylesheet" href="css/supreme-suite.css">
   <link rel="stylesheet" href="css/portfolio.css">
   <link rel="stylesheet" href="css/news_newspaper.css">
+  <link rel="stylesheet" href="css/cavaliere_memo.css">
 </head>
 <body>
 
@@ -236,6 +237,10 @@
     <div class="header-right-actions">
       <button id="tab-demo-btn" class="account-tab active-demo" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('demo'); if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('demo');" title="Conto Demo Istituzionale €30,000" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(0,242,161,0.15); border:1px solid #00f2a1; color:#00f2a1;">🟢 Demo €30k</button>
       <button id="tab-live-btn" class="account-tab" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('live'); if(window.TPUSupremeAccounts) TPUSupremeAccounts.switchMode('live');" title="Conto Reale Multi-Broker API" style="padding:4px 10px; font-size:11px; border-radius:6px; font-weight:800; cursor:pointer; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24;">🔒 Reale Live</button>
+      <button id="tab-cavaliere-memo-btn" class="cavaliere-memo-hud-btn" onclick="if(window.CavaliereMemoEngine) CavaliereMemoEngine.openModal();" title="Tribunale di Certificazione — Il Cavaliere Memo Giudice Attivo 24/7">
+        <span>⚔️ Cavaliere Memo</span>
+        <span class="cm-badge-hud">GIUDICE h24</span>
+      </button>
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:#00f2a1; color:#00f2a1; cursor:pointer;" onclick="if(window.ApiManager) ApiManager.openModal()" title="Gestione Connessione API Broker (OKX, Bybit, Kraken, Telegram)">
         🔑 API Broker
       </button>
@@ -2013,14 +2018,52 @@
           </div>
 
           <!-- 5 Autonomous AI Agents HUD -->
-          <div class="tpu-glass-card" style="margin-bottom:28px; border-color:rgba(14, 165, 233, 0.4); padding:20px; background:rgba(15, 23, 42, 0.65); border-radius:14px;">
+          <div class="tpu-glass-card" style="margin-bottom:28px; border-color:rgba(245, 158, 11, 0.45); padding:20px; background:rgba(15, 23, 42, 0.7); border-radius:14px; box-shadow:0 0 25px rgba(245, 158, 11, 0.12);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-              <span class="gold-badge" style="font-size:12px;">🤖 Schiera 5 Agenti IA Autonomi • Supervisione in Tempo Reale</span>
-              <span style="font-size:12px; color:#10b981; font-weight:800;">● SISTEMA AUTONOMO ONLINE</span>
+              <span class="gold-badge" style="font-size:12px;">⚔️ Schiera Agenti IA &amp; Cavaliere Memo (Giudice Attivo h24)</span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:12px; color:#10b981; font-weight:800;">● AUDIT CONTINUO ATTIVO</span>
+                <button onclick="if(window.CavaliereMemoEngine) CavaliereMemoEngine.openModal();" class="cavaliere-memo-hud-btn" style="padding:3px 10px; font-size:11px;">
+                  ⚔️ Cancelleria Giudiziaria (8h)
+                </button>
+              </div>
             </div>
             <p style="font-size:13px; color:#94a3b8; margin-bottom:18px;">
-              Coordinati da un Agente Supervisore centrale, 4 agenti operativi gestiscono assistenza clienti 24/7 (PDF &amp; audio), social media &amp; giornale di bordo, ricerca fonti globali e bollettini cloud storicizzati a 30 giorni.
+              Presieduti dal <strong style="color:#fbbf24;">Cavaliere Memo</strong> (Giudice Attivo indipendente con vigilanza h24 e certificazione sistematica ogni 8 ore su 336 asset, 88 Mid-Cap, grafici, oscillatori e portafogli), 5 agenti IA autonomi gestiscono supervisione, assistenza continua, social media, ricerca fonti e bollettini cloud.
             </p>
+
+            <!-- Cavaliere Memo Supreme Agent Card -->
+            <div style="margin-bottom:16px; padding:16px; background:linear-gradient(135deg, rgba(37,99,235,0.18), rgba(245,158,11,0.15)); border:2px solid rgba(245,158,11,0.5); border-radius:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="font-size:32px; background:rgba(7,10,18,0.7); width:50px; height:50px; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1px solid #f59e0b;">⚔️</div>
+                <div>
+                  <div style="font-size:14px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+                    IL CAVALIERE MEMO — GIUDICE ATTIVO &amp; PALADINO D'ONORE
+                    <span class="cm-status-pill">100% CERTIFICATO</span>
+                  </div>
+                  <div style="font-size:12px; color:#fbbf24; margin-top:2px;">
+                    <em>"La spada che taglia a metà lo spillo con precisione e acutezza: Verità e Valore Senza Sorte Alcuna"</em>
+                  </div>
+                  <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">
+                    Vigilanza h24 su 336 Titoli (88 Mid-Cap IT/US/UK), Sub2 Oscillatori, Stop Loss/Take Profit e Conti Demo/Reale. Rapporto ogni 8 ore.
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                <div id="agent-status-cavaliere-memo" style="font-size:11.5px; color:#10b981; font-weight:800; font-family:'JetBrains Mono', monospace;">
+                  Stato: In Servizio Permanente h24 (Audit Continuo: 0 Errori)
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button onclick="if(window.CavaliereMemoEngine) CavaliereMemoEngine.openModal();" class="cm-action-btn" style="background:#f59e0b; color:#000; font-weight:800; border:none; padding:6px 12px;">
+                    📜 Registri &amp; Protocolli (8h)
+                  </button>
+                  <button onclick="if(window.CavaliereMemoEngine) CavaliereMemoEngine.exportFullArchiveCSV();" class="cm-action-btn export-btn" style="padding:6px 12px; font-weight:700;">
+                    📊 Esporta Foglio Excel / CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
               <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(56,189,248,0.25); border-radius:10px;">
                 <div style="font-weight:800; color:#38bdf8; margin-bottom:4px; font-size:13px;">🛡️ 1. Agente Supervisore</div>
@@ -2828,5 +2871,6 @@
   <script src="js/timesfm_engine.js"></script>
   <script src="js/portfolio_engine.js"></script>
   <script src="js/news_newspaper_engine.js"></script>
+  <script src="js/cavaliere_memo_engine.js"></script>
 </body>
 </html>

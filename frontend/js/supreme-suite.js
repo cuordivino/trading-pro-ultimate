@@ -55,6 +55,7 @@
   // 2. 5 Autonomous AI Agents Ensemble Orchestrator
   window.TPUAutonomousAI = {
     agents: {
+      cavaliere_memo: { name: "Il Cavaliere Memo — Giudice Attivo & Paladino d'Onore", status: "In servizio permanente h24 (Audit Continuo)", load: "100% Certificato" },
       supervisor: { name: "Agente Supervisore / Direttore della Comunicazione", status: "Coordinamento attiva", load: "14%" },
       assistant: { name: "Agente Esecutivo Assistenza & Report PDF/Audio", status: "In ascolto 24/7", load: "28%" },
       social: { name: "Agente Social & Giornale di Bordo (Telegram/IG/YT/Substack)", status: "Pubblicazione automatica", load: "42%" },
@@ -63,7 +64,7 @@
     },
 
     init: function() {
-      console.log("⚡ TPU Autonomous 5-AI Agents Ensemble Online.");
+      console.log("⚡ TPU Autonomous AI Agents Ensemble & Cavaliere Memo Online.");
       setInterval(() => {
         this.simulateTelemetry();
       }, 6000);
@@ -73,6 +74,7 @@
       // Simulate real-time agent micro-updates
       const loads = ["12%", "24%", "38%", "45%", "29%", "19%", "53%"];
       Object.keys(this.agents).forEach(k => {
+        if (k === 'cavaliere_memo') return; // Handled dynamically with live countdown by CavaliereMemoEngine
         const el = document.getElementById(`agent-status-${k}`);
         if(el) {
           const randomLoad = loads[Math.floor(Math.random() * loads.length)];
