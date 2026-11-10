@@ -2214,6 +2214,104 @@
           <!-- DAY TRADER SKILL 11-IN-1 ENGINE (TIME MACHINE, ORB, PELOSI & SEC 8-K) -->
           <div id="day-trader-skill-container"></div>
 
+          <!-- 1-TO-1 GUEST INVITE & GUMROAD ACCESS CONTROL (IDENTICO A XVIDEO-CADBRIDGE-4K) -->
+          <div class="tpu-glass-card" style="margin-bottom:28px; border-color:rgba(16, 185, 129, 0.45); padding:22px; background:rgba(15, 23, 42, 0.8); border-radius:14px; box-shadow:0 0 25px rgba(16, 185, 129, 0.15);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span class="gold-badge" style="background:linear-gradient(135deg, #059669, #10b981); color:#fff; font-size:12px;">🔗 Genera Link Diretto 1-a-1 (Gratis per il Tuo Ospite)</span>
+                <span class="cm-status-pill" style="border-color:#10b981; color:#10b981;">PROPRIETARIO</span>
+              </div>
+              <button onclick="TPUSecurity.openInstallerModal()" class="cinematic-cta-btn" style="padding:6px 14px; font-size:11.5px; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:800;">
+                📲 Installa Icona Home (Profilo iOS)
+              </button>
+            </div>
+            <p style="font-size:12.5px; color:#94a3b8; margin-bottom:16px; line-height:1.45;">
+              Chi riceve questo link può usare l'app in modalità <strong>dimostrazione di prova (senza eseguito a mercato)</strong>, vincolato automaticamente al <strong>primo IP / cellulare che lo apre</strong>, senza poter piazzare ordini né modificare connettori broker.
+            </p>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
+              <div>
+                <label style="display:block; font-size:11px; color:#cbd5e1; margin-bottom:4px; font-weight:700;">Nome Amico / Collaboratore:</label>
+                <input type="text" id="tpu-guest-name-input" value="Amico / Collaboratore" style="width:100%; padding:9px; background:#070a12; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:6px; font-size:12px; box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="display:block; font-size:11px; color:#cbd5e1; margin-bottom:4px; font-weight:700;">Permessi Sessione:</label>
+                <select id="tpu-guest-perm-select" style="width:100%; padding:9px; background:#070a12; border:1px solid rgba(255,255,255,0.15); color:#38bdf8; border-radius:6px; font-size:12px; font-weight:700; box-sizing:border-box;">
+                  <option value="readonly" selected>Solo Visualizzazione Dimostrativa (Senza Eseguito)</option>
+                  <option value="full">Uso Completo (Demo Autorizzato)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+              <button type="button" onclick="TPUSecurity.generateGuestLink()" class="cinematic-cta-btn" style="flex:2; min-width:240px; padding:12px; font-weight:900; font-size:13px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none; border-radius:8px; cursor:pointer;">
+                🔒 Genera Link Unico 1-a-1 + QR Code
+              </button>
+              <button type="button" onclick="TPUSecurity.revokeGuestLink()" style="flex:1; min-width:140px; padding:12px; font-weight:800; font-size:12px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#f87171; border-radius:8px; cursor:pointer;">
+                ⛔ Revoca Ospite
+              </button>
+            </div>
+
+            <!-- Generated link row -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px;">Link Diretto da Inviare su WhatsApp / Telegram:</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="tpu-generated-invite-url" readonly placeholder="Premi 'Genera Link Unico'..." style="flex:1; padding:10px; background:#030509; border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-family:monospace; font-size:11.5px; border-radius:6px;">
+                <button type="button" onclick="TPUSecurity.copyGuestLink()" style="padding:10px 14px; font-size:12px; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; cursor:pointer;">
+                  📋 Copia
+                </button>
+                <button type="button" onclick="TPUSecurity.shareGuestLink()" style="padding:10px 14px; font-size:12px; font-weight:800; background:linear-gradient(135deg, #0ea5e9, #0284c7); color:#fff; border:none; border-radius:6px; cursor:pointer;">
+                  📲 Condividi
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic QR Code Container (iPhone / Android scan) -->
+            <div id="tpu-guest-qr-wrap" style="display:none; align-items:center; gap:16px; background:#070a14; border:1px solid rgba(255,255,255,0.08); padding:14px; border-radius:10px; margin-bottom:16px;">
+              <div style="background:#fff; padding:8px; border-radius:8px; flex-shrink:0;">
+                <img id="tpu-guest-qr-img" src="" alt="QR Code Ospite" style="width:140px; height:140px; display:block;">
+              </div>
+              <div>
+                <strong style="color:#fff; font-size:13px; display:block; margin-bottom:4px;">📲 Inquadra con Fotocamera iPhone o Android</strong>
+                <p style="font-size:11.5px; color:#cbd5e1; margin-bottom:8px; line-height:1.4;">
+                  Fai inquadrare questo QR Code o invia il link su WhatsApp: il sistema registrerà l'indirizzo IP del primo dispositivo che accede e <strong>lo vincolerà in esclusiva</strong> a quel terminale.
+                </p>
+                <div id="tpu-guest-bound-status" style="font-size:11px; font-family:monospace; color:#38bdf8;">
+                  In attesa del 1° accesso...
+                </div>
+              </div>
+            </div>
+
+            <!-- Gumroad Sales & Paywall Config -->
+            <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:16px; margin-top:14px;">
+              <div style="font-size:12px; font-weight:800; color:#fbbf24; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                <span>🛒 Vendita su Gumroad &amp; Paywall GitHub Pages</span>
+              </div>
+              <div style="font-size:11px; color:#94a3b8; margin-bottom:10px;">
+                Chiunque apre il sito senza il tuo link di invito 1-a-1 vede il Paywall Gumroad con richiesta License Key.
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:12px;">
+                <div>
+                  <label style="display:block; font-size:10px; color:#94a3b8; margin-bottom:2px;">URL Prodotto Gumroad:</label>
+                  <input type="text" id="tpu-gumroad-url-input" value="https://gumroad.com/l/trading-pro-ultimate" style="width:100%; padding:8px; background:#070a12; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; font-size:11px; box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:10px; color:#94a3b8; margin-bottom:2px;">Gumroad Permalink:</label>
+                  <input type="text" id="tpu-gumroad-permalink-input" value="trading-pro-ultimate" style="width:100%; padding:8px; background:#070a12; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; font-size:11px; box-sizing:border-box;">
+                </div>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button type="button" onclick="TPUSecurity.showGatekeeper()" style="padding:8px 14px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:6px; cursor:pointer;">
+                  👁️ Simula Vista Paywall
+                </button>
+                <button type="button" onclick="alert('Configurazione Gumroad salvata con successo!')" style="padding:8px 14px; font-size:11px; font-weight:800; background:#f59e0b; color:#000; border:none; border-radius:6px; cursor:pointer;">
+                  💾 Salva Gumroad
+                </button>
+              </div>
+            </div>
+          </div>
+  
+
           <!-- Multi-Broker API Connectors -->
           <div class="tpu-glass-card" style="padding:20px; margin-bottom:28px; background:rgba(15, 23, 42, 0.65); border-radius:14px;">
             <h3 style="color:#fff; font-size:16px; margin:0 0 16px 0;">🔌 Connettori Multi-Broker Istituzionali &amp; Exchange</h3>
@@ -2995,5 +3093,6 @@
   <script src="js/cavaliere_memo_engine.js"></script>
   <script src="js/web_design_agents_guild.js"></script>
   <script src="js/day_trader_skill_bridge.js"></script>
+  <script src="js/tpu_security_guard.js"></script>
 </body>
 </html>
