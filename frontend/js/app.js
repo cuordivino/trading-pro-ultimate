@@ -1097,6 +1097,10 @@ function filterMegaCategory(cat, tabBtn) {
     filtered = allAssets.filter(a => fxPairs.includes(a.symbol) || (a.symbol.length === 6 && ['USD', 'EUR', 'GBP', 'JPY'].some(c => a.symbol.includes(c)) && !a.symbol.includes('USDT')));
   } else if (cat === 'crypto') {
     filtered = allAssets.filter(a => a.cat === 'crypto' || a.symbol.endsWith('USDT') || ['BTC', 'ETH', 'SOL', 'NEAR'].some(c => a.symbol.includes(c)));
+  } else if (cat === 'me_stock') {
+    filtered = allAssets.filter(a => a.cat === 'me_stock' || a.symbol.endsWith('.SR') || a.symbol.endsWith('.AE') || a.symbol.endsWith('.QA') || a.symbol.endsWith('.KW'));
+  } else if (cat === 'mid_cap') {
+    filtered = allAssets.filter(a => (a.sector && a.sector.toLowerCase().includes('mid cap')) || ['BRE.MI', 'DLG.MI', 'REY.MI', 'TGYM.MI', 'WBD.MI', 'MAIRE.MI', 'SFER.MI', 'SMCI', 'PLTR', 'HOOD', 'AML.L', 'MKS.L', 'EZJ.L'].includes(a.symbol));
   } else if (cat !== 'all') {
     filtered = allAssets.filter(a => a.cat === cat);
   }

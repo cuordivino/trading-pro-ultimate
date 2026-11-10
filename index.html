@@ -72,6 +72,8 @@
   <link rel="stylesheet" href="css/portfolio.css">
   <link rel="stylesheet" href="css/news_newspaper.css">
   <link rel="stylesheet" href="css/cavaliere_memo.css">
+  <link rel="stylesheet" href="css/responsive_11_rules.css">
+  <link rel="stylesheet" href="css/charts_3d_depth.css">
 </head>
 <body>
 
@@ -179,6 +181,82 @@
       </div>
     </div>
 
+    <!-- CATEGORIZED CHAPTERS DROPDOWN NAVIGATION ("MENU A TENDINE DEI CAPITOLI") -->
+    <nav class="chapters-nav-desktop">
+      <!-- 1. Trading & Terminale -->
+      <div class="chapter-dropdown">
+        <button class="chapter-dropdown-btn" type="button">
+          <span>📈 Trading &amp; Terminale</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="chapter-dropdown-menu">
+          <button class="chapter-dropdown-item active" onclick="switchMainTab('tab-terminal')">📈 Terminale Principale &amp; Candele</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-sizer')">📐 Position Sizer &amp; Calcolatore Rischio</button>
+          <button class="chapter-dropdown-item" onclick="if(window.ApiManager) ApiManager.openModal()">🔑 Connettori API Broker (Fineco/IBKR/Bybit)</button>
+        </div>
+      </div>
+
+      <!-- 2. Portafoglio & Conti -->
+      <div class="chapter-dropdown">
+        <button class="chapter-dropdown-btn" type="button" style="border-color:rgba(0,242,161,0.4); color:#00f2a1;">
+          <span>💼 Portafogli &amp; Conti</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="chapter-dropdown-menu">
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-portfolio-manager'); if(window.PortfolioEngine) PortfolioEngine.renderPortfolioSector();">💼 Gestione Portafoglio (Demo €30k &amp; Reale)</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-model-portfolios')">📊 Portafogli Modello &amp; Gestiti (IA)</button>
+          <button class="chapter-dropdown-item" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('demo')">🟢 Conto Demo Istituzionale €30,000</button>
+          <button class="chapter-dropdown-item" onclick="if(window.PortfolioEngine) PortfolioEngine.openPortfolioSector('live')">🔒 Conto Reale Multi-Broker Live</button>
+        </div>
+      </div>
+
+      <!-- 3. Intelligenza Artificiale & Quant -->
+      <div class="chapter-dropdown">
+        <button class="chapter-dropdown-btn" type="button" style="border-color:rgba(245,158,11,0.4); color:#fbbf24;">
+          <span>🤖 IA &amp; Quantaste</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="chapter-dropdown-menu">
+          <button class="chapter-dropdown-item" onclick="if(window.CavaliereMemoEngine) CavaliereMemoEngine.openModal();" style="color:#fbbf24; font-weight:800;">⚔️ Cavaliere Memo (Giudice Attivo h24)</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-supreme-suite')">🤖 Supreme Suite &amp; 5 Agenti Autonomi</button>
+          <button class="chapter-dropdown-item" onclick="if(window.TimesFMEngine) TimesFMEngine.openStrategyModal()">⚡ Google TimesFM Forecast &amp; Strategia</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-casario-quant')">⚡ Suite Quantaste Casario Completa</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-quant')">🤖 4 Motori Quant Istituzionali</button>
+        </div>
+      </div>
+
+      <!-- 4. Macro Intelligence & Screener -->
+      <div class="chapter-dropdown">
+        <button class="chapter-dropdown-btn" type="button" style="border-color:rgba(56,189,248,0.4); color:#38bdf8;">
+          <span>🌐 Macro &amp; Screener</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="chapter-dropdown-menu">
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-macro-radar')">🌐 Panoramica Macro &amp; Radar Screener</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-scanner')">🎯 Radar Opportunità Rapido</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-consensus')">🧠 Comitato Investitori IA</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-rotation')">🔄 Rotazione Settoriale</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-optimal')">🎯 Posizioni Ottimali &amp; Auto-Pilot</button>
+        </div>
+      </div>
+
+      <!-- 5. Strumenti & Registri -->
+      <div class="chapter-dropdown">
+        <button class="chapter-dropdown-btn" type="button">
+          <span>🛠️ Strumenti &amp; Registri</span>
+          <span class="chevron">▾</span>
+        </button>
+        <div class="chapter-dropdown-menu">
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-hub')">📚 Hub 63 Skills Quant</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-journal')">📓 Diario di Trading &amp; Journal</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-alerts')">🔔 Allarmi Istituzionali</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-chat')">💬 Chat Grandi Maestri</button>
+          <button class="chapter-dropdown-item" onclick="openCopyrightModal()">📜 Paternità, Copyright &amp; Marchi</button>
+          <button class="chapter-dropdown-item" onclick="switchMainTab('tab-settings')">⚙️ Impostazioni Terminale</button>
+        </div>
+      </div>
+    </nav>
+
     <!-- MAIN NAV TABS -->
     <nav class="nav-tabs-container">
       <button class="tab-nav-btn active" data-tab="tab-terminal" onclick="switchMainTab('tab-terminal', this)">
@@ -250,6 +328,9 @@
       </button>
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
         📜 Paternità & Copyright
+      </button>
+      <button class="btn-mobile-chapters-drawer" type="button" onclick="if(window.TPUWebDesignGuild) window.TPUWebDesignGuild.toggleMobileDrawer();" title="Apri Hub dei Capitoli e Navigazione Rapida">
+        <span>☰</span> <span>Capitoli</span>
       </button>
       <button class="btn-lock-terminal" onclick="lockTerminal()" title="Blocca Terminale con Password">
         <span>🔒</span> Blocca
@@ -332,6 +413,8 @@
             <button class="mega-tab-pill" onclick="filterMegaCategory('commodities', this)">🛢️ Materie Prime</button>
             <button class="mega-tab-pill" onclick="filterMegaCategory('forex', this)">💱 Forex</button>
             <button class="mega-tab-pill" onclick="filterMegaCategory('crypto', this)">🪙 Cripto</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('me_stock', this)">🇸🇦 Mediorientale</button>
+            <button class="mega-tab-pill" onclick="filterMegaCategory('mid_cap', this)">🇮🇹🇺🇸🇬🇧 Mid-Cap</button>
           </div>
 
           <div class="mega-asset-list" id="mega-asset-list-container">
@@ -2068,6 +2151,33 @@
               </div>
             </div>
 
+            <!-- SCHIERA AGENTI WEB DESIGN & 11 REGOLE RESPONSIVE -->
+            <div id="web-design-guild-card" style="margin-bottom:16px; padding:16px; background:linear-gradient(135deg, rgba(14,165,233,0.15), rgba(0,242,161,0.12)); border:2px solid rgba(14,165,233,0.45); border-radius:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="font-size:30px; background:rgba(7,10,18,0.7); width:50px; height:50px; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1px solid #0ea5e9;">🎨</div>
+                <div>
+                  <div style="font-size:14px; font-weight:900; color:#fff; display:flex; align-items:center; gap:8px;">
+                    SCHIERA AGENTI WEB DESIGN &amp; 11 REGOLE RESPONSIVE
+                    <span class="cm-status-pill" style="border-color:#0ea5e9; color:#38bdf8; background:rgba(14,165,233,0.15);">100% CROSS-DEVICE</span>
+                  </div>
+                  <div style="font-size:12px; color:#38bdf8; margin-top:2px;">
+                    <em>Supervisore UI/UX + Agente 11 Regole Responsive + Agente 3D Volumetria + Agente Ergonomia Drawer</em>
+                  </div>
+                  <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;">
+                    Verifica continua su iPhone diritto, iPhone ruotato 90°, Dynamic Island, iPad e PC. Rendering torte e barre 3D tridimensionali.
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                <div style="font-size:11.5px; color:#00f2a1; font-weight:800; font-family:'JetBrains Mono', monospace;" id="design-agent-status-supervisor">
+                  Stato: 11 Regole Convalidate (Audit Layout Continuo)
+                </div>
+                <button onclick="if(window.TPUWebDesignGuild) window.TPUWebDesignGuild.toggleMobileDrawer();" class="cm-action-btn" style="background:#0ea5e9; color:#fff; font-weight:800; border:none; padding:6px 14px;">
+                  📱 Esplora Drawer Capitoli
+                </button>
+              </div>
+            </div>
+
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
               <div class="tpu-glass-card" style="padding:14px; background:rgba(7, 10, 18, 0.7); border:1px solid rgba(56,189,248,0.25); border-radius:10px;">
                 <div style="font-weight:800; color:#38bdf8; margin-bottom:4px; font-size:13px;">🛡️ 1. Agente Supervisore</div>
@@ -2876,5 +2986,6 @@
   <script src="js/portfolio_engine.js"></script>
   <script src="js/news_newspaper_engine.js"></script>
   <script src="js/cavaliere_memo_engine.js"></script>
+  <script src="js/web_design_agents_guild.js"></script>
 </body>
 </html>

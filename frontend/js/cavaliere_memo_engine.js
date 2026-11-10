@@ -682,7 +682,7 @@ ${p.copyrightNote || 'Proprietà Intellettuale: Trading Pro Ultimate™ × cuord
     // 10. Header & Navigation HUD Buttons Injection
     injectHUDButtons: function() {
       // If already present, don't re-inject
-      if (document.getElementById('cavaliere-memo-hud-btn')) return;
+      if (document.getElementById('cavaliere-memo-hud-btn') || document.getElementById('tab-cavaliere-memo-btn') || document.querySelector('.cavaliere-memo-hud-btn')) return;
 
       const headerRight = document.querySelector('.header-right-actions');
       if (headerRight) {

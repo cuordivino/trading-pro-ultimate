@@ -36,7 +36,7 @@ window.GlobalMarketAssets = [
   { symbol: 'TGYM.MI', name: 'Technogym S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 10.85, currency: '€', precision: 2, change24h: 0.95, volume24h: 680000, sector: 'FTSE Mid Cap - Wellness & Fitness' },
   { symbol: 'BSS.MI', name: 'Biesse S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 10.15, currency: '€', precision: 2, change24h: 0.65, volume24h: 145000, sector: 'FTSE Mid Cap - Macchinari Industriali' },
   { symbol: 'WBD.MI', name: 'Webuild S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 2.65, currency: '€', precision: 3, change24h: 1.85, volume24h: 4500000, sector: 'FTSE Mid Cap - Grandi Opere Costruzioni' },
-  { symbol: 'MAIRE.MI', name: 'Maire Tecnimont S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 7.45, currency: '€', precision: 2, change24h: 2.6, volume24h: 2400000, sector: 'FTSE Mid Cap - Chimica Verde & Engineering' },
+  { symbol: 'MAIRE.MI', name: 'Maire Tecnimont S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 13.45, currency: '€', precision: 2, change24h: 2.91, volume24h: 3200000, sector: 'FTSE Mid Cap - Chimica Verde & Engineering' },
   { symbol: 'SFER.MI', name: 'Salvatore Ferragamo S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 6.85, currency: '€', precision: 2, change24h: -1.25, volume24h: 890000, sector: 'FTSE Mid Cap - Moda & Lusso' },
   { symbol: 'ELN.MI', name: 'El.En. S.p.A.', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 11.2, currency: '€', precision: 2, change24h: 0.85, volume24h: 210000, sector: 'FTSE Mid Cap - Laser Medicali & Industriali' },
   { symbol: 'TIP.MI', name: 'Tamburi Investment Partners', cat: 'eu_stock', exchange: 'Borsa Italiana', basePrice: 9.15, currency: '€', precision: 2, change24h: 0.45, volume24h: 410000, sector: 'FTSE Mid Cap - Merchant Banking' },
@@ -414,7 +414,23 @@ window.GlobalMarketAssets = [
   { symbol: '005930.KS', name: 'Samsung Electronics Co., Ltd.', cat: 'asia_stock', exchange: 'Korea Exchange', basePrice: 58500.00, currency: '₩', precision: 2, change24h: 1.20, volume24h: 16800000, sector: 'Asia — Semis & Mobile' },
   { symbol: '0700.HK', name: 'Tencent Holdings Limited', cat: 'asia_stock', exchange: 'Hong Kong Stock Exchange', basePrice: 418.40, currency: 'HK$', precision: 2, change24h: -0.33, volume24h: 22400000, sector: 'Asia — Internet & AI' },
   { symbol: '9988.HK', name: 'Alibaba Group Holding Limited', cat: 'asia_stock', exchange: 'Hong Kong Stock Exchange', basePrice: 96.50, currency: 'HK$', precision: 2, change24h: 1.45, volume24h: 48500000, sector: 'Asia — E-commerce & Cloud' },
-  { symbol: 'TSM', name: 'Taiwan Semiconductor Manufacturing (TSMC)', cat: 'asia_stock', exchange: 'NYSE / Taiwan', basePrice: 195.50, currency: '$', precision: 2, change24h: 2.85, volume24h: 18400000, sector: 'Asia — Semiconductor Foundry' }
+  { symbol: 'TSM', name: 'Taiwan Semiconductor Manufacturing (TSMC)', cat: 'asia_stock', exchange: 'NYSE / Taiwan', basePrice: 195.50, currency: '$', precision: 2, change24h: 2.85, volume24h: 18400000, sector: 'Asia — Semiconductor Foundry' },
+  // =========================================================================
+  // 8. BORSA MEDIORIENTALE (TADAWUL, ADX, DFM, QSE, BOURSA KUWAIT)
+  // =========================================================================
+  { symbol: '2222.SR', name: 'Saudi Aramco', cat: 'me_stock', exchange: 'Tadawul', basePrice: 27.85, currency: 'SAR', precision: 2, change24h: 0.45, volume24h: 18500000, sector: 'Mediorientale — Energia & Petrolio' },
+  { symbol: '1120.SR', name: 'Al Rajhi Bank', cat: 'me_stock', exchange: 'Tadawul', basePrice: 88.40, currency: 'SAR', precision: 2, change24h: 1.20, volume24h: 4200000, sector: 'Mediorientale — Banking Islamico' },
+  { symbol: '2010.SR', name: 'SABIC', cat: 'me_stock', exchange: 'Tadawul', basePrice: 74.20, currency: 'SAR', precision: 2, change24h: 0.80, volume24h: 3100000, sector: 'Mediorientale — Chimica & Petrolchimico' },
+  { symbol: 'IHC.AE', name: 'International Holding Company', cat: 'me_stock', exchange: 'ADX Abu Dhabi', basePrice: 414.00, currency: 'AED', precision: 2, change24h: 0.75, volume24h: 1850000, sector: 'Mediorientale — Holding & Conglomerato' },
+  { symbol: 'EMAAR.AE', name: 'Emaar Properties', cat: 'me_stock', exchange: 'DFM Dubai', basePrice: 8.45, currency: 'AED', precision: 2, change24h: 1.80, volume24h: 14500000, sector: 'Mediorientale — Real Estate & Costruzioni' },
+  { symbol: 'FAB.AE', name: 'First Abu Dhabi Bank', cat: 'me_stock', exchange: 'ADX Abu Dhabi', basePrice: 13.60, currency: 'AED', precision: 2, change24h: 0.60, volume24h: 5200000, sector: 'Mediorientale — Servizi Finanziari' },
+  { symbol: 'QNBK.QA', name: 'Qatar National Bank', cat: 'me_stock', exchange: 'QSE Qatar', basePrice: 16.20, currency: 'QAR', precision: 2, change24h: 0.50, volume24h: 2900000, sector: 'Mediorientale — Settore Bancario' },
+  { symbol: 'DIB.AE', name: 'Dubai Islamic Bank', cat: 'me_stock', exchange: 'DFM Dubai', basePrice: 6.15, currency: 'AED', precision: 2, change24h: 0.90, volume24h: 6800000, sector: 'Mediorientale — Finanza Islamica' },
+  { symbol: '7010.SR', name: 'Saudi Telecom Co (STC)', cat: 'me_stock', exchange: 'Tadawul', basePrice: 41.50, currency: 'SAR', precision: 2, change24h: 0.35, volume24h: 2800000, sector: 'Mediorientale — Telecomunicazioni' },
+  { symbol: 'EMIRATESNBD.AE', name: 'Emirates NBD', cat: 'me_stock', exchange: 'DFM Dubai', basePrice: 19.85, currency: 'AED', precision: 2, change24h: 1.10, volume24h: 3400000, sector: 'Mediorientale — Gruppo Bancario' },
+  { symbol: 'ADNOCDIST.AE', name: 'ADNOC Distribution', cat: 'me_stock', exchange: 'ADX Abu Dhabi', basePrice: 3.65, currency: 'AED', precision: 2, change24h: 0.55, volume24h: 8100000, sector: 'Mediorientale — Distribuzione Carburanti' },
+  { symbol: 'KFH.KW', name: 'Kuwait Finance House', cat: 'me_stock', exchange: 'Boursa Kuwait', basePrice: 0.745, currency: 'KWD', precision: 3, change24h: 0.40, volume24h: 5600000, sector: 'Mediorientale — Finanza & Investimenti' }
+
 ];
 
 // Commodity & Cross Aliases Mapping for Ultra-Accurate Search & Selection

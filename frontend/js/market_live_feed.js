@@ -30,7 +30,7 @@
     'PIA.MI': { price: 2.45, change: -0.8, high: 2.494, low: 2.406, volume: 1250000, curr: '€', exch: 'Borsa Italiana', name: 'Piaggio & C. S.p.A.' },
     'BSS.MI': { price: 10.15, change: 0.65, high: 10.33, low: 9.97, volume: 145000, curr: '€', exch: 'Borsa Italiana', name: 'Biesse S.p.A.' },
     'WBD.MI': { price: 2.65, change: 1.85, high: 2.698, low: 2.602, volume: 4500000, curr: '€', exch: 'Borsa Italiana', name: 'Webuild S.p.A.' },
-    'MAIRE.MI': { price: 7.45, change: 2.6, high: 7.58, low: 7.32, volume: 2400000, curr: '€', exch: 'Borsa Italiana', name: 'Maire Tecnimont S.p.A.' },
+    'MAIRE.MI': { price: 13.45, change: 2.91, high: 13.55, low: 13.15, volume: 3200000, curr: '€', exch: 'Borsa Italiana', name: 'Maire Tecnimont S.p.A.', prevClose: 13.07 },
     'SFER.MI': { price: 6.85, change: -1.25, high: 6.97, low: 6.73, volume: 890000, curr: '€', exch: 'Borsa Italiana', name: 'Salvatore Ferragamo S.p.A.' },
     'IRE.MI': { price: 2.05, change: 0.75, high: 2.087, low: 2.013, volume: 3100000, curr: '€', exch: 'Borsa Italiana', name: 'Iren S.p.A.' },
     'ACE.MI': { price: 21.64, change: 1.2, high: 22.03, low: 21.25, volume: 350000, curr: '€', exch: 'Borsa Italiana', name: 'Acea S.p.A.' },
@@ -261,7 +261,21 @@
     'NEARUSDT': { price: 4.6500, change: 3.20, high: 4.8200, low: 4.5200, volume: 28000000, curr: '$', exch: 'Bybit / Binance Linear', name: 'NEAR Protocol Perpetual' },
     'AVAXUSDT': { price: 28.50, change: 2.40, high: 29.40, low: 27.80, volume: 4200000, curr: '$', exch: 'Bybit / Binance Linear', name: 'Avalanche Perpetual' },
     'LINKUSDT': { price: 13.80, change: 1.80, high: 14.25, low: 13.40, volume: 3800000, curr: '$', exch: 'Bybit / Binance Linear', name: 'Chainlink Perpetual' },
-    'PEPEUSDT': { price: 0.00001085, change: 6.20, high: 0.00001150, low: 0.00001020, volume: 850000000000, curr: '$', exch: 'Bybit / Binance Linear', name: 'Pepe Perpetual' }
+    'PEPEUSDT': { price: 0.00001085, change: 6.20, high: 0.00001150, low: 0.00001020, volume: 850000000000, curr: '$', exch: 'Bybit / Binance Linear', name: 'Pepe Perpetual' },
+    // 11. Borsa Mediorientale (Tadawul, ADX, DFM, QSE)
+    '2222.SR': { price: 27.85, change: 0.45, high: 28.15, low: 27.65, volume: 18500000, curr: 'SAR', exch: 'Tadawul', name: 'Saudi Aramco' },
+    '1120.SR': { price: 88.40, change: 1.20, high: 89.20, low: 87.50, volume: 4200000, curr: 'SAR', exch: 'Tadawul', name: 'Al Rajhi Bank' },
+    '2010.SR': { price: 74.20, change: 0.80, high: 75.00, low: 73.60, volume: 3100000, curr: 'SAR', exch: 'Tadawul', name: 'SABIC' },
+    'IHC.AE': { price: 414.00, change: 0.75, high: 416.50, low: 412.00, volume: 1850000, curr: 'AED', exch: 'ADX Abu Dhabi', name: 'International Holding Company' },
+    'EMAAR.AE': { price: 8.45, change: 1.80, high: 8.58, low: 8.32, volume: 14500000, curr: 'AED', exch: 'DFM Dubai', name: 'Emaar Properties' },
+    'FAB.AE': { price: 13.60, change: 0.60, high: 13.80, low: 13.45, volume: 5200000, curr: 'AED', exch: 'ADX Abu Dhabi', name: 'First Abu Dhabi Bank' },
+    'QNBK.QA': { price: 16.20, change: 0.50, high: 16.45, low: 16.05, volume: 2900000, curr: 'QAR', exch: 'QSE Qatar', name: 'Qatar National Bank' },
+    'DIB.AE': { price: 6.15, change: 0.90, high: 6.24, low: 6.08, volume: 6800000, curr: 'AED', exch: 'DFM Dubai', name: 'Dubai Islamic Bank' },
+    '7010.SR': { price: 41.50, change: 0.35, high: 41.90, low: 41.20, volume: 2800000, curr: 'SAR', exch: 'Tadawul', name: 'Saudi Telecom Co (STC)' },
+    'EMIRATESNBD.AE': { price: 19.85, change: 1.10, high: 20.10, low: 19.60, volume: 3400000, curr: 'AED', exch: 'DFM Dubai', name: 'Emirates NBD' },
+    'ADNOCDIST.AE': { price: 3.65, change: 0.55, high: 3.72, low: 3.60, volume: 8100000, curr: 'AED', exch: 'ADX Abu Dhabi', name: 'ADNOC Distribution' },
+    'KFH.KW': { price: 0.745, change: 0.40, high: 0.755, low: 0.738, volume: 5600000, curr: 'KWD', exch: 'Boursa Kuwait', name: 'Kuwait Finance House' }
+
   };
 
   function getScannerTarget(sym) {

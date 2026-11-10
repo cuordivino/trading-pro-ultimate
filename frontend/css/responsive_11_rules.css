@@ -1,0 +1,441 @@
+/* ==========================================================================
+   TRADING PRO ULTIMATE™ — 11 REGOLE RESPONSIVE ARCHITECTURE
+   Reference Standard: xvideo-cadbridge-4k (Universal Cross-Device Engine)
+   Rules Verified:
+   1. iPhone Portrait (375px - 430px)
+   2. iPhone Landscape 90° (max-height: 480px)
+   3. Dynamic Island & Notch Evasion (safe-area-inset)
+   4. iPad Portrait (768px - 834px)
+   5. iPad Landscape (1024px - 1180px)
+   6. Compact Laptop (1280px - 1440px)
+   7. Desktop & 4K UHD (1920px - 3840px)
+   8. Touch Targets >= 44x44px (Apple HIG & Android WCAG)
+   9. Zero Horizontal Overflow (overflow-x: hidden)
+   10. Fluid Typography & Elastic Containers
+   11. One-Thumb Chapter Drawer Navigation
+   ========================================================================== */
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --header-h: 62px;
+}
+
+/* ==========================================================================
+   RULE 3 & RULE 9: ROOT SAFE AREA & OVERFLOW CONTAINMENT
+   ========================================================================== */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+
+/* ==========================================================================
+   ENHANCED INSTITUTIONAL HEADER & LOGO BRANDING
+   ========================================================================== */
+.terminal-header {
+  height: auto !important;
+  min-height: var(--header-h) !important;
+  padding: max(8px, var(--sat)) max(14px, var(--sar)) 8px max(14px, var(--sal)) !important;
+  background: linear-gradient(180deg, #070a14 0%, #0b1120 100%) !important;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9999 !important;
+  gap: 12px !important;
+}
+
+.brand-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: opacity 0.2s !important;
+}
+
+.brand-box:hover {
+  opacity: 0.95 !important;
+}
+
+.institutional-site-logo {
+  height: 42px !important;
+  width: auto !important;
+  max-width: 170px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25), 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+  object-fit: contain !important;
+}
+
+.brand-text-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.brand-title {
+  font-size: clamp(13px, 1.3vw, 16px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.3px !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.brand-subtitle {
+  font-size: clamp(9px, 0.8vw, 10.5px) !important;
+  color: #94a3b8 !important;
+  letter-spacing: 0.5px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* ==========================================================================
+   CATEGORIZED CHAPTERS DROPDOWN NAVIGATION ("MENU A TENDINE")
+   ========================================================================== */
+.chapters-nav-desktop {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 !important;
+  justify-content: center !important;
+}
+
+.chapter-dropdown {
+  position: relative !important;
+}
+
+.chapter-dropdown-btn {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  color: #e2e8f0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  min-height: 40px !important;
+  white-space: nowrap !important;
+}
+
+.chapter-dropdown-btn:hover,
+.chapter-dropdown-btn.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(245, 158, 11, 0.2)) !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.3) !important;
+}
+
+.chapter-dropdown-btn .chevron {
+  font-size: 10px !important;
+  transition: transform 0.2s !important;
+}
+
+.chapter-dropdown:hover .chapter-dropdown-btn .chevron {
+  transform: rotate(180deg) !important;
+}
+
+.chapter-dropdown-menu {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  left: 0 !important;
+  background: #090e1a !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  min-width: 260px !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 158, 11, 0.15) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  z-index: 10005 !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.chapter-dropdown:hover .chapter-dropdown-menu,
+.chapter-dropdown.open .chapter-dropdown-menu {
+  display: flex !important;
+}
+
+.chapter-dropdown-item {
+  padding: 10px 14px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  border: none !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  transition: all 0.15s !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.chapter-dropdown-item:hover {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  transform: translateX(3px) !important;
+}
+
+.chapter-dropdown-item.active {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #10b981 !important;
+  border-left: 3px solid #10b981 !important;
+}
+
+/* ==========================================================================
+   MOBILE HAMBURGER & UNIFIED CHAPTERS DRAWER (RULE 11)
+   ========================================================================== */
+.btn-mobile-chapters-drawer {
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: #fff !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Mobile Drawer Overlay */
+.mobile-unified-drawer-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(3, 7, 18, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease !important;
+}
+
+.mobile-unified-drawer-overlay.active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.mobile-unified-drawer-panel {
+  width: 85% !important;
+  max-width: 360px !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  background: #090e1a !important;
+  border-left: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.8) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: max(16px, var(--sat)) 16px max(16px, var(--sab)) 16px !important;
+  transform: translateX(100%) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.mobile-unified-drawer-overlay.active .mobile-unified-drawer-panel {
+  transform: translateX(0) !important;
+}
+
+.mobile-drawer-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 14px !important;
+}
+
+.mobile-drawer-section-title {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: #f59e0b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin: 12px 0 6px 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.mobile-drawer-btn {
+  min-height: 48px !important; /* RULE 8: Apple HIG min touch target */
+  padding: 12px 14px !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  color: #e2e8f0 !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  cursor: pointer !important;
+  margin-bottom: 6px !important;
+  width: 100% !important;
+  text-align: left !important;
+  transition: all 0.2s !important;
+  box-sizing: border-box !important;
+}
+
+.mobile-drawer-btn:active,
+.mobile-drawer-btn.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(245, 158, 11, 0.2)) !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+}
+
+/* ==========================================================================
+   RULE 8: TOUCH TARGET SIZING (>= 44x44px ON ALL INTERACTIVE ELEMENTS)
+   ========================================================================== */
+.account-tab,
+.cavaliere-memo-hud-btn,
+.btn-lock-terminal,
+.btn-drawer-action,
+.btn-drawer-close {
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ==========================================================================
+   RULE 1 & RULE 2: IPHONE PORTRAIT & IPHONE 90° LANDSCAPE BREAKPOINTS
+   ========================================================================== */
+
+/* Tablet & Mobile (< 1080px): Switch to Mobile Chapters Drawer */
+@media screen and (max-width: 1080px) {
+  .chapters-nav-desktop {
+    display: none !important;
+  }
+  .nav-tabs-container {
+    display: none !important; /* Hide unreadable squashed tab strip */
+  }
+  .btn-mobile-chapters-drawer {
+    display: inline-flex !important;
+  }
+  .institutional-site-logo {
+    height: 34px !important;
+  }
+  .brand-subtitle {
+    display: none !important; /* Save vertical space on mobile */
+  }
+}
+
+/* iPhone Portrait (<= 480px) */
+@media screen and (max-width: 480px) {
+  .terminal-header {
+    padding: max(6px, var(--sat)) max(8px, var(--sar)) 6px max(8px, var(--sal)) !important;
+    gap: 8px !important;
+  }
+  .brand-title {
+    font-size: 13px !important;
+  }
+  .header-right-actions {
+    gap: 4px !important;
+  }
+  .account-tab {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    min-height: 38px !important;
+  }
+  .cavaliere-memo-hud-btn {
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+    min-height: 38px !important;
+  }
+  .cavaliere-memo-hud-btn span:first-child {
+    font-size: 11px !important;
+  }
+}
+
+/* RULE 2: iPhone 90° Landscape (max-height: 480px and orientation: landscape) */
+@media screen and (max-height: 480px) and (orientation: landscape) {
+  .terminal-header {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 4px max(12px, var(--sar)) 4px max(12px, var(--sal)) !important;
+  }
+  .institutional-site-logo {
+    height: 28px !important;
+  }
+  .brand-title {
+    font-size: 12px !important;
+  }
+  .brand-subtitle {
+    display: none !important;
+  }
+  .chapters-nav-desktop {
+    display: none !important;
+  }
+  .btn-mobile-chapters-drawer {
+    display: inline-flex !important;
+    min-height: 36px !important;
+    padding: 4px 10px !important;
+  }
+  .account-tab, .cavaliere-memo-hud-btn {
+    min-height: 36px !important;
+    padding: 4px 8px !important;
+  }
+}
+
+/* ==========================================================================
+   RULE 4 & RULE 5: IPAD PORTRAIT & LANDSCAPE (768px - 1180px)
+   ========================================================================== */
+@media screen and (min-width: 768px) and (max-width: 1080px) {
+  .terminal-header {
+    padding: max(10px, var(--sat)) 16px 10px 16px !important;
+  }
+  .institutional-site-logo {
+    height: 38px !important;
+  }
+  .btn-mobile-chapters-drawer {
+    display: inline-flex !important;
+    font-size: 13px !important;
+    padding: 8px 16px !important;
+  }
+}
+
+/* ==========================================================================
+   RULE 7: DESKTOP & 4K UHD ULTRA-WIDE (1920px - 3840px)
+   ========================================================================== */
+@media screen and (min-width: 1920px) {
+  .terminal-header {
+    padding: 12px 32px !important;
+  }
+  .institutional-site-logo {
+    height: 48px !important;
+  }
+  .brand-title {
+    font-size: 18px !important;
+  }
+  .chapter-dropdown-btn {
+    font-size: 13.5px !important;
+    padding: 10px 16px !important;
+  }
+}

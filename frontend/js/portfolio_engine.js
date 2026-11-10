@@ -800,7 +800,7 @@
       });
     },
 
-    // 2. Asset Allocation Donut Pie
+    // 2. Asset Allocation 3D Volumetric Donut Chart
     renderAssetAllocationDonut: function() {
       const canvas = document.getElementById('canvas-pf-allocation');
       if (!canvas) return;
@@ -812,14 +812,13 @@
       const m = this.calculateMetrics(isDemo);
       const positions = isDemo ? this.demoState.positions : this.liveState.positions;
 
-      // Group by category
       const cats = {
-        'Criptovalute': { color: '#00f2a1', amount: 0 },
-        'Azioni US': { color: '#38bdf8', amount: 0 },
-        'Azioni EU': { color: '#818cf8', amount: 0 },
-        'Forex': { color: '#f59e0b', amount: 0 },
-        'Materie Prime': { color: '#ec4899', amount: 0 },
-        'Liquidità EUR': { color: '#64748b', amount: m.cash }
+        'Criptovalute': { color: '#00f2a1', darkColor: '#059669', amount: 0 },
+        'Azioni US': { color: '#38bdf8', darkColor: '#0284c7', amount: 0 },
+        'Azioni EU': { color: '#818cf8', darkColor: '#4f46e5', amount: 0 },
+        'Forex': { color: '#f59e0b', darkColor: '#d97706', amount: 0 },
+        'Materie Prime': { color: '#ec4899', darkColor: '#db2777', amount: 0 },
+        'Liquidità EUR': { color: '#64748b', darkColor: '#334155', amount: m.cash }
       };
 
       positions.forEach(p => {
@@ -836,52 +835,102 @@
       const slices = Object.entries(cats).filter(([_, c]) => c.amount > 0).map(([label, c]) => ({
         label,
         color: c.color,
+        darkColor: c.darkColor,
         amount: c.amount,
         pct: (c.amount / total) * 100
       }));
 
-      const cx = 110, cy = h / 2;
-      const outerR = 80, innerR = 48;
-      let startAngle = -Math.PI / 2;
+      const cx = 110, cy = (h / 2) - 4;
+      const outerR = 76, innerR = 44;
+      const depth = 12; // 3D extrusion height
 
+      // Step 1: Base Drop Shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 14;
+      ctx.beginPath();
+      ctx.arc(cx, cy + depth, outerR, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fill();
+      ctx.restore();
+
+      // Step 2: 3D Extrusion Rim
+      for (let d = depth; d >= 1; d--) {
+        let startAngle = -Math.PI / 2;
+        slices.forEach(slice => {
+          const sliceAngle = (slice.pct / 100) * (Math.PI * 2);
+          ctx.beginPath();
+          ctx.arc(cx, cy + d, outerR, startAngle, startAngle + sliceAngle);
+          ctx.arc(cx, cy + d, innerR, startAngle + sliceAngle, startAngle, true);
+          ctx.closePath();
+          ctx.fillStyle = slice.darkColor;
+          ctx.fill();
+          startAngle += sliceAngle;
+        });
+      }
+
+      // Step 3: Top Surface with 3D Radial Lighting
+      let startAngle = -Math.PI / 2;
       slices.forEach(slice => {
         const sliceAngle = (slice.pct / 100) * (Math.PI * 2);
         ctx.beginPath();
         ctx.arc(cx, cy, outerR, startAngle, startAngle + sliceAngle);
         ctx.arc(cx, cy, innerR, startAngle + sliceAngle, startAngle, true);
         ctx.closePath();
-        ctx.fillStyle = slice.color;
+
+        const grad = ctx.createRadialGradient(cx - 25, cy - 25, 10, cx, cy, outerR);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.35, slice.color);
+        grad.addColorStop(1, slice.darkColor);
+
+        ctx.fillStyle = grad;
         ctx.fill();
-        ctx.strokeStyle = '#070a12';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(7, 10, 18, 0.8)';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
         startAngle += sliceAngle;
       });
 
-      // Center Text (NAV)
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('NAV', cx, cy - 6);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 10px JetBrains Mono, monospace';
-      ctx.fillText('€' + Math.round(m.nav / 1000) + 'k', cx, cy + 10);
+      // Step 4: Specular Reflection Arc
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR - 1, -Math.PI * 0.8, -Math.PI * 0.2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-      // Render Legend List
+      // Center Bevel Cylinder & Text (NAV)
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#090e1a';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('NAV 3D', cx, cy - 5);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 12px JetBrains Mono, monospace';
+      ctx.fillText('€' + Math.round(m.nav / 1000) + 'k', cx, cy + 12);
+
+      // Interactive HTML Legend with 3D Pills
       const legendEl = document.getElementById('pf-allocation-legend');
       if (legendEl) {
         legendEl.innerHTML = slices.map(s => `
           <div class="pf-legend-item">
-            <span class="pf-legend-dot" style="background:${s.color};"></span>
-            <span class="pf-legend-label">${s.label}</span>
-            <span class="pf-legend-val">${s.pct.toFixed(1)}% (€${Math.round(s.amount).toLocaleString()})</span>
+            <span class="pf-legend-dot" style="background:${s.color}; box-shadow:0 0 10px ${s.color};"></span>
+            <span class="pf-legend-label">${s.label} (${s.pct.toFixed(1)}%)</span>
+            <span class="pf-legend-val">€${s.amount.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
           </div>
         `).join('');
       }
     },
 
-    // 3. PnL Breakdown Pie
+    // 3. PnL Breakdown 3D Volumetric Pie (Guadagni e Perdite)
     renderPnlBreakdownPie: function() {
       const canvas = document.getElementById('canvas-pf-pnl');
       if (!canvas) return;
@@ -896,64 +945,120 @@
       const losses = [];
       positions.forEach(p => {
         const pnl = p.pnlEur || 0;
-        if (pnl >= 0) gains.push({ symbol: p.symbol, pnl, color: '#00f2a1' });
-        else losses.push({ symbol: p.symbol, pnl: Math.abs(pnl), color: '#f43f5e' });
+        if (pnl >= 0) gains.push({ symbol: p.symbol, pnl, color: '#00f2a1', dark: '#059669' });
+        else losses.push({ symbol: p.symbol, pnl: Math.abs(pnl), color: '#f43f5e', dark: '#be123c' });
       });
 
       const totalGain = gains.reduce((acc, g) => acc + g.pnl, 0);
       const totalLoss = losses.reduce((acc, l) => acc + l.pnl, 0);
       const totalPnlAbs = (totalGain + totalLoss) || 1;
 
-      const cx = 110, cy = h / 2;
-      const outerR = 80, innerR = 48;
+      const cx = 110, cy = (h / 2) - 4;
+      const outerR = 76, innerR = 44;
+      const depth = 12;
 
-      let startAngle = -Math.PI / 2;
       const gainAngle = (totalGain / totalPnlAbs) * (Math.PI * 2);
+      const lossAngle = (totalLoss / totalPnlAbs) * (Math.PI * 2);
 
-      // Gains Slice (Green)
+      // Base Drop Shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 14;
+      ctx.beginPath();
+      ctx.arc(cx, cy + depth, outerR, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fill();
+      ctx.restore();
+
+      // Extrusion Rim
+      for (let d = depth; d >= 1; d--) {
+        const startAngle = -Math.PI / 2;
+        // Gains rim
+        ctx.beginPath();
+        ctx.arc(cx, cy + d, outerR, startAngle, startAngle + gainAngle);
+        ctx.arc(cx, cy + d, innerR, startAngle + gainAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = '#047857';
+        ctx.fill();
+
+        // Losses rim
+        ctx.beginPath();
+        ctx.arc(cx, cy + d, outerR, startAngle + gainAngle, startAngle + gainAngle + lossAngle);
+        ctx.arc(cx, cy + d, innerR, startAngle + gainAngle + lossAngle, startAngle + gainAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = '#9f1239';
+        ctx.fill();
+      }
+
+      // Top Faces with 3D Radial Gradients
+      const startAngle = -Math.PI / 2;
+      // Gains Top
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, startAngle, startAngle + gainAngle);
       ctx.arc(cx, cy, innerR, startAngle + gainAngle, startAngle, true);
       ctx.closePath();
-      ctx.fillStyle = '#00f2a1';
+      const gainGrad = ctx.createRadialGradient(cx - 20, cy - 20, 10, cx, cy, outerR);
+      gainGrad.addColorStop(0, '#a7f3d0');
+      gainGrad.addColorStop(0.3, '#00f2a1');
+      gainGrad.addColorStop(1, '#059669');
+      ctx.fillStyle = gainGrad;
       ctx.fill();
       ctx.strokeStyle = '#070a12';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Losses Slice (Red)
-      const lossAngle = (totalLoss / totalPnlAbs) * (Math.PI * 2);
+      // Losses Top
       ctx.beginPath();
       ctx.arc(cx, cy, outerR, startAngle + gainAngle, startAngle + gainAngle + lossAngle);
       ctx.arc(cx, cy, innerR, startAngle + gainAngle + lossAngle, startAngle + gainAngle, true);
       ctx.closePath();
-      ctx.fillStyle = '#f43f5e';
+      const lossGrad = ctx.createRadialGradient(cx - 20, cy - 20, 10, cx, cy, outerR);
+      lossGrad.addColorStop(0, '#fecdd3');
+      lossGrad.addColorStop(0.3, '#f43f5e');
+      lossGrad.addColorStop(1, '#be123c');
+      ctx.fillStyle = lossGrad;
       ctx.fill();
       ctx.strokeStyle = '#070a12';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Specular highlight
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR - 1, -Math.PI * 0.8, -Math.PI * 0.2);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Center text: Win %
+      // Center text: Win Rate
       const winPct = Math.round((totalGain / totalPnlAbs) * 100);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#090e1a';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 10px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('WIN', cx, cy - 6);
+      ctx.fillText('WIN RATE', cx, cy - 5);
       ctx.fillStyle = '#00f2a1';
-      ctx.font = 'bold 12px JetBrains Mono, monospace';
-      ctx.fillText(winPct + '%', cx, cy + 10);
+      ctx.font = 'bold 13px JetBrains Mono, monospace';
+      ctx.fillText(winPct + '%', cx, cy + 12);
 
       // Legend
       const legendEl = document.getElementById('pf-pnl-legend');
       if (legendEl) {
         legendEl.innerHTML = `
           <div class="pf-legend-item">
-            <span class="pf-legend-dot" style="background:#00f2a1;"></span>
+            <span class="pf-legend-dot" style="background:#00f2a1; box-shadow:0 0 10px #00f2a1;"></span>
             <span class="pf-legend-label">Guadagni Totali (+${winPct}%)</span>
             <span class="pf-legend-val" style="color:#00f2a1;">+€${totalGain.toFixed(2)}</span>
           </div>
           <div class="pf-legend-item">
-            <span class="pf-legend-dot" style="background:#f43f5e;"></span>
+            <span class="pf-legend-dot" style="background:#f43f5e; box-shadow:0 0 10px #f43f5e;"></span>
             <span class="pf-legend-label">Perdite Totali (-${100 - winPct}%)</span>
             <span class="pf-legend-val" style="color:#f43f5e;">-€${totalLoss.toFixed(2)}</span>
           </div>
@@ -967,7 +1072,7 @@
       }
     },
 
-    // 4. Currency Exposure Bar
+    // 4. Currency Exposure: 3D Vertical Columns (Colonne Tridimensionali)
     renderCurrencyExposure: function() {
       const canvas = document.getElementById('canvas-pf-currency');
       if (!canvas) return;
@@ -976,38 +1081,77 @@
       ctx.clearRect(0, 0, w, h);
 
       const currencies = [
-        { code: 'EUR (Base)', pct: 52, color: '#0ea5e9' },
-        { code: 'USD (Azioni US / Forex)', pct: 28, color: '#38bdf8' },
-        { code: 'USDT (Cripto Perp)', pct: 20, color: '#00f2a1' }
+        { code: 'EUR', label: 'Euro Base', pct: 52, color: '#0ea5e9', dark: '#0369a1', light: '#7dd3fc' },
+        { code: 'USD', label: 'Dollaro USA', pct: 28, color: '#38bdf8', dark: '#0284c7', light: '#bae6fd' },
+        { code: 'USDT', label: 'Tether Perp', pct: 20, color: '#00f2a1', dark: '#059669', light: '#a7f3d0' }
       ];
 
-      const barY = 40, barH = 26;
-      let curX = 20;
-      const totalW = w - 40;
+      const baseLineY = h - 35;
+      const maxColH = 95;
+      const colW = 54;
+      const spacing = (w - (currencies.length * colW)) / (currencies.length + 1);
 
-      currencies.forEach(c => {
-        const segW = (c.pct / 100) * totalW;
-        ctx.fillStyle = c.color;
-        ctx.fillRect(curX, barY, segW, barH);
-        ctx.strokeStyle = '#070a12';
-        ctx.strokeRect(curX, barY, segW, barH);
-        curX += segW;
-      });
+      currencies.forEach((c, i) => {
+        const x = spacing + i * (colW + spacing);
+        const colH = (c.pct / 100) * maxColH;
+        const topY = baseLineY - colH;
+        const depth = 8;
 
-      // Labels below bar
-      let legY = 100;
-      currencies.forEach(c => {
-        ctx.fillStyle = c.color;
-        ctx.fillRect(20, legY - 8, 10, 10);
+        // Base 3D Shadow
+        ctx.beginPath();
+        ctx.ellipse(x + colW / 2, baseLineY + 4, colW / 2 + 4, 6, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fill();
+
+        // Front Face of the 3D Column with Vertical Lighting
+        const frontGrad = ctx.createLinearGradient(x, 0, x + colW, 0);
+        frontGrad.addColorStop(0, c.light);
+        frontGrad.addColorStop(0.3, c.color);
+        frontGrad.addColorStop(1, c.dark);
+
+        ctx.fillStyle = frontGrad;
+        ctx.fillRect(x, topY, colW, colH);
+
+        // Side Depth Face (Right angled bevel)
+        ctx.beginPath();
+        ctx.moveTo(x + colW, topY);
+        ctx.lineTo(x + colW + depth, topY - depth);
+        ctx.lineTo(x + colW + depth, baseLineY - depth);
+        ctx.lineTo(x + colW, baseLineY);
+        ctx.closePath();
+        ctx.fillStyle = c.dark;
+        ctx.fill();
+
+        // Top 3D Cap (Rhombus highlight)
+        ctx.beginPath();
+        ctx.moveTo(x, topY);
+        ctx.lineTo(x + depth, topY - depth);
+        ctx.lineTo(x + colW + depth, topY - depth);
+        ctx.lineTo(x + colW, topY);
+        ctx.closePath();
+        ctx.fillStyle = c.light;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Percentage Text on top of the 3D column
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.pct + '%', x + colW / 2, topY - depth - 6);
+
+        // Label below column
         ctx.fillStyle = '#cbd5e1';
-        ctx.font = '11px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${c.code}: ${c.pct}%`, 38, legY);
-        legY += 22;
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.fillText(c.code, x + colW / 2, baseLineY + 16);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.fillText(c.label, x + colW / 2, baseLineY + 28);
       });
     },
 
-    // 5. Margin Risk Chart
+    // 5. Margin Risk: 3D Dual Pillar Chart (Pilastri Tridimensionali)
     renderMarginRisk: function() {
       const canvas = document.getElementById('canvas-pf-margin');
       if (!canvas) return;
@@ -1018,37 +1162,77 @@
       const isDemo = this.activeMode === 'demo';
       const m = this.calculateMetrics(isDemo);
 
-      const barY = 40, barH = 26;
-      const totalW = w - 40;
-
       const usedPct = Math.min(100, Math.round((m.totalInvestedMargin / m.nav) * 100)) || 18;
       const freePct = 100 - usedPct;
 
-      // Used Margin (Amber)
-      const usedW = (usedPct / 100) * totalW;
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(20, barY, usedW, barH);
+      const pillars = [
+        { code: 'IMPEGNATO', label: 'Margine Attivo', pct: usedPct, val: Math.round(m.totalInvestedMargin), color: '#f59e0b', dark: '#b45309', light: '#fde68a' },
+        { code: 'LIBERO BUFFER', label: 'Buffer Rischio', pct: freePct, val: Math.round(m.freeMargin), color: '#10b981', dark: '#047857', light: '#a7f3d0' }
+      ];
 
-      // Free Buffer (Green)
-      ctx.fillStyle = '#10b981';
-      ctx.fillRect(20 + usedW, barY, totalW - usedW, barH);
+      const baseLineY = h - 35;
+      const maxColH = 95;
+      const colW = 75;
+      const spacing = (w - (pillars.length * colW)) / (pillars.length + 1);
 
-      // Legend
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(20, 100, 10, 10);
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '11px Inter, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(`Margine Impegnato: ${usedPct}% (€${Math.round(m.totalInvestedMargin).toLocaleString()})`, 38, 108);
+      pillars.forEach((p, i) => {
+        const x = spacing + i * (colW + spacing);
+        const colH = (p.pct / 100) * maxColH;
+        const topY = baseLineY - colH;
+        const depth = 10;
 
-      ctx.fillStyle = '#10b981';
-      ctx.fillRect(20, 126, 10, 10);
-      ctx.fillStyle = '#cbd5e1';
-      ctx.fillText(`Buffer di Sicurezza Libero: ${freePct}% (€${Math.round(m.freeMargin).toLocaleString()})`, 38, 134);
+        // Base 3D Shadow
+        ctx.beginPath();
+        ctx.ellipse(x + colW / 2, baseLineY + 4, colW / 2 + 5, 7, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fill();
 
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 10.5px JetBrains Mono, monospace';
-      ctx.fillText(`Anti-Panic Guard: ATTIVO (Stop-out al 15% di margine)`, 20, 160);
+        // Front Face
+        const frontGrad = ctx.createLinearGradient(x, 0, x + colW, 0);
+        frontGrad.addColorStop(0, p.light);
+        frontGrad.addColorStop(0.25, p.color);
+        frontGrad.addColorStop(1, p.dark);
+
+        ctx.fillStyle = frontGrad;
+        ctx.fillRect(x, topY, colW, colH);
+
+        // Right 3D Side Face
+        ctx.beginPath();
+        ctx.moveTo(x + colW, topY);
+        ctx.lineTo(x + colW + depth, topY - depth);
+        ctx.lineTo(x + colW + depth, baseLineY - depth);
+        ctx.lineTo(x + colW, baseLineY);
+        ctx.closePath();
+        ctx.fillStyle = p.dark;
+        ctx.fill();
+
+        // Top 3D Cap Face
+        ctx.beginPath();
+        ctx.moveTo(x, topY);
+        ctx.lineTo(x + depth, topY - depth);
+        ctx.lineTo(x + colW + depth, topY - depth);
+        ctx.lineTo(x + colW, topY);
+        ctx.closePath();
+        ctx.fillStyle = p.light;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Percentage & Value on Top
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 13px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.pct + '%', x + colW / 2, topY - depth - 6);
+
+        // Labels Below
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.fillText(p.code, x + colW / 2, baseLineY + 16);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText('€' + p.val.toLocaleString(), x + colW / 2, baseLineY + 28);
+      });
     },
 
     // =========================================================================
