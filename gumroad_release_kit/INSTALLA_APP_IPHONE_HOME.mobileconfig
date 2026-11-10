@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>FullScreen</key>
+            <true/>
+            <key>IsRemovable</key>
+            <true/>
+            <key>Label</key>
+            <string>TradingPro</string>
+            <key>PayloadDescription</key>
+            <string>Icona WebApp Trading Pro Ultimate a Schermo Intero</string>
+            <key>PayloadDisplayName</key>
+            <string>Trading Pro Ultimate WebApp</string>
+            <key>PayloadIdentifier</key>
+            <string>com.tradingpro.ultimate.webclip</string>
+            <key>PayloadType</key>
+            <string>com.apple.webClip.managed</string>
+            <key>PayloadUUID</key>
+            <string>C1D2E3F4-2026-TPU1-9876-0123456789AB</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Precomposed</key>
+            <true/>
+            <key>URL</key>
+            <string>https://cuordivino.github.io/trading-pro-ultimate/</string>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>Trading Pro Ultimate (Icona Home Screen)</string>
+    <key>PayloadIdentifier</key>
+    <string>com.tradingpro.ultimate.profile</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>D2E3F4A5-2026-TPU2-8765-BA9876543210</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>

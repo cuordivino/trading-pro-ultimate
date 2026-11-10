@@ -2308,13 +2308,17 @@
                   <input type="text" id="tpu-gumroad-permalink-input" value="trading-pro-ultimate" style="width:100%; padding:8px; background:#070a12; border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; font-size:11px; box-sizing:border-box;">
                 </div>
               </div>
-              <div style="display:flex; gap:10px;">
-                <button type="button" onclick="TPUSecurity.showGatekeeper()" style="padding:8px 14px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:6px; cursor:pointer;">
-                  👁️ Simula Vista Paywall
+              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <button type="button" onclick="TPUSecurity.showGatekeeper(); TPUSecurity.switchAuthTab('license');" style="padding:8px 14px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:6px; cursor:pointer;">
+                  👁️ Simula Vista Paywall Gumroad
                 </button>
-                <button type="button" onclick="alert('Configurazione Gumroad salvata con successo!')" style="padding:8px 14px; font-size:11px; font-weight:800; background:#f59e0b; color:#000; border:none; border-radius:6px; cursor:pointer;">
-                  💾 Salva Gumroad
+                <button type="button" onclick="TPUSecurity.saveGumroadConfig()" style="padding:8px 14px; font-size:11px; font-weight:800; background:#f59e0b; color:#000; border:none; border-radius:6px; cursor:pointer;">
+                  💾 Salva Configurazione Gumroad
                 </button>
+                <button type="button" onclick="TPUSecurity.generateVipClientKey()" style="padding:8px 14px; font-size:11px; font-weight:800; background:rgba(16,185,129,0.2); border:1px solid #10b981; color:#10b981; border-radius:6px; cursor:pointer;">
+                  🔑 Genera License Key VIP Diretta
+                </button>
+                <input type="text" id="tpu-vip-generated-key" readonly placeholder="Chiave VIP..." style="padding:7px 10px; background:#030509; border:1px solid rgba(16,185,129,0.35); color:#10b981; font-family:monospace; font-size:11px; border-radius:6px; width:195px;">
               </div>
             </div>
           </div>

@@ -1,0 +1,28 @@
+================================================================================
+   TRADING PRO ULTIMATE™ — GUIDA RAPIDA DI ATTIVAZIONE LICENZA GUMROAD
+   Autore & Sviluppatore: cuordivino — Tutti i diritti riservati ©
+================================================================================
+
+Grazie per aver acquistato TRADING PRO ULTIMATE™!
+
+PASSO 1 — DOVE TROVI LA TUA LICENSE KEY GUMROAD:
+Nella ricevuta email inviata da Gumroad (e nella pagina di download del tuo ordine)
+trovi il tuo codice di licenza personale nel formato:
+XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX
+
+PASSO 2 — COME SBLOCCARE IL TERMINALE (SU PC, MAC, IPHONE E ANDROID):
+1. Apri il file "AVVIA_TRADING_PRO_ULTIMATE_CLIENTE.html" incluso in questo pacchetto
+   (oppure collegati direttamente a: https://cuordivino.github.io/trading-pro-ultimate/ ).
+2. Nella schermata di accesso riservato, clicca sulla scheda:
+   "🛒 Licenza Gumroad"
+3. Incolla la tua License Key personale e clicca su:
+   "✅ Verifica e Sblocca Licenza"
+
+PASSO 3 — COME AVERE L'ICONA APP SU IPHONE, IPAD E ANDROID:
+- Su iPhone / iPad (Safari): Apri il link su Safari -> Tocca "Condividi" in basso ->
+  Scegli "Aggiungi alla schermata Home" (oppure apri il file INSTALLA_APP_IPHONE_HOME.mobileconfig).
+- Su Android (Chrome) e PC (Chrome/Edge): Clicca su "Installa App" nella barra degli indirizzi.
+
+ASSISTENZA UFFICIALE:
+Telegram: @cuordivino
+================================================================================
