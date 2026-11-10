@@ -217,7 +217,7 @@
                   <li>✓ Aggiornamenti continui tramite GitHub Pages</li>
                 </ul>
               </div>
-              <a href="https://gumroad.com" target="_blank" class="checkout-btn">Acquista Licenza Base ➔</a>
+              <a href="https://lamente7.gumroad.com/l/trading-pro-ultimate" target="_blank" class="checkout-btn">Acquista Licenza Base ➔</a>
             </div>
 
             <!-- Tier 2 (Featured Gold) -->
@@ -235,7 +235,7 @@
                   <li>✓ Feed Macro Live Wire in tempo reale e Alpha Briefing</li>
                 </ul>
               </div>
-              <a href="https://gumroad.com" target="_blank" class="checkout-btn gold">Attiva Abbonamento Pro ⚡</a>
+              <a href="https://lamente7.gumroad.com/l/trading-pro-ultimate" target="_blank" class="checkout-btn gold">Attiva Abbonamento Pro ⚡</a>
             </div>
 
             <!-- Tier 3 -->
@@ -251,7 +251,7 @@
                   <li>✓ Anti-Panic Guard dedicata con stop drawdown calibrato</li>
                 </ul>
               </div>
-              <a href="https://gumroad.com" target="_blank" class="checkout-btn">Richiedi Private Wealth ➔</a>
+              <a href="https://lamente7.gumroad.com/l/trading-pro-ultimate" target="_blank" class="checkout-btn">Richiedi Private Wealth ➔</a>
             </div>
           </div>
         </div>

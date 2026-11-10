@@ -24,7 +24,8 @@
     activeInviteToken: localStorage.getItem('tpu_active_invite_token') || null,
     boundGuestIp: localStorage.getItem('tpu_bound_guest_ip') || null,
     guestName: localStorage.getItem('tpu_bound_guest_name') || 'Amico / Collaboratore',
-    gumroadUrl: localStorage.getItem('tpu_gumroad_url') || 'https://gumroad.com/l/trading-pro-ultimate',
+    gumroadProductId: localStorage.getItem('tpu_gumroad_product_id') || 'vatY6QXXtMs5hr0ZthWyXQ==',
+    gumroadUrl: localStorage.getItem('tpu_gumroad_url') || 'https://lamente7.gumroad.com/l/trading-pro-ultimate',
     gumroadPermalink: localStorage.getItem('tpu_gumroad_permalink') || 'trading-pro-ultimate',
     antiCopyHandlersBound: false,
 
@@ -655,7 +656,7 @@
       const alreadyActivatedLocally = localStorage.getItem('tpu_active_license_key') === key;
       try {
         const formBody = new URLSearchParams();
-        formBody.append('product_permalink', this.gumroadPermalink || 'trading-pro-ultimate');
+        formBody.append('product_id', this.gumroadProductId || 'vatY6QXXtMs5hr0ZthWyXQ==');
         formBody.append('license_key', key);
         formBody.append('increment_uses_count', alreadyActivatedLocally ? 'false' : 'true');
 
