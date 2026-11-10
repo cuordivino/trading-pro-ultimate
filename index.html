@@ -170,14 +170,16 @@
 
   <!-- NAVIGATION HEADER -->
   <header class="terminal-header">
-    <div class="brand-box" style="display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="switchMainTab('tab-terminal')">
-      <img src="assets/tradingpro_institutional_logo.jpg" alt="Trading Pro Ultimate Logo" class="institutional-site-logo" style="height:38px; border-radius:6px; border:1px solid rgba(245,158,11,0.35); box-shadow:0 0 14px rgba(245,158,11,0.25); object-fit:contain;">
-      <div class="brand-title">
-        <span>⚡ TRADING<span class="accent-pro">PRO</span> ULTIMATE™</span>
-        <span class="brand-author-badge">© by cuordivino</span>
-      </div>
-      <div class="brand-subtitle" style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono)">
-        TUTTI I DIRITTI RISERVATI • QUANT INSTITUTIONAL TERMINAL
+    <div class="brand-box" onclick="switchMainTab('tab-terminal')">
+      <img src="assets/tradingpro_institutional_logo.jpg" alt="Trading Pro Ultimate Logo" class="institutional-site-logo">
+      <div class="brand-text-wrap">
+        <div class="brand-title">
+          <span>⚡ TRADING<span class="accent-pro">PRO</span> ULTIMATE™</span>
+          <span class="brand-author-badge">© by cuordivino</span>
+        </div>
+        <div class="brand-subtitle">
+          TUTTI I DIRITTI RISERVATI • QUANT INSTITUTIONAL TERMINAL
+        </div>
       </div>
     </div>
 
@@ -354,6 +356,8 @@
         <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Capitolo:</span>
         <select id="drawer-chapter-quick-select" class="drawer-quick-select" onchange="switchMainTab(this.value)">
           <option value="tab-terminal">📈 Terminale Pro (Grafico Candele & Ordini)</option>
+          <option value="tab-portfolio-manager">💼 Gestione Portafoglio (Demo €30k &amp; Reale)</option>
+          <option value="tab-supreme-suite">🤖 Supreme Suite &amp; 5 Agenti IA</option>
                     <option value="tab-market-quantum">⚡ Market Quantum Co-Pilot (Multi-Agent & Risk)</option>
 <option value="tab-model-portfolios">💼 Portafogli Modello & Gestiti (IA)</option>
           <option value="tab-macro-radar">🌐 Panoramica Macro & Radar Screener</option>

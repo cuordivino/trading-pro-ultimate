@@ -58,6 +58,7 @@
       console.log('🎨 TPU Web Design Agents Guild Online & Ready.');
       this.detectEnvironment();
       this.bindEvents();
+      this.bindDropdownEvents();
       this.startAuditLoop();
       this.injectMobileDrawerHTML();
     },
@@ -72,13 +73,41 @@
       this.viewportState.isDesktop = w > 1080;
       this.viewportState.isLandscapePhone = h <= 480 && w > h;
 
-      // Safe area detection
-      const testEl = document.createElement('div');
-      testEl.style.paddingTop = 'env(safe-area-inset-top, 0px)';
-      document.body.appendChild(testEl);
-      const computedPad = parseInt(window.getComputedStyle(testEl).paddingTop) || 0;
-      document.body.removeChild(testEl);
-      this.viewportState.hasNotchOrIsland = computedPad > 0;
+      if (this.viewportState.hasNotchOrIsland === undefined && typeof document !== 'undefined' && document.body) {
+        try {
+          const testEl = document.createElement('div');
+          testEl.style.paddingTop = 'env(safe-area-inset-top, 0px)';
+          document.body.appendChild(testEl);
+          const computedPad = parseInt(window.getComputedStyle(testEl).paddingTop) || 0;
+          document.body.removeChild(testEl);
+          this.viewportState.hasNotchOrIsland = computedPad > 0;
+        } catch(e) {
+          this.viewportState.hasNotchOrIsland = false;
+        }
+      }
+    },
+
+    bindDropdownEvents: function() {
+      document.querySelectorAll('.chapter-dropdown-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const parent = btn.closest('.chapter-dropdown');
+          if (!parent) return;
+          const wasOpen = parent.classList.contains('open');
+          document.querySelectorAll('.chapter-dropdown.open').forEach(d => d.classList.remove('open'));
+          if (!wasOpen) parent.classList.add('open');
+        });
+      });
+
+      document.querySelectorAll('.chapter-dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.chapter-dropdown.open').forEach(d => d.classList.remove('open'));
+        });
+      });
+
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.chapter-dropdown.open').forEach(d => d.classList.remove('open'));
+      });
     },
 
     bindEvents: function() {

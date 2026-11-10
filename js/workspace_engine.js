@@ -833,13 +833,15 @@ window.ColumnSplitterManager = {
         // Bybit Wide Chart Mode: Chart expands to 1fr (100% available space), Order Execution on right
         grid.classList.add('book-under');
         grid.style.setProperty('display', 'grid', 'important');
-        grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.order || 340) + 'px', 'important');
+        grid.style.setProperty('grid-template-columns', 'minmax(0, 1fr) 10px ' + (this.widths.order || 340) + 'px', 'important');
         grid.style.setProperty('gap', '0', 'important');
 
         if (chartWrap) {
           chartWrap.style.setProperty('grid-column', '1', 'important');
           chartWrap.style.setProperty('width', '100%', 'important');
           chartWrap.style.setProperty('max-width', '100%', 'important');
+          chartWrap.style.setProperty('min-width', '0', 'important');
+          chartWrap.style.setProperty('overflow', 'hidden', 'important');
         }
 
         if (split1) split1.style.setProperty('display', 'none', 'important');
@@ -868,13 +870,15 @@ window.ColumnSplitterManager = {
         // Standard 3-Column Layout: Chart (1fr) | Book | Order Execution
         grid.classList.remove('book-under');
         grid.style.setProperty('display', 'grid', 'important');
-        grid.style.setProperty('grid-template-columns', '1fr 10px ' + (this.widths.book || 310) + 'px 10px ' + (this.widths.order || 340) + 'px', 'important');
+        grid.style.setProperty('grid-template-columns', 'minmax(0, 1fr) 10px ' + (this.widths.book || 310) + 'px 10px ' + (this.widths.order || 340) + 'px', 'important');
         grid.style.setProperty('gap', '0', 'important');
 
         if (chartWrap) {
           chartWrap.style.setProperty('grid-column', '1', 'important');
           chartWrap.style.setProperty('width', '100%', 'important');
           chartWrap.style.setProperty('max-width', '100%', 'important');
+          chartWrap.style.setProperty('min-width', '0', 'important');
+          chartWrap.style.setProperty('overflow', 'hidden', 'important');
         }
 
         if (split1) {
@@ -949,10 +953,13 @@ window.ColumnSplitterManager = {
     const onMove = (clientX) => {
       if (!isDragging) return;
       const delta = clientX - startX;
+      const maxAllowed = Math.max(250, window.innerWidth - 450);
       if (type === 'book') {
-        this.widths.book = Math.max(180, Math.min(700, startW - delta));
+        const boundBook = Math.min(600, maxAllowed);
+        this.widths.book = Math.max(180, Math.min(boundBook, startW - delta));
       } else if (type === 'order') {
-        this.widths.order = Math.max(220, Math.min(800, startW - delta));
+        const boundOrder = Math.min(650, maxAllowed);
+        this.widths.order = Math.max(220, Math.min(boundOrder, startW - delta));
       }
       this.applyDomWidths();
       if (window.resizeAllCharts) window.resizeAllCharts();

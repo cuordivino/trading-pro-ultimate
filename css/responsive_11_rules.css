@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TRADING PRO ULTIMATE™ — 11 REGOLE RESPONSIVE ARCHITECTURE
+   TRADING PRO ULTIMATE™ — 11 REGOLE RESPONSIVE ARCHITECTURE (V2 ENHANCED)
    Reference Standard: xvideo-cadbridge-4k (Universal Cross-Device Engine)
    Rules Verified:
    1. iPhone Portrait (375px - 430px)
@@ -10,7 +10,7 @@
    6. Compact Laptop (1280px - 1440px)
    7. Desktop & 4K UHD (1920px - 3840px)
    8. Touch Targets >= 44x44px (Apple HIG & Android WCAG)
-   9. Zero Horizontal Overflow (overflow-x: hidden)
+   9. Zero Horizontal Overflow (overflow-x: hidden, zero right-edge clipping)
    10. Fluid Typography & Elastic Containers
    11. One-Thumb Chapter Drawer Navigation
    ========================================================================== */
@@ -24,7 +24,7 @@
 }
 
 /* ==========================================================================
-   RULE 3 & RULE 9: ROOT SAFE AREA & OVERFLOW CONTAINMENT
+   RULE 3 & RULE 9: ROOT SAFE AREA & STRICT OVERFLOW CONTAINMENT
    ========================================================================== */
 html, body {
   overflow-x: hidden !important;
@@ -34,8 +34,23 @@ html, body {
   -webkit-text-size-adjust: 100% !important;
 }
 
+/* Ensure inputs, sliders and controls are always interactive and never blocked */
+input, select, textarea, button {
+  pointer-events: auto !important;
+}
+.lev-slider, input[type="range"] {
+  pointer-events: auto !important;
+  touch-action: pan-y !important;
+  cursor: pointer !important;
+}
+
+/* Permanently eliminate legacy 17 squashed buttons to prevent right-edge clipping on PC */
+.nav-tabs-container {
+  display: none !important;
+}
+
 /* ==========================================================================
-   ENHANCED INSTITUTIONAL HEADER & LOGO BRANDING
+   MASTER HEADER: BALANCED 3-TIER PC ARCHITECTURE & CENTRAL INDEPENDENT BAR
    ========================================================================== */
 .terminal-header {
   height: auto !important;
@@ -51,8 +66,12 @@ html, body {
   top: 0 !important;
   z-index: 9999 !important;
   gap: 12px !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
 }
 
+/* 1. LEFT BRAND BOX */
 .brand-box {
   display: flex !important;
   align-items: center !important;
@@ -74,6 +93,7 @@ html, body {
   border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.25), 0 4px 10px rgba(0, 0, 0, 0.5) !important;
   object-fit: contain !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .brand-text-wrap {
@@ -83,31 +103,39 @@ html, body {
 }
 
 .brand-title {
-  font-size: clamp(13px, 1.3vw, 16px) !important;
+  font-size: clamp(12.5px, 1.2vw, 15.5px) !important;
   font-weight: 900 !important;
   letter-spacing: -0.3px !important;
   color: #fff !important;
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
+  white-space: nowrap !important;
 }
 
 .brand-subtitle {
-  font-size: clamp(9px, 0.8vw, 10.5px) !important;
+  font-size: clamp(8.5px, 0.75vw, 10px) !important;
   color: #94a3b8 !important;
   letter-spacing: 0.5px !important;
   font-family: 'JetBrains Mono', monospace !important;
+  white-space: nowrap !important;
 }
 
 /* ==========================================================================
-   CATEGORIZED CHAPTERS DROPDOWN NAVIGATION ("MENU A TENDINE")
+   2. PARTE INDIPENDENTE CENTRALE PER IL PC (CATEGORIZED CHAPTERS DROPDOWNS)
    ========================================================================== */
 .chapters-nav-desktop {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  flex: 1 !important;
   justify-content: center !important;
+  gap: 6px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  background: rgba(11, 16, 29, 0.8) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  border-radius: 12px !important;
+  padding: 4px 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
 .chapter-dropdown {
@@ -115,24 +143,26 @@ html, body {
 }
 
 .chapter-dropdown-btn {
-  background: rgba(15, 23, 42, 0.75) !important;
+  background: rgba(15, 23, 42, 0.85) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 8px !important;
-  padding: 8px 12px !important;
+  padding: 7px 11px !important;
   color: #e2e8f0 !important;
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  min-height: 40px !important;
+  min-height: 36px !important;
   white-space: nowrap !important;
+  user-select: none !important;
 }
 
 .chapter-dropdown-btn:hover,
-.chapter-dropdown-btn.active {
+.chapter-dropdown-btn.active,
+.chapter-dropdown.open .chapter-dropdown-btn {
   background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(245, 158, 11, 0.2)) !important;
   border-color: #f59e0b !important;
   color: #fbbf24 !important;
@@ -144,20 +174,22 @@ html, body {
   transition: transform 0.2s !important;
 }
 
-.chapter-dropdown:hover .chapter-dropdown-btn .chevron {
+.chapter-dropdown:hover .chapter-dropdown-btn .chevron,
+.chapter-dropdown.open .chapter-dropdown-btn .chevron {
   transform: rotate(180deg) !important;
 }
 
 .chapter-dropdown-menu {
   position: absolute !important;
   top: calc(100% + 6px) !important;
-  left: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
   background: #090e1a !important;
   border: 1px solid rgba(245, 158, 11, 0.35) !important;
   border-radius: 12px !important;
   padding: 8px !important;
-  min-width: 260px !important;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 158, 11, 0.15) !important;
+  min-width: 250px !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(245, 158, 11, 0.15) !important;
   display: none !important;
   flex-direction: column !important;
   gap: 4px !important;
@@ -171,9 +203,9 @@ html, body {
 }
 
 .chapter-dropdown-item {
-  padding: 10px 14px !important;
+  padding: 9px 12px !important;
   border-radius: 8px !important;
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
   color: #cbd5e1 !important;
   background: transparent !important;
@@ -182,7 +214,7 @@ html, body {
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   transition: all 0.15s !important;
   width: 100% !important;
   box-sizing: border-box !important;
@@ -198,6 +230,16 @@ html, body {
   background: rgba(16, 185, 129, 0.18) !important;
   color: #10b981 !important;
   border-left: 3px solid #10b981 !important;
+}
+
+/* ==========================================================================
+   3. RIGHT HEADER QUICK ACTIONS (ZERO OVERFLOW GUARD)
+   ========================================================================== */
+.header-right-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
@@ -221,7 +263,7 @@ html, body {
   box-shadow: 0 0 12px rgba(37, 99, 235, 0.4) !important;
 }
 
-/* Mobile Drawer Overlay */
+/* Mobile Drawer Overlay: physically hidden when closed to prevent touch/click hijacking */
 .mobile-unified-drawer-overlay {
   position: fixed !important;
   inset: 0 !important;
@@ -229,7 +271,7 @@ html, body {
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   z-index: 100000 !important;
-  display: flex !important;
+  display: none !important;
   justify-content: flex-end !important;
   opacity: 0 !important;
   pointer-events: none !important;
@@ -237,6 +279,7 @@ html, body {
 }
 
 .mobile-unified-drawer-overlay.active {
+  display: flex !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
@@ -318,71 +361,107 @@ html, body {
 .btn-lock-terminal,
 .btn-drawer-action,
 .btn-drawer-close {
-  min-height: 44px !important;
+  min-height: 40px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
 }
 
 /* ==========================================================================
-   RULE 1 & RULE 2: IPHONE PORTRAIT & IPHONE 90° LANDSCAPE BREAKPOINTS
+   RULE 1: MOBILE & CELL (< 768px): LOGO A DIMENSIONE DOPPIA E CENTRATO
    ========================================================================== */
-
-/* Tablet & Mobile (< 1080px): Switch to Mobile Chapters Drawer */
-@media screen and (max-width: 1080px) {
+@media screen and (max-width: 768px) {
+  .terminal-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: max(10px, var(--sat)) 12px 10px 12px !important;
+    gap: 8px !important;
+  }
+  .brand-box {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    gap: 6px !important;
+  }
+  /* LOGO A DIMENSIONE DOPPIA RISPETTO ALL'ORIGINALE (34px -> 68px) E PERFETTAMENTE CENTRATO */
+  .institutional-site-logo {
+    height: 68px !important;
+    max-width: 260px !important;
+    width: auto !important;
+    margin: 0 auto 4px auto !important;
+    border-radius: 10px !important;
+    border: 2px solid rgba(245, 158, 11, 0.5) !important;
+    box-shadow: 0 0 22px rgba(245, 158, 11, 0.35), 0 6px 16px rgba(0, 0, 0, 0.6) !important;
+  }
+  .brand-text-wrap {
+    align-items: center !important;
+    text-align: center !important;
+  }
+  .brand-title {
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 14px !important;
+  }
+  .brand-subtitle {
+    display: block !important;
+    text-align: center !important;
+    font-size: 9px !important;
+    color: #94a3b8 !important;
+  }
   .chapters-nav-desktop {
     display: none !important;
   }
-  .nav-tabs-container {
-    display: none !important; /* Hide unreadable squashed tab strip */
-  }
   .btn-mobile-chapters-drawer {
     display: inline-flex !important;
-  }
-  .institutional-site-logo {
-    height: 34px !important;
-  }
-  .brand-subtitle {
-    display: none !important; /* Save vertical space on mobile */
-  }
-}
-
-/* iPhone Portrait (<= 480px) */
-@media screen and (max-width: 480px) {
-  .terminal-header {
-    padding: max(6px, var(--sat)) max(8px, var(--sar)) 6px max(8px, var(--sal)) !important;
-    gap: 8px !important;
-  }
-  .brand-title {
+    min-height: 44px !important;
+    padding: 8px 16px !important;
     font-size: 13px !important;
   }
   .header-right-actions {
-    gap: 4px !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
   }
   .account-tab {
-    padding: 6px 8px !important;
-    font-size: 10px !important;
-    min-height: 38px !important;
-  }
-  .cavaliere-memo-hud-btn {
-    padding: 4px 8px !important;
+    padding: 6px 9px !important;
     font-size: 10.5px !important;
     min-height: 38px !important;
   }
-  .cavaliere-memo-hud-btn span:first-child {
+  .cavaliere-memo-hud-btn {
+    padding: 4px 10px !important;
     font-size: 11px !important;
+    min-height: 38px !important;
   }
 }
 
-/* RULE 2: iPhone 90° Landscape (max-height: 480px and orientation: landscape) */
+/* ==========================================================================
+   RULE 2: IPHONE 90° LANDSCAPE (max-height: 480px and orientation: landscape)
+   ========================================================================== */
 @media screen and (max-height: 480px) and (orientation: landscape) {
   .terminal-header {
-    height: 44px !important;
-    min-height: 44px !important;
+    height: 42px !important;
+    min-height: 42px !important;
     padding: 4px max(12px, var(--sar)) 4px max(12px, var(--sal)) !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+  }
+  .brand-box {
+    flex-direction: row !important;
+    gap: 8px !important;
   }
   .institutional-site-logo {
-    height: 28px !important;
+    height: 32px !important;
+    max-width: 130px !important;
+    margin: 0 !important;
   }
   .brand-title {
     font-size: 12px !important;
@@ -395,29 +474,57 @@ html, body {
   }
   .btn-mobile-chapters-drawer {
     display: inline-flex !important;
-    min-height: 36px !important;
+    min-height: 34px !important;
     padding: 4px 10px !important;
+    font-size: 11px !important;
   }
   .account-tab, .cavaliere-memo-hud-btn {
-    min-height: 36px !important;
+    min-height: 34px !important;
     padding: 4px 8px !important;
   }
 }
 
 /* ==========================================================================
-   RULE 4 & RULE 5: IPAD PORTRAIT & LANDSCAPE (768px - 1180px)
+   RULE 4 & RULE 5: IPAD PORTRAIT & LANDSCAPE (769px - 1080px)
    ========================================================================== */
-@media screen and (min-width: 768px) and (max-width: 1080px) {
+@media screen and (min-width: 769px) and (max-width: 1080px) {
   .terminal-header {
     padding: max(10px, var(--sat)) 16px 10px 16px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
   }
   .institutional-site-logo {
     height: 38px !important;
+  }
+  .chapters-nav-desktop {
+    display: none !important;
   }
   .btn-mobile-chapters-drawer {
     display: inline-flex !important;
     font-size: 13px !important;
     padding: 8px 16px !important;
+  }
+}
+
+/* ==========================================================================
+   RULE 6: COMPACT LAPTOPS & DESKTOPS (1081px - 1440px)
+   Tighten button padding so dropdowns never push the right-side off-screen!
+   ========================================================================== */
+@media screen and (min-width: 1081px) and (max-width: 1440px) {
+  .chapters-nav-desktop {
+    gap: 4px !important;
+    padding: 3px 6px !important;
+  }
+  .chapter-dropdown-btn {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    min-height: 34px !important;
+  }
+  .brand-subtitle {
+    display: none !important; /* Save horizontal space on compact laptops */
+  }
+  .brand-title {
+    font-size: 13px !important;
   }
 }
 
@@ -432,10 +539,10 @@ html, body {
     height: 48px !important;
   }
   .brand-title {
-    font-size: 18px !important;
+    font-size: 17px !important;
   }
   .chapter-dropdown-btn {
-    font-size: 13.5px !important;
-    padding: 10px 16px !important;
+    font-size: 13px !important;
+    padding: 9px 15px !important;
   }
 }
