@@ -120,6 +120,7 @@ function toggleDrawer(id) {
 // TOP CHAPTER DROPDOWN NAVIGATION ("APERTURA A TENDINA IN ALTO")
 // ==========================================================================
 const CHAPTER_META = {
+  'tab-marketing-erp': { icon: '💼📈', title: 'Apex-CEO IA — Marketing Multicanale, CRM Commerciale, Video Demo & Contabilità ERP' },
   'tab-portfolio-manager': { icon: '💼', title: 'Gestione Portafoglio Istituzionale (Demo €30k & Reale API Multi-Broker)' },
   'tab-market-quantum': { icon: '⚡', title: 'Market Quantum Co-Pilot (Multi-Agent & Risk)' },
   'tab-supreme-suite': { icon: '🤖', title: 'Supreme Suite & 5 Agenti IA (Conti Demo/Live & Connettori Broker)' },
@@ -206,7 +207,9 @@ function switchMainTab(tabId, btnElem) {
   }
 
   // Trigger chapter renders
-  if (tabId === 'tab-portfolio-manager' && window.PortfolioEngine) {
+  if (tabId === 'tab-marketing-erp' && window.MarketingERPEngine) {
+    MarketingERPEngine.runAutonomousCorporateCycle(false);
+  } else if (tabId === 'tab-portfolio-manager' && window.PortfolioEngine) {
     PortfolioEngine.renderPortfolioSector();
   } else if (tabId === 'tab-market-quantum' && window.MarketQuantumEngine) {
     MarketQuantumEngine.renderCockpit();
