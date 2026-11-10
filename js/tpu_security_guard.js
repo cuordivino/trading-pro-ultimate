@@ -14,6 +14,7 @@
 
   const TPU_SECURITY = {
     role: 'locked', // 'owner' | 'licensed' | 'guest' | 'locked'
+    guestPerm: 'spectator', // 'spectator' (Blindato: solo visione, no modifiche, no copia) | 'demo_unlocked'
     clientIp: 'Rilevamento in corso...',
     masterPass: 'Deia2026',
     totpSecretBase32: 'JBSWY3DPEHPK3PXP2026TPU', // Base32 secret for Google Authenticator
@@ -22,9 +23,10 @@
     guestName: localStorage.getItem('tpu_bound_guest_name') || 'Ospite',
     gumroadUrl: localStorage.getItem('tpu_gumroad_url') || 'https://gumroad.com/l/trading-pro-ultimate',
     gumroadPermalink: localStorage.getItem('tpu_gumroad_permalink') || 'trading-pro-ultimate',
+    antiCopyHandlersBound: false,
 
     init: async function() {
-      console.log('🛡️ TPU Security Guard Online (2FA Google Authenticator & IP-Lock Attivi).');
+      console.log('🛡️ TPU Security Guard Online (2FA Google Authenticator & IP-Lock & Anti-Theft Attivi).');
       await this.detectClientIp();
       this.evaluateAccess();
       this.injectSecurityUI();
@@ -51,7 +53,7 @@
       const params = new URLSearchParams(window.location.search);
       const invite = params.get('invite');
       const targetGuest = params.get('guest') || 'Amico';
-      const boundIpParam = params.get('ip');
+      const permMode = params.get('perm') || 'spectator';
 
       // Check if entering via 1-to-1 Guest Invite Link
       if (invite) {
@@ -62,13 +64,13 @@
         if (!storedIp) {
           localStorage.setItem('tpu_guest_token_' + invite, invite);
           localStorage.setItem('tpu_guest_ip_' + invite, this.clientIp);
-          this.unlockAsGuest(targetGuest, this.clientIp);
+          this.unlockAsGuest(targetGuest, this.clientIp, permMode);
           return;
         }
 
         // Case 2: Matching IP — Allow access
         if (storedIp === this.clientIp || this.clientIp === '127.0.0.1') {
-          this.unlockAsGuest(targetGuest, storedIp);
+          this.unlockAsGuest(targetGuest, storedIp, permMode);
           return;
         }
 
@@ -109,53 +111,224 @@
       this.enforceGuestRestrictions(false);
     },
 
-    unlockAsGuest: function(guestName, boundIp) {
+    unlockAsGuest: function(guestName, boundIp, perm = 'spectator') {
       this.role = 'guest';
+      this.guestPerm = perm;
       this.hideGatekeeper();
-      this.updateRoleBanner(`OSPITE: ${guestName} (Prova Senza Eseguito)`, 'badge-guest');
-      this.enforceGuestRestrictions(true);
-      this.showGuestBanner(guestName, boundIp);
+      const badgeText = perm === 'spectator'
+        ? `OSPITE: ${guestName} (Solo Visione Blindata)`
+        : `OSPITE: ${guestName} (Demo Interattiva)`;
+      this.updateRoleBanner(badgeText, 'badge-guest');
+      this.enforceGuestRestrictions(true, guestName, boundIp, perm);
+      this.showGuestBanner(guestName, boundIp, perm);
     },
 
-    // Enforce "Prova Senza Eseguito" restrictions for guests
-    enforceGuestRestrictions: function(isGuest) {
-      // Disable or mark read-only order buttons and API keys for guest
-      const orderBtns = document.querySelectorAll('#btn-order-buy, #btn-order-sell, .btn-execute-order, .order-execution-col button');
-      orderBtns.forEach(btn => {
-        if (isGuest) {
-          btn.disabled = true;
-          btn.style.opacity = '0.45';
-          btn.style.cursor = 'not-allowed';
-          btn.setAttribute('title', 'Modalità Dimostrazione: Esecuzione ordini disattivata per gli ospiti');
-        } else {
-          btn.disabled = false;
-          btn.style.opacity = '1';
-          btn.style.cursor = 'pointer';
-        }
+    // Toast Alert for blocked actions in Spectator mode
+    showSecurityToast: function(msg) {
+      let t = document.getElementById('tpu-security-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'tpu-security-toast';
+        t.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0f172a; border:1px solid #f59e0b; color:#fbbf24; padding:10px 18px; border-radius:8px; font-size:12px; font-weight:700; z-index:100020; box-shadow:0 10px 30px rgba(0,0,0,0.85); transition:opacity 0.3s ease; pointer-events:none;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display = 'block';
+      t.style.opacity = '1';
+      clearTimeout(this._toastTimer);
+      this._toastTimer = setTimeout(() => {
+        if (t) t.style.opacity = '0';
+        setTimeout(() => { if (t) t.style.display = 'none'; }, 300);
+      }, 2600);
+    },
+
+    // Enforce "Spettatore Blindato" restrictions for guests
+    enforceGuestRestrictions: function(isGuest, guestName = 'Ospite', boundIp = '', perm = 'spectator') {
+      const styleId = 'tpu-spectator-anti-theft-styles';
+      const watermarkId = 'tpu-spectator-watermark-overlay';
+
+      // 1. Trading Execution & Sensitive Action Buttons: ALWAYS blocked for any guest
+      const orderSelectors = [
+        '#btn-order-buy', '#btn-order-sell', '.btn-execute-order', '.order-execution-col button',
+        '.btn-place-order', '#btn-api-modal', '.cm-save-btn', '#btn-clear-history',
+        '#btn-save-keys', '#btn-reset-balance', '#btn-deposit', '#btn-withdraw',
+        '#btn-save-gumroad', '#tpu-btn-save-keys'
+      ];
+      orderSelectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(btn => {
+          if (isGuest) {
+            btn.disabled = true;
+            btn.style.opacity = '0.35';
+            btn.style.cursor = 'not-allowed';
+            btn.setAttribute('title', '🔒 Modalità Ospite: Esecuzione ordini e modifiche riservate al proprietario.');
+          } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+          }
+        });
       });
 
-      // Disable API connector modals for guests
+      // Disable API connector modal triggers
       const apiBtn = document.getElementById('btn-api-modal');
-      if (apiBtn && isGuest) {
-        apiBtn.onclick = () => alert('⚠️ Connettori API Broker riservati al Proprietario del Terminale.');
+      if (apiBtn) {
+        if (isGuest) {
+          apiBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showSecurityToast('🔒 Connettori API Broker riservati al Proprietario.');
+          };
+        }
+      }
+
+      // 2. Spectator Mode ("Spettatore Blindato"):
+      // Friend can only look around, cannot touch or change ANY inputs/sliders, cannot copy any code
+      if (isGuest && perm === 'spectator') {
+        // A. Inject Anti-Theft CSS (Blocks selection, dragging, hides sensitive code, keeps navigation operational)
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style');
+          style.id = styleId;
+          style.textContent = `
+            body.tpu-spectator-mode * {
+              -webkit-user-select: none !important;
+              -moz-user-select: none !important;
+              -ms-user-select: none !important;
+              user-select: none !important;
+              -webkit-touch-callout: none !important;
+            }
+            body.tpu-spectator-mode input:not(#tpu-owner-pwd-input):not(#tpu-owner-totp-input):not(.tpu-nav-search),
+            body.tpu-spectator-mode select:not(.tpu-nav-select):not(.tpu-view-select),
+            body.tpu-spectator-mode textarea,
+            body.tpu-spectator-mode input[type="range"] {
+              pointer-events: none !important;
+              opacity: 0.65 !important;
+              filter: grayscale(35%) !important;
+              cursor: not-allowed !important;
+            }
+            /* Chapter & view navigation remains fully clickable for exploration */
+            body.tpu-spectator-mode .chapters-nav-desktop,
+            body.tpu-spectator-mode .nav-tabs-container,
+            body.tpu-spectator-mode .mobile-drawer,
+            body.tpu-spectator-mode .drawer-section-item,
+            body.tpu-spectator-mode .chapter-btn,
+            body.tpu-spectator-mode .tab-btn,
+            body.tpu-spectator-mode .tpu-chapter-pill,
+            body.tpu-spectator-mode .timeframe-btn,
+            body.tpu-spectator-mode .symbol-chip,
+            body.tpu-spectator-mode .btn-tf,
+            body.tpu-spectator-mode .bybit-sym-btn,
+            body.tpu-spectator-mode .accordion-toggle,
+            body.tpu-spectator-mode .tpu-allow-click {
+              pointer-events: auto !important;
+              cursor: pointer !important;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+        document.body.classList.add('tpu-spectator-mode');
+
+        // B. Freeze all interactive inputs, sliders, and form elements
+        document.querySelectorAll('input:not(#tpu-owner-pwd-input):not(#tpu-owner-totp-input), textarea').forEach(el => {
+          el.setAttribute('readonly', 'true');
+        });
+
+        // C. Sensitive Code & Formula Masking
+        const sensitiveCodeBlocks = document.querySelectorAll('#tfm-sql-code, #tfm-python-code, .algorithm-source-code');
+        sensitiveCodeBlocks.forEach(el => {
+          if (!el.dataset.originalCode) {
+            el.dataset.originalCode = el.innerHTML;
+          }
+          el.innerHTML = '<span style="color:#f59e0b; font-weight:800; font-family:monospace;">🔒 [CODICE PROPRIETARIO RISERVATO — SOLA VISIONE RISULTATI &amp; GRAFICI]</span>';
+        });
+
+        // D. Dynamic Anti-Theft Watermark Overlay (Protects against screenshots & photos)
+        if (!document.getElementById(watermarkId)) {
+          const wm = document.createElement('div');
+          wm.id = watermarkId;
+          wm.style.cssText = 'position:fixed; inset:0; pointer-events:none; z-index:99990; overflow:hidden; opacity:0.065; display:flex; flex-direction:column; justify-content:space-around; align-items:center; transform:rotate(-22deg) scale(1.3);';
+          
+          let patternHtml = '';
+          const repeatText = `OSPITE AUTORIZZATO: ${guestName.toUpperCase()} • IP: ${boundIp || this.clientIp} • SOLO VISIONE SPETTATORE — VIETATA LA COPIA O CONDIVISIONE • TRADING PRO ULTIMATE™`;
+          for (let i = 0; i < 20; i++) {
+            patternHtml += `<div style="white-space:nowrap; font-size:13.5px; font-weight:900; color:#fbbf24; letter-spacing:2px; margin:22px 0;">${repeatText}</div>`;
+          }
+          wm.innerHTML = patternHtml;
+          document.body.appendChild(wm);
+        }
+
+        // E. Bind Anti-Theft Handlers (Right-Click, DevTools, Copy, Cut, Print, Save)
+        if (!this.antiCopyHandlersBound) {
+          this.antiCopyHandlersBound = true;
+
+          // Block Right-Click Context Menu
+          document.addEventListener('contextmenu', (e) => {
+            if (this.role === 'guest' && this.guestPerm === 'spectator') {
+              e.preventDefault();
+              this.showSecurityToast('🔒 Modalità Spettatore Blindato: Tasto destro disabilitato per protezione del codice sorgente.');
+              return false;
+            }
+          }, true);
+
+          // Block DevTools shortcuts and Page saving
+          document.addEventListener('keydown', (e) => {
+            if (this.role === 'guest' && this.guestPerm === 'spectator') {
+              const k = e.key.toLowerCase();
+              if (k === 'f12' ||
+                  ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) ||
+                  ((e.ctrlKey || e.metaKey) && (k === 'u' || k === 's' || k === 'p' || k === 'c' || k === 'x'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showSecurityToast('🔒 Azione bloccata in Modalità Spettatore (Protezione Codice & Dati Attiva).');
+                return false;
+              }
+            }
+          }, true);
+
+          // Block and Poison Clipboard Copy
+          document.addEventListener('copy', (e) => {
+            if (this.role === 'guest' && this.guestPerm === 'spectator') {
+              e.preventDefault();
+              if (e.clipboardData) {
+                e.clipboardData.setData('text/plain', 'PROTETTO DA TRADING PRO ULTIMATE™ — COPYRIGHT CUORDIVINO — TUTTI I DIRITTI RISERVATI');
+              }
+              this.showSecurityToast('🔒 Copia non autorizzata: protezione del codice attiva.');
+            }
+          }, true);
+        }
+
+      } else {
+        // Owner or Unlocked Demo: remove spectator class & overlays
+        document.body.classList.remove('tpu-spectator-mode');
+        const wm = document.getElementById(watermarkId);
+        if (wm) wm.remove();
+        const style = document.getElementById(styleId);
+        if (style) style.remove();
       }
     },
 
-    showGuestBanner: function(name, ip) {
+    showGuestBanner: function(name, ip, perm = 'spectator') {
       let b = document.getElementById('tpu-guest-warning-banner');
       if (!b) {
         b = document.createElement('div');
         b.id = 'tpu-guest-warning-banner';
-        b.style.cssText = 'background:linear-gradient(90deg, #1e3a8a, #0b1120); border-bottom:1px solid #38bdf8; color:#fff; padding:6px 14px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center; z-index:10001; position:sticky; top:0;';
+        b.style.cssText = 'background:linear-gradient(90deg, #1e3a8a, #0b1120); border-bottom:1px solid #38bdf8; color:#fff; padding:7px 16px; font-size:11.5px; display:flex; justify-content:space-between; align-items:center; z-index:10001; position:sticky; top:0; box-shadow:0 4px 15px rgba(0,0,0,0.5); flex-wrap:wrap; gap:8px;';
         document.body.prepend(b);
       }
+      const isSpectator = perm === 'spectator';
       b.innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
-          <span>👁️</span>
-          <strong>MODALITÀ DIMOSTRAZIONE OSPITE:</strong>
-          <span>Accesso concesso a <b>${name}</b> • Senza eseguito a mercato • Vincolato a questo dispositivo (IP: ${ip})</span>
+          <span>${isSpectator ? '🔒' : '👁️'}</span>
+          <strong>${isSpectator ? 'MODALITÀ SPETTATORE BLINDATO' : 'MODALITÀ DIMOSTRAZIONE OSPITE'}:</strong>
+          <span style="color:#e2e8f0;">Ospite: <b>${name}</b> • ${isSpectator ? 'Solo Visione (No Operazioni • No Modifiche • Anti-Copia)' : 'Senza Eseguito'} • Vincolato a questo IP: <code style="color:#38bdf8;">${ip}</code></span>
         </div>
-        <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8; font-size:10px; font-weight:800; padding:2px 8px; border-radius:4px;">SOLO LETTURA / DEMO</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#fbbf24; font-size:10px; font-weight:800; padding:3px 8px; border-radius:4px;">
+            ${isSpectator ? 'SOLO VISIONE • ANTI-FURTO ATTIVO' : 'DEMO INTERATTIVA'}
+          </span>
+          <button type="button" onclick="TPUSecurity.showGatekeeper()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:4px; cursor:pointer;">
+            🔑 Sei il Proprietario? Accedi
+          </button>
+        </div>
       `;
     },
 
@@ -307,15 +480,18 @@
     // 6. Generate 1-to-1 Guest Invite Link with automatic IP Lock
     generateGuestLink: function() {
       const guestName = document.getElementById('tpu-guest-name-input')?.value.trim() || 'Amico';
+      const permMode = document.getElementById('tpu-guest-perm-select')?.value || 'spectator';
       const token = 'INV-' + Math.random().toString(36).substring(2, 9).toUpperCase();
       this.activeInviteToken = token;
       this.guestName = guestName;
+      this.guestPerm = permMode;
 
       localStorage.setItem('tpu_active_invite_token', token);
       localStorage.setItem('tpu_bound_guest_name', guestName);
+      localStorage.setItem('tpu_bound_guest_perm', permMode);
 
       const baseUrl = window.location.origin + window.location.pathname;
-      const inviteUrl = `${baseUrl}?invite=${encodeURIComponent(token)}&guest=${encodeURIComponent(guestName)}`;
+      const inviteUrl = `${baseUrl}?invite=${encodeURIComponent(token)}&guest=${encodeURIComponent(guestName)}&perm=${encodeURIComponent(permMode)}`;
 
       const outInput = document.getElementById('tpu-generated-invite-url');
       if (outInput) outInput.value = inviteUrl;
@@ -330,7 +506,10 @@
 
       const statusEl = document.getElementById('tpu-guest-bound-status');
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color:#fbbf24;">● In attesa del 1° accesso:</span> Verrà bloccato automaticamente sul primo IP che lo apre.`;
+        const modeDesc = permMode === 'spectator'
+          ? '🔒 Spettatore Blindato (Solo Visione • No Operazioni • No Modifiche • Anti-Copia)'
+          : '🔓 Demo Interattiva (Simulazione libera senza mercato reale)';
+        statusEl.innerHTML = `<span style="color:#fbbf24;">● In attesa del 1° accesso di ${guestName} (${modeDesc}):</span> Verrà bloccato automaticamente sul primo IP che lo apre.`;
       }
     },
 
