@@ -241,8 +241,16 @@
             </div>
           </button>
 
-          <!-- Section 3: Intelligenza Artificiale & Quant -->
-          <div class="mobile-drawer-section-title">🤖 3. Intelligenza Artificiale &amp; Quant</div>
+                    <!-- Section 3: Intelligenza Artificiale, Apex-CEO & Nuovi Agenti -->
+          <div class="mobile-drawer-section-title">👑 3. Nuovi Agenti IA, Marketing &amp; R&amp;D</div>
+          <button class="mobile-drawer-btn" onclick="window.TPUWebDesignGuild.switchChapter('tab-marketing-erp')" style="border:2px solid #f59e0b; background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(16,185,129,0.25)); margin-bottom:8px; box-shadow:0 0 16px rgba(245,158,11,0.3);">
+            <span style="font-size:22px;">👑📈</span>
+            <div>
+              <div style="color:#fbbf24; font-size:13.5px; font-weight:900;">Apex-CEO IA, Nuovi Agenti Marketing &amp; R&amp;D</div>
+              <div style="font-size:11px; color:#38bdf8;">Schiera Nuovi Agenti • Video Demo • Voce Maestra • Lab R&amp;D</div>
+            </div>
+          </button>
+
           <button class="mobile-drawer-btn" onclick="window.TPUWebDesignGuild.closeMobileDrawer(); if(window.CavaliereMemoEngine) window.CavaliereMemoEngine.openModal();" style="border-color:#f59e0b; background:rgba(245,158,11,0.12);">
             <span style="font-size:18px;">⚔️</span>
             <div>

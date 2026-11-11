@@ -1,6 +1,4 @@
-// TRADING PRO ULTIMATE™ — Service Worker (Safe Passive v2.7.6)
-// Safe, crash-free lifecycle for iOS WebKit, macOS Safari and Windows 10
-
+// TRADING PRO ULTIMATE™ — Service Worker (Force Clear Cache v3.5.0)
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });

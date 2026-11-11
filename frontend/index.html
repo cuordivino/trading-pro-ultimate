@@ -332,6 +332,9 @@
       <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; border-color:var(--accent); color:var(--accent); cursor:pointer;" onclick="openCopyrightModal()">
         📜 Paternità & Copyright
       </button>
+      <button class="btn-mobile-chapters-drawer btn-mobile-quick-agents" type="button" onclick="switchMainTab('tab-marketing-erp')" style="border-color:#f59e0b; background:linear-gradient(135deg, rgba(245,158,11,0.25), rgba(16,185,129,0.25)); color:#fbbf24; font-weight:800;" title="Apri Nuovi Agenti IA (Apex-CEO, Marketing &amp; R&amp;D)">
+        <span>👑</span> <span>Nuovi Agenti</span>
+      </button>
       <button class="btn-mobile-chapters-drawer" type="button" onclick="if(window.TPUWebDesignGuild) window.TPUWebDesignGuild.toggleMobileDrawer();" title="Apri Hub dei Capitoli e Navigazione Rapida">
         <span>☰</span> <span>Capitoli</span>
       </button>
@@ -3118,6 +3121,10 @@
       <span class="icon">📈</span>
       <span>Terminale</span>
     </button>
+    <button class="m-bottom-nav-item highlight-ai-agents" onclick="switchMainTab('tab-marketing-erp', this)" style="color:#fbbf24; font-weight:900;">
+      <span class="icon">👑📈</span>
+      <span>Nuovi Agenti</span>
+    </button>
     <button class="m-bottom-nav-item" onclick="switchMainTab('tab-scanner', this); if(window.OpportunityScanner) OpportunityScanner.renderScannerTab();">
       <span class="icon">🎯</span>
       <span>Radar</span>
@@ -3458,8 +3465,8 @@
   <script src="js/cavaliere_memo_engine.js"></script>
   <script src="js/web_design_agents_guild.js"></script>
   <script src="js/day_trader_skill_bridge.js"></script>
-  <script src="js/tpu_security_guard.js?v=3.0.0"></script>
-  <script src="js/marketing_erp_engine.js?v=1.0.0"></script>
-  <script src="js/rnd_autonomous_agents.js?v=1.0.0"></script>
+  <script src="js/tpu_security_guard.js?v=3.5.0"></script>
+  <script src="js/marketing_erp_engine.js?v=3.5.0"></script>
+  <script src="js/rnd_autonomous_agents.js?v=3.5.0"></script>
 </body>
 </html>
