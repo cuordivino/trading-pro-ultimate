@@ -549,3 +549,162 @@ body.tpu-layout-landscape-split #main-terminal-body,
   color: #f59e0b;
   font-weight: 700;
 }
+
+
+/* =====================================================================
+   TPU v18.4 MASTER: ANTI-COLLISION & ERGONOMIC DESKTOP/MOBILE HEADER FIX
+   ===================================================================== */
+.terminal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 12px !important;
+  box-sizing: border-box !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+.terminal-header::-webkit-scrollbar {
+  display: none !important;
+}
+
+.brand-box {
+  flex: 0 0 auto !important;
+  min-width: 190px !important;
+  max-width: 240px !important;
+  overflow: hidden !important;
+}
+
+.chapters-nav-desktop {
+  flex: 0 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.chapters-nav-desktop::-webkit-scrollbar {
+  display: none !important;
+}
+
+.chapter-dropdown-btn {
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex: 0 0 auto !important;
+}
+
+.header-right-actions {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+}
+
+#btn-top-ced-v18 {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.3px !important;
+}
+
+/* TOP MONITOR CONTROL BAR: ZERO-COLLISION SWATCHES & BUTTONS */
+#cbMonitorControlBarV18 {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 4px 12px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.cb-brand-tag {
+  flex: 0 0 auto !important;
+}
+
+.cb-center-controls {
+  flex: 0 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+.cb-swatches-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex: 0 1 auto !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.cb-swatches-wrap::-webkit-scrollbar {
+  display: none !important;
+}
+
+.cb-right-controls {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Laptop and standard PC screen safety: auto-collapse swatches if width < 1550px */
+@media (max-width: 1550px) {
+  .cb-swatches-wrap {
+    display: none !important;
+  }
+}
+
+/* MACRO GLOBE TRACK & ON-CHART TIMELINE PINS */
+.macro-timeline-track {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 68px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 15;
+}
+.macro-globe-marker {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.7);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+.macro-globe-marker:hover {
+  transform: translateX(-50%) scale(1.12);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+  border-color: #38bdf8;
+  z-index: 30;
+}

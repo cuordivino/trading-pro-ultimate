@@ -596,7 +596,8 @@ async function pollActiveQuote() {
   }
 
   if (window.onRealtimePriceTick && q && q.price) {
-    try { window.onRealtimePriceTick(q.price, q.volume); } catch(e) {}
+    // Pass 0 for incremental volume: q.volume is 24h total volume, never single candle volume
+    try { window.onRealtimePriceTick(q.price, 0, null, sym); } catch(e) {}
   }
 }
 

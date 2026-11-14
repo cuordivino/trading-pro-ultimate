@@ -309,7 +309,8 @@ window.BybitEngine = {
               const p = parseFloat(d.lastPrice);
               this.tickerData.lastPrice = p;
               if (window.onRealtimePriceTick) {
-                window.onRealtimePriceTick(p, parseFloat(d.volume24h) || 0, null, this.currentSymbol);
+                // Pass 0 for incremental volume: d.volume24h is 24h cumulative total, NOT candle volume!
+                window.onRealtimePriceTick(p, 0, null, this.currentSymbol);
               }
             }
             if (d.markPrice) this.tickerData.markPrice = parseFloat(d.markPrice);
