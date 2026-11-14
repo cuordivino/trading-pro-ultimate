@@ -965,6 +965,22 @@ window.BybitEngine = {
     if (posResMargin) posResMargin.innerText = fmtMargin;
     if (posResLiq) posResLiq.innerText = `${curr}${Math.max(0, liqPrice).toFixed(prec)}`;
 
+    // 7b. Sync Multi-TP Table with BasketTimingEngineV23 TP1/TP2/TP3 Split
+    const multiTpBody = document.getElementById('multi-tp-tbody');
+    if (multiTpBody && price > 0) {
+      const split = window.BasketTimingEngineV23?.executionParameters?.takeProfitSplit || { tp1Pct: 40, tp2Pct: 40, tp3RunnerPct: 20 };
+      const riskDist = sl > 0 ? Math.abs(price - sl) : (price * 0.015);
+      const dir = side === 'LONG' ? 1 : -1;
+      const tp1P = +(price + dir * riskDist * 1.5).toFixed(prec);
+      const tp2P = +(price + dir * riskDist * 2.8).toFixed(prec);
+      const tp3P = +(price + dir * riskDist * 4.5).toFixed(prec);
+      multiTpBody.innerHTML = `
+        <tr><td>TP1 (${split.tp1Pct}%)</td><td>${curr}${tp1P}</td><td>1:1.5</td><td style="color:#00f2a1">+${curr}${(qty * (split.tp1Pct/100) * Math.abs(tp1P - price)).toFixed(2)}</td></tr>
+        <tr><td>TP2 (${split.tp2Pct}%)</td><td>${curr}${tp2P}</td><td>1:2.8</td><td style="color:#00f2a1">+${curr}${(qty * (split.tp2Pct/100) * Math.abs(tp2P - price)).toFixed(2)}</td></tr>
+        <tr><td>TP3 Runner (${split.tp3RunnerPct}%)</td><td>${curr}${tp3P}</td><td>1:4.5</td><td style="color:#00f2a1">+${curr}${(qty * (split.tp3RunnerPct/100) * Math.abs(tp3P - price)).toFixed(2)}</td></tr>
+      `;
+    }
+
     // 8. Update Execution Button
     const execBtn = document.getElementById('btn-execute-order');
     if (execBtn) {

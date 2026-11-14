@@ -3794,6 +3794,9 @@ window.BybitMacroCalendar = {
       <button type="button" class="btn btn-xs" style="font-size:9.5px; padding:3px 9px; background:rgba(56,189,248,0.18); color:#38bdf8; border:1px solid #38bdf8; border-radius:4px; font-weight:800; cursor:pointer;" onclick="BybitMacroCalendar.openModal('tutte')">
         <span>Dossier Completo ↗</span>
       </button>
+      <button type="button" id="v23-chart-dt-badge" style="font-size:9.5px; padding:3px 9px; background:rgba(0,242,161,0.16); color:#00f2a1; border:1px solid #00f2a1; border-radius:4px; font-weight:900; font-family:'JetBrains Mono',monospace; cursor:pointer;" onclick="window.BasketTimingEngineV23 && window.BasketTimingEngineV23.openModal()" title="Apri Condizionatore Tempo Inter-Operazione (1s-4h) & Paniere 348+ Titoli">
+        ⏱️ Δt Ordini: 5.0s
+      </button>
     `;
   },
 

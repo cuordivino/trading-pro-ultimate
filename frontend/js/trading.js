@@ -362,6 +362,11 @@ window.TradingEngine = {
           ${window.MultiExchangeAllocator ? window.MultiExchangeAllocator.buildAllocatorHTML(true) : ''}
         </div>
 
+        <!-- BASKET PERCENTAGE MIXER + INTER-TRADE TIME CONDITIONER v23.0 -->
+        <div id="v23-basket-timing-automated-dock">
+          ${window.BasketTimingEngineV23 ? window.BasketTimingEngineV23.buildFullMatrixHTML(true) : ''}
+        </div>
+
         <!-- MACRO SETTINGS SUMMARY & TUNE BUTTON -->
         <div class="bot-macro-summary-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">

@@ -2077,3 +2077,774 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, 350);
 });
+
+
+// =============================================================================
+// BASKET PERCENTAGE MIXER + ULTRA-FAST/ELASTIC INTER-TRADE TIME CONDITIONER
+// + FULL OPERATIONAL MATRIX v23.0 (BasketMixerAndUltraTimingEngineV23)
+// =============================================================================
+class BasketMixerAndUltraTimingEngineV23 {
+  constructor() {
+    this.version = "23.0.0-BASKET-MIXER-ULTRATIMING-FULLPARAMS";
+
+    // 1. GESTIONE PANIERE TOTALE & PERCENTUALI PER TIPO DI TITOLO (MANUALE / SEMI-AUTO / FULL-AUTO)
+    this.basketConfig = {
+      allocationMode: "SEMI_AUTO", // "FULL_AUTO" | "SEMI_AUTO" | "MANUAL"
+      totalUniverseCount: 348,
+      categories: {
+        cryptoMajors: { id: "cryptoMajors", label: "🪙 Crypto Majors (BTC, ETH, SOL, BNB, XRP)", pct: 30, locked: true, momentumScore: 88, color: "#f59e0b" },
+        cryptoAltDeFi: { id: "cryptoAltDeFi", label: "⚡ Altcoin High-Beta, DeFi & AI (SUI, FET, RENDER, LINK, AVAX)", pct: 15, locked: false, momentumScore: 84, color: "#a855f7" },
+        globalIndices: { id: "globalIndices", label: "🏛️ Indici Mondiali (Nasdaq 100, S&P 500, DAX 40, FTSE MIB)", pct: 20, locked: false, momentumScore: 80, color: "#38bdf8" },
+        techStocks: { id: "techStocks", label: "💻 Azioni Tech & Blue-Chip (NVDA, TSLA, AAPL, MSFT, META)", pct: 15, locked: false, momentumScore: 86, color: "#00f2a1" },
+        forexPairs: { id: "forexPairs", label: "💱 Forex Majors & Cross (EUR/USD, GBP/USD, USD/JPY)", pct: 10, locked: false, momentumScore: 73, color: "#22d3ee" },
+        commoditiesGold: { id: "commoditiesGold", label: "🥇 Materie Prime & Metalli (Oro XAU/USD, Argento, WTI)", pct: 10, locked: true, momentumScore: 91, color: "#fbbf24" }
+      },
+      customPinnedAssets: {
+        "BTCUSDT": 15,
+        "NVDA": 10
+      }
+    };
+
+    // 2. CONDIZIONATORE TEMPO TRA UN'OPERAZIONE E L'ALTRA (DA POCHI SECONDI 1s-5s A ORE)
+    this.interTradeTiming = {
+      mode: "SEMI_AUTO_ADAPTIVE", // "AUTO_ADAPTIVE" | "SEMI_AUTO_ADAPTIVE" | "MANUAL_FIXED"
+      currentDelaySeconds: 5,
+      minAllowedSeconds: 2,
+      maxAllowedSeconds: 300,
+      manualFixedSeconds: 5,
+      reconditionOnWinFactor: 0.75,
+      reconditionOnLossFactor: 2.5,
+      lastTradeOutcome: "WIN",
+      lastExecutionTimestamp: Date.now()
+    };
+
+    // 3. CRUSCOTTO COMPLETO PARAMETRI GESTIONE OTTIMALE OPERAZIONI
+    this.executionParameters = {
+      directionMode: "BI_DIRECTIONAL_AUTO", // "BI_DIRECTIONAL_AUTO" | "LONG_ONLY" | "SHORT_ONLY" | "HEDGE_SIMULTANEOUS"
+      orderExecutionType: "SMART_HYBRID",   // "SMART_HYBRID" | "LIMIT_MAKER_POC" | "MARKET_ULTRA_FAST"
+      maxConcurrentOpenTrades: 5,
+      maxAllowedSpreadBps: 8.0,
+      takeProfitSplit: { tp1Pct: 40, tp2Pct: 40, tp3RunnerPct: 20 },
+      autoBreakevenAtR: 1.0,
+      trailingStopDistanceAtr: 1.2,
+      trailingStopMode: "ATR", // "ATR" | "PCT"
+      stagnationTimeStopMinutes: 45,
+      macroHighImpactFilter: true
+    };
+
+    this.countdownRemainingSec = 5.0;
+    this.loadSavedState();
+    this.rebalanceBasketPercentages();
+    this.computeConditionedInterTradeDelay({});
+    this.startLiveCountdownLoop();
+  }
+
+  loadSavedState() {
+    try {
+      const raw = localStorage.getItem("TPU_BASKET_TIMING_V23");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.basketConfig) {
+          this.basketConfig.allocationMode = parsed.basketConfig.allocationMode || this.basketConfig.allocationMode;
+          if (parsed.basketConfig.customPinnedAssets) {
+            this.basketConfig.customPinnedAssets = parsed.basketConfig.customPinnedAssets;
+          }
+          if (parsed.basketConfig.categories) {
+            Object.keys(parsed.basketConfig.categories).forEach(k => {
+              if (this.basketConfig.categories[k]) {
+                this.basketConfig.categories[k] = {
+                  ...this.basketConfig.categories[k],
+                  ...parsed.basketConfig.categories[k]
+                };
+              }
+            });
+          }
+        }
+        if (parsed.interTradeTiming) {
+          this.interTradeTiming = { ...this.interTradeTiming, ...parsed.interTradeTiming };
+        }
+        if (parsed.executionParameters) {
+          this.executionParameters = {
+            ...this.executionParameters,
+            ...parsed.executionParameters,
+            takeProfitSplit: {
+              ...this.executionParameters.takeProfitSplit,
+              ...(parsed.executionParameters.takeProfitSplit || {})
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("[BasketTiming v23] Stato iniziale predefinito.");
+    }
+  }
+
+  saveState() {
+    try {
+      localStorage.setItem("TPU_BASKET_TIMING_V23", JSON.stringify({
+        basketConfig: this.basketConfig,
+        interTradeTiming: this.interTradeTiming,
+        executionParameters: this.executionParameters
+      }));
+    } catch (e) {}
+  }
+
+  // ===========================================================================
+  // 1. LOGICA PANIERE & MIXER PERCENTUALE (FULL_AUTO / SEMI_AUTO / MANUAL)
+  // ===========================================================================
+  setBasketMode(mode) {
+    if (!["FULL_AUTO", "SEMI_AUTO", "MANUAL"].includes(mode)) return;
+    this.basketConfig.allocationMode = mode;
+    this.rebalanceBasketPercentages();
+    this.saveState();
+    this.renderAllContainers();
+    if (window.showToast) {
+      const labels = {
+        FULL_AUTO: "🤖 100% Automatico CED (Full-Auto Basket)",
+        SEMI_AUTO: "🌓 Semi-Automatico Assistito (Lock & Auto-Fill)",
+        MANUAL: "🖐️ Manuale Completo (Custom Mixer)"
+      };
+      window.showToast(`Modalità Paniere: ${labels[mode]}`, "info");
+    }
+  }
+
+  toggleCategoryLock(catId) {
+    const cat = this.basketConfig.categories[catId];
+    if (!cat) return;
+    cat.locked = !cat.locked;
+    this.rebalanceBasketPercentages();
+    this.saveState();
+    this.renderAllContainers();
+  }
+
+  rebalanceBasketPercentages(changedCategoryId = null, newPctValue = null) {
+    const cats = this.basketConfig.categories;
+    if (changedCategoryId && cats[changedCategoryId] && newPctValue !== null) {
+      cats[changedCategoryId].pct = Math.max(0, Math.min(100, parseFloat(newPctValue) || 0));
+    }
+
+    if (this.basketConfig.allocationMode === "FULL_AUTO") {
+      const totalScore = Object.values(cats).reduce((acc, c) => acc + Math.max(10, c.momentumScore), 0) || 1;
+      let runningSum = 0;
+      const keys = Object.keys(cats);
+      keys.forEach((k, idx) => {
+        if (idx === keys.length - 1) {
+          cats[k].pct = +Math.max(0, 100 - runningSum).toFixed(1);
+        } else {
+          const v = +((Math.max(10, cats[k].momentumScore) / totalScore) * 100).toFixed(1);
+          cats[k].pct = v;
+          runningSum += v;
+        }
+      });
+    } else if (this.basketConfig.allocationMode === "SEMI_AUTO") {
+      let lockedSum = 0;
+      const unlockedList = [];
+      Object.values(cats).forEach(c => {
+        if (c.locked || c.id === changedCategoryId) {
+          lockedSum += c.pct;
+        } else {
+          unlockedList.push(c);
+        }
+      });
+      if (lockedSum > 100 && changedCategoryId && cats[changedCategoryId]) {
+        const excess = lockedSum - 100;
+        cats[changedCategoryId].pct = Math.max(0, +(cats[changedCategoryId].pct - excess).toFixed(1));
+        lockedSum = 100;
+      }
+      const remainingPct = Math.max(0, 100 - lockedSum);
+      const unlockedScoreSum = unlockedList.reduce((acc, c) => acc + Math.max(10, c.momentumScore), 0) || 1;
+      let runningUnlocked = 0;
+      unlockedList.forEach((c, idx) => {
+        if (idx === unlockedList.length - 1) {
+          c.pct = +Math.max(0, remainingPct - runningUnlocked).toFixed(1);
+        } else {
+          const v = +((Math.max(10, c.momentumScore) / unlockedScoreSum) * remainingPct).toFixed(1);
+          c.pct = v;
+          runningUnlocked += v;
+        }
+      });
+    }
+    this.basketConfig.totalUniverseCount = (window.GlobalMarketAssets && window.GlobalMarketAssets.length) ? window.GlobalMarketAssets.length : 348;
+    return this.basketConfig;
+  }
+
+  onCategoryPctInput(catId, val) {
+    this.rebalanceBasketPercentages(catId, val);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+  }
+
+  pinCustomAsset(symbol, pct) {
+    const sym = (symbol || document.getElementById("v23-pin-asset-select")?.value || "BTCUSDT").toUpperCase().trim();
+    const val = Math.max(1, Math.min(100, parseFloat(pct !== undefined ? pct : document.getElementById("v23-pin-asset-pct")?.value) || 10));
+    this.basketConfig.customPinnedAssets[sym] = val;
+    this.saveState();
+    this.renderAllContainers();
+    if (window.showToast) window.showToast(`📌 Titolo ${sym} fissato nel paniere al ${val}%`, "success");
+  }
+
+  unpinCustomAsset(symbol) {
+    delete this.basketConfig.customPinnedAssets[symbol];
+    this.saveState();
+    this.renderAllContainers();
+    if (window.showToast) window.showToast(`Titolo ${symbol} rimosso dalle quote fisse`, "info");
+  }
+
+  // ===========================================================================
+  // 2. LOGICA CONDIZIONATORE TEMPO INTER-OPERAZIONE (1s - 4h)
+  // ===========================================================================
+  setTimingMode(mode) {
+    if (!["AUTO_ADAPTIVE", "SEMI_AUTO_ADAPTIVE", "MANUAL_FIXED"].includes(mode)) return;
+    this.interTradeTiming.mode = mode;
+    this.computeConditionedInterTradeDelay({});
+    this.countdownRemainingSec = this.interTradeTiming.currentDelaySeconds;
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    if (window.showToast) {
+      window.showToast(`⏱️ Regime Tempo impostato: ${mode} (Δt = ${this.formatDuration(this.interTradeTiming.currentDelaySeconds)})`, "info");
+    }
+  }
+
+  computeConditionedInterTradeDelay({ signalStrength = 88, volatilityAtrPct = 1.4, lastTradeOutcome = null } = {}) {
+    const t = this.interTradeTiming;
+    const outcome = lastTradeOutcome || t.lastTradeOutcome || "WIN";
+
+    if (t.mode === "MANUAL_FIXED") {
+      t.currentDelaySeconds = Math.max(1, parseFloat(t.manualFixedSeconds) || 5);
+      return t.currentDelaySeconds;
+    }
+
+    let rawSeconds = 30;
+    if (signalStrength >= 92 && volatilityAtrPct >= 1.0) {
+      rawSeconds = 2;
+    } else if (signalStrength >= 85) {
+      rawSeconds = 5;
+    } else if (signalStrength >= 78) {
+      rawSeconds = 15;
+    } else {
+      rawSeconds = 60;
+    }
+
+    if (outcome === "WIN") {
+      rawSeconds = rawSeconds * (parseFloat(t.reconditionOnWinFactor) || 0.75);
+    } else if (outcome === "LOSS") {
+      rawSeconds = rawSeconds * (parseFloat(t.reconditionOnLossFactor) || 2.5);
+    }
+
+    if (t.mode === "SEMI_AUTO_ADAPTIVE") {
+      const minS = Math.max(1, parseFloat(t.minAllowedSeconds) || 2);
+      const maxS = Math.max(minS, parseFloat(t.maxAllowedSeconds) || 300);
+      t.currentDelaySeconds = Math.max(minS, Math.min(maxS, Math.round(rawSeconds)));
+    } else {
+      t.currentDelaySeconds = Math.max(1, Math.min(14400, Math.round(rawSeconds)));
+    }
+    return t.currentDelaySeconds;
+  }
+
+  setQuickDelaySeconds(sec) {
+    const val = Math.max(1, parseInt(sec, 10) || 5);
+    this.interTradeTiming.manualFixedSeconds = val;
+    this.interTradeTiming.currentDelaySeconds = val;
+    if (this.interTradeTiming.mode === "SEMI_AUTO_ADAPTIVE") {
+      if (val < this.interTradeTiming.minAllowedSeconds) this.interTradeTiming.minAllowedSeconds = val;
+      if (val > this.interTradeTiming.maxAllowedSeconds) this.interTradeTiming.maxAllowedSeconds = val;
+    }
+    this.countdownRemainingSec = val;
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    if (window.showToast) window.showToast(`⏱️ Tempo Inter-Operazione impostato a ${this.formatDuration(val)}`, "success");
+  }
+
+  adjustLiveDelay(deltaSecOrMode) {
+    let cur = this.interTradeTiming.currentDelaySeconds || 5;
+    if (deltaSecOrMode === "half") {
+      cur = Math.max(1, Math.round(cur * 0.5));
+    } else {
+      cur = Math.max(1, cur + (parseInt(deltaSecOrMode, 10) || 5));
+    }
+    this.interTradeTiming.manualFixedSeconds = cur;
+    this.interTradeTiming.currentDelaySeconds = cur;
+    this.countdownRemainingSec = Math.max(1, Math.min(cur, this.countdownRemainingSec + (deltaSecOrMode === "half" ? -cur : parseInt(deltaSecOrMode, 10) || 0)));
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    if (window.showToast) window.showToast(`⏱️ Δt Ricondizionato in diretta: ${this.formatDuration(cur)}`, "info");
+  }
+
+  updateTimingParam(key, val) {
+    if (key === "lastTradeOutcome") {
+      this.interTradeTiming.lastTradeOutcome = val;
+    } else {
+      this.interTradeTiming[key] = Math.max(0.1, parseFloat(val) || 1);
+    }
+    this.computeConditionedInterTradeDelay({});
+    this.countdownRemainingSec = this.interTradeTiming.currentDelaySeconds;
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+  }
+
+  formatDuration(sec) {
+    const s = Math.max(1, Math.round(sec));
+    if (s < 60) return `${s}s`;
+    if (s < 3600) {
+      const m = Math.floor(s / 60);
+      const rem = s % 60;
+      return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
+    }
+    const h = Math.floor(s / 3600);
+    const remM = Math.floor((s % 3600) / 60);
+    return remM > 0 ? `${h}h ${remM}m` : `${h}h`;
+  }
+
+  startLiveCountdownLoop() {
+    if (this._cdInterval) clearInterval(this._cdInterval);
+    this.countdownRemainingSec = this.interTradeTiming.currentDelaySeconds || 5;
+    this._cdInterval = setInterval(() => {
+      const target = Math.max(1, this.interTradeTiming.currentDelaySeconds || 5);
+      this.countdownRemainingSec -= 0.2;
+      if (this.countdownRemainingSec <= 0) {
+        this.countdownRemainingSec = target;
+        this.interTradeTiming.lastExecutionTimestamp = Date.now();
+        if (window.TradingEngine && window.TradingEngine.botActive) {
+          try { window.TradingEngine.runBotAutonomousLoop(); } catch (e) {}
+        }
+      }
+      const txt = `${this.countdownRemainingSec.toFixed(1)}s`;
+      const pct = Math.max(0, Math.min(100, ((target - this.countdownRemainingSec) / target) * 100));
+      document.querySelectorAll(".v23-live-countdown-val").forEach(el => {
+        el.textContent = `${txt} / ${this.formatDuration(target)}`;
+      });
+      document.querySelectorAll(".v23-live-countdown-bar").forEach(bar => {
+        bar.style.width = `${pct.toFixed(1)}%`;
+      });
+      const chartBadge = document.getElementById("v23-chart-dt-badge");
+      if (chartBadge) {
+        chartBadge.textContent = `⏱️ Δt Ordini: ${txt} (${this.formatDuration(target)})`;
+      }
+    }, 200);
+  }
+
+  // ===========================================================================
+  // 3. LOGICA MATRICE PARAMETRI OPERATIVI COMPLETI
+  // ===========================================================================
+  updateExecParam(key, val) {
+    if (key === "tp1Pct" || key === "tp2Pct" || key === "tp3RunnerPct") {
+      this.executionParameters.takeProfitSplit[key] = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    } else if (key === "macroHighImpactFilter") {
+      this.executionParameters.macroHighImpactFilter = !!val;
+    } else if (["maxConcurrentOpenTrades", "stagnationTimeStopMinutes"].includes(key)) {
+      this.executionParameters[key] = Math.max(1, parseInt(val, 10) || 1);
+    } else if (["maxAllowedSpreadBps", "autoBreakevenAtR", "trailingStopDistanceAtr"].includes(key)) {
+      this.executionParameters[key] = Math.max(0.1, parseFloat(val) || 1.0);
+    } else {
+      this.executionParameters[key] = val;
+    }
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+  }
+
+  syncWithEngines() {
+    try {
+      if (window.TradingEngine && window.TradingEngine.macroSettings) {
+        window.TradingEngine.macroSettings.maxOpenTrades = this.executionParameters.maxConcurrentOpenTrades;
+        window.TradingEngine.macroSettings.orderTtlMinutes = this.executionParameters.stagnationTimeStopMinutes;
+      }
+      if (this.executionParameters.directionMode === "LONG_ONLY" && typeof window.setTradeSide === "function") {
+        window.setTradeSide("LONG");
+      } else if (this.executionParameters.directionMode === "SHORT_ONLY" && typeof window.setTradeSide === "function") {
+        window.setTradeSide("SHORT");
+      }
+    } catch (e) {}
+  }
+
+  // ===========================================================================
+  // 4. COSTRUZIONE INTERFACCIA HTML COMPLETA v23.0
+  // ===========================================================================
+  buildFullMatrixHTML(compact = false) {
+    const b = this.basketConfig;
+    const t = this.interTradeTiming;
+    const p = this.executionParameters;
+
+    const alloc = window.MultiExchangeAllocator;
+    const activeExId = alloc ? alloc.activeOrderExchange : "bybit";
+    const activeEx = alloc && alloc.exchanges[activeExId] ? alloc.exchanges[activeExId] : { allocatedMethodBudgetEur: 250, shortName: "Bybit", icon: "🟡" };
+    const baseBudgetEur = Math.max(10, activeEx.allocatedMethodBudgetEur || 250);
+
+    const totalPct = +Object.values(b.categories).reduce((acc, c) => acc + (parseFloat(c.pct) || 0), 0).toFixed(1);
+
+    // Build stacked visual bar
+    const stackedBarSegments = Object.values(b.categories).map(c =>
+      `<div style="width:${Math.max(0, c.pct)}%; background:${c.color}; height:100%; transition:width 0.25s ease;" title="${c.label}: ${c.pct}%"></div>`
+    ).join("");
+
+    // Categories rows
+    const catRowsHtml = Object.values(b.categories).map(c => {
+      const catEur = +((baseBudgetEur * (c.pct / 100))).toFixed(2);
+      return `
+        <div style="background:rgba(15,23,42,0.85); border:1px solid ${c.locked ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:9px 10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="font-size:11.5px; font-weight:800; color:#fff;">${c.label}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:10px; font-family:var(--font-mono); color:#00f2a1; background:rgba(0,242,161,0.1); padding:2px 6px; border-radius:4px;">Momentum ${c.momentumScore}/100</span>
+              <button type="button" onclick="window.BasketTimingEngineV23.toggleCategoryLock('${c.id}')" style="min-height:28px; padding:2px 8px; font-size:10px; font-weight:900; border-radius:5px; cursor:pointer; border:1px solid ${c.locked ? '#f59e0b' : '#475569'}; background:${c.locked ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.05)'}; color:${c.locked ? '#fbbf24' : '#94a3b8'};">
+                ${c.locked ? '🔒 Bloccato' : '🔓 Libero'}
+              </button>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 82px 92px; gap:8px; align-items:center;">
+            <input type="range" min="0" max="100" step="0.5" value="${c.pct}" ${b.allocationMode === 'FULL_AUTO' ? 'disabled' : ''} oninput="window.BasketTimingEngineV23.onCategoryPctInput('${c.id}', this.value)" style="width:100%; accent-color:${c.color}; cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:2px;">
+              <input type="number" min="0" max="100" step="0.5" value="${c.pct}" ${b.allocationMode === 'FULL_AUTO' ? 'disabled' : ''} onchange="window.BasketTimingEngineV23.onCategoryPctInput('${c.id}', this.value)" style="width:100%; background:#060a12; border:1px solid ${c.color}; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:900; padding:4px 5px; border-radius:5px; text-align:right;">
+              <span style="font-size:11px; font-weight:800; color:#94a3b8;">%</span>
+            </div>
+            <div style="text-align:right; font-family:var(--font-mono); font-size:11.5px; font-weight:900; color:#fbbf24;">
+              ${catEur.toFixed(2)} €
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Asset options from 348+ universe
+    const allAssets = (window.GlobalMarketAssets && window.GlobalMarketAssets.length)
+      ? window.GlobalMarketAssets
+      : [{ symbol: "BTCUSDT", name: "Bitcoin" }, { symbol: "ETHUSDT", name: "Ethereum" }, { symbol: "SOLUSDT", name: "Solana" }, { symbol: "NVDA", name: "NVIDIA" }, { symbol: "TSLA", name: "Tesla" }, { symbol: "UCG.MI", name: "UniCredit" }, { symbol: "ISP.MI", name: "Intesa Sanpaolo" }, { symbol: "GC=F", name: "Gold Futures" }];
+
+    const assetOptionsHtml = allAssets.slice(0, 350).map(a =>
+      `<option value="${a.symbol}">${a.symbol} — ${a.name || a.cat || ''}</option>`
+    ).join("");
+
+    const pinnedPillsHtml = Object.entries(b.customPinnedAssets || {}).map(([sym, pct]) => {
+      const eurVal = +((baseBudgetEur * (pct / 100))).toFixed(2);
+      return `
+        <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#fff; padding:4px 9px; border-radius:6px; font-size:11px; font-family:var(--font-mono); font-weight:800;">
+          <span>📌 ${sym}: <b style="color:#fbbf24;">${pct}%</b> (${eurVal} €)</span>
+          <button type="button" onclick="window.BasketTimingEngineV23.unpinCustomAsset('${sym}')" style="background:transparent; border:none; color:#f87171; font-weight:900; cursor:pointer; font-size:12px; padding:0 2px;">✕</button>
+        </span>
+      `;
+    }).join("");
+
+    // 14 Quick Timing Presets (from 1s to 4h)
+    const quickTimes = [
+      { sec: 1, lbl: "1s" },
+      { sec: 2, lbl: "2s" },
+      { sec: 3, lbl: "3s" },
+      { sec: 5, lbl: "5s" },
+      { sec: 10, lbl: "10s" },
+      { sec: 15, lbl: "15s" },
+      { sec: 30, lbl: "30s" },
+      { sec: 60, lbl: "1m" },
+      { sec: 180, lbl: "3m" },
+      { sec: 300, lbl: "5m" },
+      { sec: 900, lbl: "15m" },
+      { sec: 1800, lbl: "30m" },
+      { sec: 3600, lbl: "1h" },
+      { sec: 14400, lbl: "4h" }
+    ];
+
+    const quickTimeButtonsHtml = quickTimes.map(qt => {
+      const isCur = Math.round(t.currentDelaySeconds) === qt.sec;
+      return `
+        <button type="button" onclick="window.BasketTimingEngineV23.setQuickDelaySeconds(${qt.sec})" style="min-height:36px; padding:4px 6px; font-size:11px; font-weight:900; font-family:var(--font-mono); border-radius:6px; cursor:pointer; background:${isCur ? '#00f2a1' : 'rgba(255,255,255,0.06)'}; color:${isCur ? '#000' : '#e2e8f0'}; border:1px solid ${isCur ? '#00f2a1' : 'rgba(255,255,255,0.16)'};">
+          ${qt.lbl}
+        </button>
+      `;
+    }).join("");
+
+    return `
+      <div class="v23-master-matrix-wrap" style="background:linear-gradient(180deg, rgba(10,16,30,0.98) 0%, rgba(6,10,18,0.98) 100%); border:2px solid #38bdf8; border-radius:12px; padding:14px; margin:12px 0; box-shadow:0 10px 30px rgba(0,0,0,0.7); display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- =================================================================
+             MODULO 1: MIXER PERCENTUALE PER OGNI TIPO DI TITOLO & PANIERE (348+ ASSET)
+             ================================================================= -->
+        <div style="border:1px solid rgba(245,158,11,0.35); border-radius:10px; padding:12px; background:rgba(12,18,32,0.75);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div>
+              <div style="font-size:14px; font-weight:900; color:#fbbf24;">
+                🥧 Ripartizione Percentuale per Tipo di Titolo &amp; Paniere Totale (${b.totalUniverseCount}+ Asset)
+              </div>
+              <div style="font-size:10.5px; color:#94a3b8;">
+                Calcolato in diretta sul Budget Allocato di <b>${activeEx.icon} ${activeEx.shortName} (${baseBudgetEur.toFixed(2)} €)</b> • Totale Paniere: <b style="color:${Math.abs(totalPct - 100) < 0.5 ? '#00f2a1' : '#f59e0b'};">${totalPct}%</b>
+              </div>
+            </div>
+
+            <!-- 3 Modalità Paniere -->
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
+              <button type="button" onclick="window.BasketTimingEngineV23.setBasketMode('FULL_AUTO')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${b.allocationMode === 'FULL_AUTO' ? '#00f2a1' : 'rgba(255,255,255,0.06)'}; color:${b.allocationMode === 'FULL_AUTO' ? '#000' : '#e2e8f0'}; border:1px solid #00f2a1;">
+                🤖 100% Automatico CED
+              </button>
+              <button type="button" onclick="window.BasketTimingEngineV23.setBasketMode('SEMI_AUTO')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${b.allocationMode === 'SEMI_AUTO' ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${b.allocationMode === 'SEMI_AUTO' ? '#000' : '#e2e8f0'}; border:1px solid #f59e0b;">
+                🌓 Semi-Auto (Lock &amp; Auto-Fill)
+              </button>
+              <button type="button" onclick="window.BasketTimingEngineV23.setBasketMode('MANUAL')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${b.allocationMode === 'MANUAL' ? '#38bdf8' : 'rgba(255,255,255,0.06)'}; color:${b.allocationMode === 'MANUAL' ? '#000' : '#e2e8f0'}; border:1px solid #38bdf8;">
+                🖐️ Manuale Completo
+              </button>
+            </div>
+          </div>
+
+          <!-- Stacked Percentage Bar -->
+          <div style="width:100%; height:10px; border-radius:5px; overflow:hidden; display:flex; background:#060911; margin-bottom:10px; border:1px solid rgba(255,255,255,0.15);">
+            ${stackedBarSegments}
+          </div>
+
+          <!-- 6 Categories Grid -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(${compact ? '260px' : '310px'}, 1fr)); gap:8px; margin-bottom:10px;">
+            ${catRowsHtml}
+          </div>
+
+          <!-- Pin Single Preferred Asset from 348+ Universe -->
+          <div style="background:rgba(56,189,248,0.07); border:1px solid rgba(56,189,248,0.35); border-radius:8px; padding:9px 10px;">
+            <div style="font-size:11px; font-weight:900; color:#38bdf8; margin-bottom:6px;">
+              📌 Fissa % su Singolo Titolo Preferito (dai ${b.totalUniverseCount}+ del Paniere Live)
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px;">
+              <select id="v23-pin-asset-select" style="flex:1; min-width:170px; min-height:36px; background:#060a12; border:1px solid #38bdf8; color:#fff; font-size:11.5px; font-weight:800; border-radius:6px; padding:4px 8px;">
+                ${assetOptionsHtml}
+              </select>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <input type="number" id="v23-pin-asset-pct" min="1" max="100" step="1" value="15" style="width:68px; min-height:34px; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:12px; font-weight:900; border-radius:6px; padding:4px 6px; text-align:right;">
+                <span style="font-size:11px; font-weight:900; color:#fbbf24;">%</span>
+              </div>
+              <button type="button" onclick="window.BasketTimingEngineV23.pinCustomAsset()" style="min-height:36px; padding:6px 12px; background:#38bdf8; color:#000; font-weight:900; font-size:11px; border:none; border-radius:6px; cursor:pointer;">
+                ➕ Fissa Quota Titolo
+              </button>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              ${pinnedPillsHtml || '<span style="font-size:10px; color:#94a3b8;">Nessun singolo titolo bloccato: il motore opera sull'intero paniere secondo le % dei 6 comparti.</span>'}
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================
+             MODULO 2: CONDIZIONATORE TEMPO INTER-OPERAZIONE (DA 1s-5s FINO A 4h)
+             ================================================================= -->
+        <div style="border:1px solid rgba(0,242,161,0.4); border-radius:10px; padding:12px; background:rgba(10,20,30,0.8);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div>
+              <div style="font-size:14px; font-weight:900; color:#00f2a1;">
+                ⏱️ Condizionatore Tempo Inter-Operazione (Δt tra Operazione e Operazione: 1s ➔ 4h)
+              </div>
+              <div style="font-size:10.5px; color:#94a3b8;">
+                Dal micro-scalping ultra-rapido (<b>1s, 2s, 3s, 5s</b>) al multi-ora, con ricondizionamento automatico Post-Win / Post-Loss.
+              </div>
+            </div>
+
+            <!-- 3 Regimi Tempo -->
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
+              <button type="button" onclick="window.BasketTimingEngineV23.setTimingMode('AUTO_ADAPTIVE')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${t.mode === 'AUTO_ADAPTIVE' ? '#00f2a1' : 'rgba(255,255,255,0.06)'}; color:${t.mode === 'AUTO_ADAPTIVE' ? '#000' : '#e2e8f0'}; border:1px solid #00f2a1;">
+                ⚡ Auto Adattivo AI
+              </button>
+              <button type="button" onclick="window.BasketTimingEngineV23.setTimingMode('SEMI_AUTO_ADAPTIVE')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${t.mode === 'SEMI_AUTO_ADAPTIVE' ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${t.mode === 'SEMI_AUTO_ADAPTIVE' ? '#000' : '#e2e8f0'}; border:1px solid #f59e0b;">
+                🎛️ Semi-Auto (Tunnel Min-Max)
+              </button>
+              <button type="button" onclick="window.BasketTimingEngineV23.setTimingMode('MANUAL_FIXED')" style="min-height:36px; padding:6px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${t.mode === 'MANUAL_FIXED' ? '#38bdf8' : 'rgba(255,255,255,0.06)'}; color:${t.mode === 'MANUAL_FIXED' ? '#000' : '#e2e8f0'}; border:1px solid #38bdf8;">
+                🖐️ Manuale Diretto
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Countdown Bar & Instant Stretch/Shorten Controls -->
+          <div style="background:rgba(0,242,161,0.08); border:1px solid rgba(0,242,161,0.35); border-radius:8px; padding:9px 12px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+              <div style="font-size:12px; font-weight:900; color:#fff;">
+                ⏳ Countdown al Prossimo Ordine: <span class="v23-live-countdown-val" style="color:#00f2a1; font-family:var(--font-mono); font-size:14px;">${this.countdownRemainingSec.toFixed(1)}s / ${this.formatDuration(t.currentDelaySeconds)}</span>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                <button type="button" onclick="window.BasketTimingEngineV23.adjustLiveDelay('half')" style="min-height:32px; padding:4px 9px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:rgba(0,242,161,0.2); border:1px solid #00f2a1; color:#00f2a1;">➖ Accorcia Tempo (-50%)</button>
+                <button type="button" onclick="window.BasketTimingEngineV23.adjustLiveDelay(5)" style="min-height:32px; padding:4px 9px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#fbbf24;">➕ Allunga +5s</button>
+                <button type="button" onclick="window.BasketTimingEngineV23.adjustLiveDelay(30)" style="min-height:32px; padding:4px 9px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; color:#fbbf24;">➕ Allunga +30s</button>
+                <button type="button" onclick="window.BasketTimingEngineV23.adjustLiveDelay(300)" style="min-height:32px; padding:4px 9px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8;">➕ Allunga +5m</button>
+              </div>
+            </div>
+            <div style="width:100%; height:7px; background:#060a12; border-radius:4px; overflow:hidden;">
+              <div class="v23-live-countdown-bar" style="width:50%; height:100%; background:linear-gradient(90deg, #00f2a1, #38bdf8); transition:width 0.18s linear;"></div>
+            </div>
+          </div>
+
+          <!-- 14 Touch-First Preset Buttons (1s -> 4h) -->
+          <div style="margin-bottom:10px;">
+            <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:5px;">
+              Tasti Rapidi Δt (Da Pochi Secondi 1s–5s fino a 4 Ore):
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(54px, 1fr)); gap:5px;">
+              ${quickTimeButtonsHtml}
+            </div>
+          </div>
+
+          <!-- Tunnel Min-Max & Post-Win / Post-Loss Reconditioning -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Δt Manuale / Attuale (sec)</label>
+              <input type="number" min="1" max="14400" step="1" value="${t.currentDelaySeconds}" onchange="window.BasketTimingEngineV23.setQuickDelaySeconds(this.value)" style="width:100%; background:#060a12; border:1px solid #00f2a1; color:#00f2a1; font-family:var(--font-mono); font-size:12.5px; font-weight:900; padding:4px 6px; border-radius:5px; margin-top:3px;">
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Tunnel Minimo (sec)</label>
+              <input type="number" min="1" max="3600" step="1" value="${t.minAllowedSeconds}" onchange="window.BasketTimingEngineV23.updateTimingParam('minAllowedSeconds', this.value)" style="width:100%; background:#060a12; border:1px solid #334155; color:#fff; font-family:var(--font-mono); font-size:12.5px; font-weight:800; padding:4px 6px; border-radius:5px; margin-top:3px;">
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Tunnel Massimo (sec)</label>
+              <input type="number" min="2" max="14400" step="5" value="${t.maxAllowedSeconds}" onchange="window.BasketTimingEngineV23.updateTimingParam('maxAllowedSeconds', this.value)" style="width:100%; background:#060a12; border:1px solid #334155; color:#fff; font-family:var(--font-mono); font-size:12.5px; font-weight:800; padding:4px 6px; border-radius:5px; margin-top:3px;">
+            </div>
+            <div style="background:rgba(0,242,161,0.06); border:1px solid rgba(0,242,161,0.3); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#00f2a1;">Post-Profitto (Moltipl. Δt)</label>
+              <input type="number" min="0.2" max="2.0" step="0.05" value="${t.reconditionOnWinFactor}" onchange="window.BasketTimingEngineV23.updateTimingParam('reconditionOnWinFactor', this.value)" style="width:100%; background:#060a12; border:1px solid #00f2a1; color:#00f2a1; font-family:var(--font-mono); font-size:12.5px; font-weight:800; padding:4px 6px; border-radius:5px; margin-top:3px;">
+            </div>
+            <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.35); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#f87171;">Post-Stop Loss (Moltipl. Δt)</label>
+              <input type="number" min="1.0" max="10.0" step="0.25" value="${t.reconditionOnLossFactor}" onchange="window.BasketTimingEngineV23.updateTimingParam('reconditionOnLossFactor', this.value)" style="width:100%; background:#060a12; border:1px solid #ef4444; color:#f87171; font-family:var(--font-mono); font-size:12.5px; font-weight:800; padding:4px 6px; border-radius:5px; margin-top:3px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================
+             MODULO 3: CRUSCOTTO COMPLETO DI TUTTI I PARAMETRI DI FINE-TUNING
+             ================================================================= -->
+        <div style="border:1px solid rgba(56,189,248,0.4); border-radius:10px; padding:12px; background:rgba(11,17,30,0.85);">
+          <div style="font-size:14px; font-weight:900; color:#38bdf8; margin-bottom:10px;">
+            🎛️ Cruscotto Completo Parametri per la Gestione Ottimale delle Operazioni
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+            <!-- 1. Direzione Operativa -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">1. Direzione Operativa</label>
+              <select onchange="window.BasketTimingEngineV23.updateExecParam('directionMode', this.value)" style="width:100%; min-height:36px; background:#060a12; border:1px solid #38bdf8; color:#fff; font-size:11.5px; font-weight:800; border-radius:6px; padding:4px 8px;">
+                <option value="BI_DIRECTIONAL_AUTO" ${p.directionMode === 'BI_DIRECTIONAL_AUTO' ? 'selected' : ''}>🔄 Bi-Direzionale Auto (Long &amp; Short)</option>
+                <option value="LONG_ONLY" ${p.directionMode === 'LONG_ONLY' ? 'selected' : ''}>🟢 Solo Long (Trend Bullish)</option>
+                <option value="SHORT_ONLY" ${p.directionMode === 'SHORT_ONLY' ? 'selected' : ''}>🔴 Solo Short (Copertura / Bear)</option>
+                <option value="HEDGE_SIMULTANEOUS" ${p.directionMode === 'HEDGE_SIMULTANEOUS' ? 'selected' : ''}>⚖️ Hedge Simultaneo (Delta Neutral)</option>
+              </select>
+            </div>
+
+            <!-- 2. Tipo Esecuzione Ordine -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">2. Tipo Esecuzione Ordine</label>
+              <select onchange="window.BasketTimingEngineV23.updateExecParam('orderExecutionType', this.value)" style="width:100%; min-height:36px; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-size:11.5px; font-weight:800; border-radius:6px; padding:4px 8px;">
+                <option value="SMART_HYBRID" ${p.orderExecutionType === 'SMART_HYBRID' ? 'selected' : ''}>🧠 Smart Hybrid (Limit POC/OB + Market Breakout)</option>
+                <option value="LIMIT_MAKER_POC" ${p.orderExecutionType === 'LIMIT_MAKER_POC' ? 'selected' : ''}>🛡️ Solo Limit Maker (Zero Slippage / Fee Minime)</option>
+                <option value="MARKET_ULTRA_FAST" ${p.orderExecutionType === 'MARKET_ULTRA_FAST' ? 'selected' : ''}>⚡ Market Ultra-Fast (&lt;50ms per Δt 1s-5s)</option>
+              </select>
+            </div>
+
+            <!-- 3. Frazionamento Take-Profit (TP1 / TP2 / TP3 Runner) -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#00f2a1; text-transform:uppercase; margin-bottom:4px;">3. Frazionamento TP1% / TP2% / TP3%</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;">
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">TP1 %</span>
+                  <input type="number" min="0" max="100" value="${p.takeProfitSplit.tp1Pct}" onchange="window.BasketTimingEngineV23.updateExecParam('tp1Pct', this.value)" style="width:100%; background:#060a12; border:1px solid #00f2a1; color:#00f2a1; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px; border-radius:5px;">
+                </div>
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">TP2 %</span>
+                  <input type="number" min="0" max="100" value="${p.takeProfitSplit.tp2Pct}" onchange="window.BasketTimingEngineV23.updateExecParam('tp2Pct', this.value)" style="width:100%; background:#060a12; border:1px solid #38bdf8; color:#38bdf8; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px; border-radius:5px;">
+                </div>
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">TP3 Run%</span>
+                  <input type="number" min="0" max="100" value="${p.takeProfitSplit.tp3RunnerPct}" onchange="window.BasketTimingEngineV23.updateExecParam('tp3RunnerPct', this.value)" style="width:100%; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px; border-radius:5px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Auto-Breakeven & Passo Trailing Stop -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#fbbf24; text-transform:uppercase; margin-bottom:4px;">4. Auto-Breakeven &amp; Trailing Stop</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">Breakeven (+R)</span>
+                  <input type="number" min="0.3" max="5.0" step="0.1" value="${p.autoBreakevenAtR}" onchange="window.BasketTimingEngineV23.updateExecParam('autoBreakevenAtR', this.value)" style="width:100%; background:#060a12; border:1px solid #f59e0b; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px 6px; border-radius:5px;">
+                </div>
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">Passo Trailing (ATR)</span>
+                  <input type="number" min="0.2" max="5.0" step="0.1" value="${p.trailingStopDistanceAtr}" onchange="window.BasketTimingEngineV23.updateExecParam('trailingStopDistanceAtr', this.value)" style="width:100%; background:#060a12; border:1px solid #38bdf8; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px 6px; border-radius:5px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Max Operazioni Contemporanee & Max Spread (bps) -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">5. Max Trade Aperti (1-25) &amp; Spread</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">Max Open (1-25)</span>
+                  <input type="number" min="1" max="25" step="1" value="${p.maxConcurrentOpenTrades}" onchange="window.BasketTimingEngineV23.updateExecParam('maxConcurrentOpenTrades', this.value)" style="width:100%; background:#060a12; border:1px solid #00f2a1; color:#00f2a1; font-family:var(--font-mono); font-size:12px; font-weight:900; padding:4px 6px; border-radius:5px;">
+                </div>
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">Max Spread (bps)</span>
+                  <input type="number" min="0.5" max="50" step="0.5" value="${p.maxAllowedSpreadBps}" onchange="window.BasketTimingEngineV23.updateExecParam('maxAllowedSpreadBps', this.value)" style="width:100%; background:#060a12; border:1px solid #334155; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px 6px; border-radius:5px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Time-Stop di Stallo & Filtro News Macro -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 10px;">
+              <label style="display:block; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">6. Time-Stop Stallo &amp; Filtro Macro</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; align-items:end;">
+                <div>
+                  <span style="font-size:9px; color:#94a3b8;">Stallo Max (min)</span>
+                  <input type="number" min="1" max="1440" step="5" value="${p.stagnationTimeStopMinutes}" onchange="window.BasketTimingEngineV23.updateExecParam('stagnationTimeStopMinutes', this.value)" style="width:100%; background:#060a12; border:1px solid #334155; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:800; padding:4px 6px; border-radius:5px;">
+                </div>
+                <button type="button" onclick="window.BasketTimingEngineV23.updateExecParam('macroHighImpactFilter', ${!p.macroHighImpactFilter})" style="min-height:32px; font-size:10px; font-weight:900; border-radius:6px; cursor:pointer; border:1px solid ${p.macroHighImpactFilter ? '#00f2a1' : '#64748b'}; background:${p.macroHighImpactFilter ? 'rgba(0,242,161,0.18)' : 'rgba(255,255,255,0.05)'}; color:${p.macroHighImpactFilter ? '#00f2a1' : '#94a3b8'};">
+                  ${p.macroHighImpactFilter ? '🛡️ Filtro Macro ON' : '⚪ Filtro Macro OFF'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAllContainers() {
+    const ids = [
+      "v23-basket-timing-order-dock",
+      "v23-basket-timing-automated-dock",
+      "v23-basket-timing-optimal-dock",
+      "v23-basket-timing-modal-body"
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const isCompact = (id === "v23-basket-timing-order-dock" || id === "v23-basket-timing-automated-dock");
+        el.innerHTML = this.buildFullMatrixHTML(isCompact);
+      }
+    });
+  }
+
+  openModal() {
+    let modal = document.getElementById("v23-basket-timing-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "v23-basket-timing-modal";
+      modal.style.cssText = "position:fixed; inset:0; background:rgba(3,7,18,0.90); backdrop-filter:blur(6px); z-index:999999; display:flex; align-items:center; justify-content:center; padding:12px; overflow-y:auto;";
+      modal.innerHTML = `
+        <div style="width:100%; max-width:1220px; max-height:92vh; overflow-y:auto; background:#070b14; border:2px solid #38bdf8; border-radius:14px; padding:16px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.88);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:15px; font-weight:900; color:#38bdf8;">🥧⏱️ PANIERE PERCENTUALE (348+ TITOLI) + CONDIZIONATORE TEMPO (1s➔4h) + MATRICE OPERATIVA v23.0</span>
+            <button type="button" onclick="document.getElementById('v23-basket-timing-modal').style.display='none'" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fff; font-weight:900; border-radius:8px; padding:6px 12px; cursor:pointer;">✕ Chiudi</button>
+          </div>
+          <div id="v23-basket-timing-modal-body"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    modal.style.display = "flex";
+    this.renderAllContainers();
+  }
+}
+
+window.BasketMixerAndUltraTimingEngineV23 = BasketMixerAndUltraTimingEngineV23;
+window.BasketTimingEngineV23 = new BasketMixerAndUltraTimingEngineV23();
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (window.BasketTimingEngineV23) {
+      window.BasketTimingEngineV23.renderAllContainers();
+      window.BasketTimingEngineV23.syncWithEngines();
+    }
+  }, 450);
+});
