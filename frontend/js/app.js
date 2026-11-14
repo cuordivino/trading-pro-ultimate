@@ -120,6 +120,7 @@ function toggleDrawer(id) {
 // TOP CHAPTER DROPDOWN NAVIGATION ("APERTURA A TENDINA IN ALTO")
 // ==========================================================================
 const CHAPTER_META = {
+  'tab-ced-command-room': { icon: '👑📈', title: 'Sala CED & 6 Agenti Quantitativi — Direzione Apex-CEO' },
   'tab-marketing-erp': { icon: '💼📈', title: 'Apex-CEO IA — Marketing Multicanale, CRM Commerciale, Video Demo & Contabilità ERP' },
   'tab-portfolio-manager': { icon: '💼', title: 'Gestione Portafoglio Istituzionale (Demo €30k & Reale API Multi-Broker)' },
   'tab-market-quantum': { icon: '⚡', title: 'Market Quantum Co-Pilot (Multi-Agent & Risk)' },
@@ -207,7 +208,10 @@ function switchMainTab(tabId, btnElem) {
   }
 
   // Trigger chapter renders
-  if (tabId === 'tab-marketing-erp' && window.MarketingERPEngine) {
+  if (tabId === 'tab-ced-command-room') {
+    const cp = document.getElementById('tab-ced-command-room');
+    if (cp) cp.style.display = 'block';
+  } else if (tabId === 'tab-marketing-erp' && window.MarketingERPEngine) {
     MarketingERPEngine.runAutonomousCorporateCycle(false);
   } else if (tabId === 'tab-portfolio-manager' && window.PortfolioEngine) {
     PortfolioEngine.renderPortfolioSector();

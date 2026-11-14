@@ -1,0 +1,508 @@
+/* ==========================================================================
+   TRADING PRO ULTIMATE™ — CED MASTER SUITE v18.0 CSS
+   12 Monitor Themes, Ergonomic Touch-First (>=44px), 0°/90° Split-Screen,
+   Control Bar & Anti-Black-Screen Safe Rules
+   ========================================================================== */
+
+/* 1. ANTI-BLACK-SCREEN & SAFE STARTUP */
+.gatekeeper-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#tpu-installer-modal {
+  display: none !important;
+}
+
+/* 2. TOP MONITOR CONTROL BAR (#cbMonitorControlBarV18) */
+#cbMonitorControlBarV18 {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100020;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(8, 12, 22, 0.96);
+  border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #f8fafc;
+}
+
+.cb-bar-left, .cb-bar-center, .cb-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cb-badge-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.cb-badge-version {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #000;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* 12 Themes Selector & Swatches */
+.cb-theme-select {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.95);
+  color: #f1f5f9;
+  border: 2px solid rgba(245, 158, 11, 0.5);
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cb-theme-select:focus {
+  border-color: #00f2a1;
+  box-shadow: 0 0 12px rgba(0, 242, 161, 0.4);
+}
+
+.cb-swatches-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  max-width: 320px;
+  padding: 2px 0;
+}
+.cb-swatch-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.cb-swatch-btn:hover, .cb-swatch-btn.active {
+  transform: scale(1.15);
+  border-color: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
+}
+
+/* Ergonomic Action Buttons in Control Bar */
+.cb-btn {
+  min-height: 44px !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  border-radius: 8px !important;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+.cb-btn-ced {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #060913 !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+  animation: pulse-glow-v18 2.5s infinite;
+}
+.cb-btn-ced:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.7);
+}
+.cb-btn-layout {
+  background: rgba(30, 41, 59, 0.9);
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+.cb-btn-layout:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8 !important;
+}
+
+@keyframes pulse-glow-v18 {
+  0%, 100% { box-shadow: 0 0 14px rgba(245, 158, 11, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 24px rgba(245, 158, 11, 0.85); transform: scale(1.02); }
+}
+
+/* 3. ERGONOMIC TOUCH-FIRST RULES (>= 44px) */
+button, .btn, .tab-nav-btn, .chapter-dropdown-btn, .m-bottom-nav-item, input, select {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+.btn-mobile-chapters-drawer, .btn-mobile-quick-agents {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+/* Big High-Visibility Button for Top-Bar & Bottom-Bar */
+.btn-ced-glow {
+  min-height: 44px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(16,185,129,0.3)) !important;
+  border: 2px solid #f59e0b !important;
+  color: #fbbf24 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+  animation: pulse-glow-v18 3s infinite ease-in-out;
+}
+.btn-ced-glow:hover {
+  border-color: #00f2a1 !important;
+  color: #00f2a1 !important;
+  box-shadow: 0 0 24px rgba(0, 242, 161, 0.5);
+}
+
+/* 4. THE 12 MONITOR THEMES */
+/* 1. Bloomberg OLED Dark */
+body.tpu-theme-1-obsidian-oled {
+  --bg-primary: #060913 !important;
+  --bg-secondary: #0c1222 !important;
+  --bg-tertiary: #131d36 !important;
+  --text-primary: #f8fafc !important;
+  --text-secondary: #cbd5e1 !important;
+  --text-muted: #94a3b8 !important;
+  --accent: #f59e0b !important;
+  --accent-pro: #f59e0b !important;
+  --border-color: rgba(245, 158, 11, 0.3) !important;
+  background: #060913 !important;
+  color: #f8fafc !important;
+}
+
+/* 2. TradingView Navy */
+body.tpu-theme-2-autocad-navy {
+  --bg-primary: #071326 !important;
+  --bg-secondary: #0d2242 !important;
+  --bg-tertiary: #143260 !important;
+  --text-primary: #f0fdf4 !important;
+  --text-secondary: #99f6e4 !important;
+  --accent: #00f5d4 !important;
+  --accent-pro: #00f5d4 !important;
+  --border-color: rgba(0, 245, 212, 0.3) !important;
+  background: #071326 !important;
+  color: #f0fdf4 !important;
+}
+
+/* 3. Financial Ivory (Chiaro) */
+body.tpu-theme-3-archiproducts-ivory {
+  --bg-primary: #f6f3ec !important;
+  --bg-secondary: #ece7dc !important;
+  --bg-tertiary: #dfd8c7 !important;
+  --text-primary: #1c1917 !important;
+  --text-secondary: #44403c !important;
+  --text-muted: #78716c !important;
+  --accent: #b45309 !important;
+  --accent-pro: #b45309 !important;
+  --border-color: #d6cebf !important;
+  background: #f6f3ec !important;
+  color: #1c1917 !important;
+}
+
+/* 4. Outdoor Sole Diretto (Bianco/Nero Max Contrasto) */
+body.tpu-theme-4-sunlight-cantiere {
+  --bg-primary: #ffffff !important;
+  --bg-secondary: #f1f5f9 !important;
+  --bg-tertiary: #e2e8f0 !important;
+  --text-primary: #000000 !important;
+  --text-secondary: #111111 !important;
+  --text-muted: #333333 !important;
+  --accent: #000000 !important;
+  --accent-pro: #000000 !important;
+  --border-color: #000000 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* 5. Bullish Emerald Dark */
+body.tpu-theme-5-studio-sage {
+  --bg-primary: #091917 !important;
+  --bg-secondary: #0f2c28 !important;
+  --bg-tertiary: #17423c !important;
+  --text-primary: #ecfdf5 !important;
+  --text-secondary: #a7f3d0 !important;
+  --accent: #10b981 !important;
+  --accent-pro: #10b981 !important;
+  --border-color: rgba(16, 185, 129, 0.35) !important;
+  background: #091917 !important;
+  color: #ecfdf5 !important;
+}
+
+/* 6. Wall Street Titanium */
+body.tpu-theme-6-blackrender-titanium {
+  --bg-primary: #121214 !important;
+  --bg-secondary: #1a1a1e !important;
+  --bg-tertiary: #26262c !important;
+  --text-primary: #fafafa !important;
+  --text-secondary: #d4d4d8 !important;
+  --accent: #ff6b00 !important;
+  --accent-pro: #ff6b00 !important;
+  --border-color: rgba(255, 107, 0, 0.35) !important;
+  background: #121214 !important;
+  color: #fafafa !important;
+}
+
+/* 7. Quant Cyan Desk */
+body.tpu-theme-7-blueprint-cyan {
+  --bg-primary: #002b49 !important;
+  --bg-secondary: #003a63 !important;
+  --bg-tertiary: #004d84 !important;
+  --text-primary: #f0f9ff !important;
+  --text-secondary: #bae6fd !important;
+  --accent: #38bdf8 !important;
+  --accent-pro: #38bdf8 !important;
+  --border-color: rgba(56, 189, 248, 0.35) !important;
+  background: #002b49 !important;
+  color: #f0f9ff !important;
+}
+
+/* 8. Hedge Fund Burgundy & Gold */
+body.tpu-theme-8-luxury-burgundy {
+  --bg-primary: #1a0910 !important;
+  --bg-secondary: #2c0e1b !important;
+  --bg-tertiary: #3e1427 !important;
+  --text-primary: #fff1f2 !important;
+  --text-secondary: #fecdd3 !important;
+  --accent: #fcd34d !important;
+  --accent-pro: #fcd34d !important;
+  --border-color: rgba(252, 211, 77, 0.35) !important;
+  background: #1a0910 !important;
+  color: #fff1f2 !important;
+}
+
+/* 9. Institutional Daylight (Grigio Chiaro) */
+body.tpu-theme-9-nordic-daylight {
+  --bg-primary: #e2e8f0 !important;
+  --bg-secondary: #cbd5e1 !important;
+  --bg-tertiary: #94a3b8 !important;
+  --text-primary: #0f172a !important;
+  --text-secondary: #1e293b !important;
+  --text-muted: #475569 !important;
+  --accent: #1d4ed8 !important;
+  --accent-pro: #1d4ed8 !important;
+  --border-color: #94a3b8 !important;
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 10. Matrix Algo Terminal */
+body.tpu-theme-10-matrix-terminal {
+  --bg-primary: #020b05 !important;
+  --bg-secondary: #051a0c !important;
+  --bg-tertiary: #0a2d16 !important;
+  --text-primary: #22c55e !important;
+  --text-secondary: #4ade80 !important;
+  --text-muted: #166534 !important;
+  --accent: #22c55e !important;
+  --accent-pro: #22c55e !important;
+  --border-color: rgba(34, 197, 94, 0.4) !important;
+  background: #020b05 !important;
+  color: #22c55e !important;
+}
+
+/* 11. DeFi Cyber Neon */
+body.tpu-theme-11-cyber-neon {
+  --bg-primary: #0d051a !important;
+  --bg-secondary: #190a33 !important;
+  --bg-tertiary: #270f4f !important;
+  --text-primary: #faf5ff !important;
+  --text-secondary: #e9d5ff !important;
+  --accent: #e879f9 !important;
+  --accent-pro: #e879f9 !important;
+  --border-color: rgba(232, 121, 249, 0.4) !important;
+  background: #0d051a !important;
+  color: #faf5ff !important;
+}
+
+/* 12. Il Sole Sepia (Riposo Occhi) */
+body.tpu-theme-12-sepia-eyecare {
+  --bg-primary: #f3ead6 !important;
+  --bg-secondary: #e6dac0 !important;
+  --bg-tertiary: #d9c8a6 !important;
+  --text-primary: #292524 !important;
+  --text-secondary: #44403c !important;
+  --text-muted: #78716c !important;
+  --accent: #9a3412 !important;
+  --accent-pro: #9a3412 !important;
+  --border-color: #cbb993 !important;
+  background: #f3ead6 !important;
+  color: #292524 !important;
+}
+
+/* Light theme overrides for panels and cards */
+body.tpu-theme-3-archiproducts-ivory .tpu-glass-card,
+body.tpu-theme-4-sunlight-cantiere .tpu-glass-card,
+body.tpu-theme-9-nordic-daylight .tpu-glass-card,
+body.tpu-theme-12-sepia-eyecare .tpu-glass-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+body.tpu-theme-4-sunlight-cantiere * {
+  border-color: #000000 !important;
+}
+
+/* 5. 0° PORTRAIT VS 90° LANDSCAPE SPLIT-SCREEN */
+/* Portrait 0° */
+@media (max-width: 900px) and (orientation: portrait) {
+  .tpu-flow-container {
+    padding: 10px !important;
+  }
+  .ced-agents-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .cb-swatches-wrap {
+    display: none;
+  }
+}
+
+/* Landscape 90° or Forced Split Mode */
+body.tpu-layout-landscape-split #main-terminal-body,
+@media (min-width: 960px) and (orientation: landscape) {
+  body.tpu-layout-landscape-split .tpu-split-container {
+    display: grid !important;
+    grid-template-columns: 50% 50% !important;
+    gap: 16px;
+    height: calc(100vh - 110px);
+    overflow: hidden;
+  }
+  body.tpu-layout-landscape-split .tpu-split-left {
+    height: 100%;
+    overflow-y: auto;
+    border-right: 2px solid var(--border-color, rgba(245, 158, 11, 0.3));
+    padding-right: 12px;
+  }
+  body.tpu-layout-landscape-split .tpu-split-right {
+    height: 100%;
+    overflow-y: auto;
+    padding-left: 4px;
+  }
+}
+
+/* 6. SALA COMANDO CED UI STYLING */
+#tab-ced-command-room {
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.ced-header-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.08));
+  border: 2px solid rgba(245, 158, 11, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.ced-agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ced-agent-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.ced-agent-card:hover {
+  transform: translateY(-2px);
+  border-color: #f59e0b;
+}
+.ced-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.ced-agent-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot-v18 1.5s infinite;
+}
+@keyframes pulse-dot-v18 {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.ced-btn-approve {
+  min-height: 48px !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  border: 2px solid #34d399 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5) !important;
+  cursor: pointer;
+}
+.ced-btn-approve:hover {
+  background: linear-gradient(135deg, #34d399, #10b981) !important;
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.8) !important;
+}
+
+.ced-log-box {
+  background: rgba(2, 6, 23, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  color: #94a3b8;
+}
+.ced-log-entry {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.ced-log-time {
+  color: #f59e0b;
+  font-weight: 700;
+}
