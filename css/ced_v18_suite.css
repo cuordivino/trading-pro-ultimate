@@ -646,44 +646,134 @@ body.tpu-layout-landscape-split #main-terminal-body,
 }
 
 
+
 /* =====================================================================
-   TPU v18.4 MASTER: ANTI-COLLISION & ERGONOMIC DESKTOP/MOBILE HEADER FIX
+   TPU v18.5 MASTER: FULL BRAND VISIBILITY ON IPHONE & PC + ZERO OVERLAP
    ===================================================================== */
-.terminal-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  padding: 0 12px !important;
-  box-sizing: border-box !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: none !important;
-}
-.terminal-header::-webkit-scrollbar {
-  display: none !important;
+@media screen and (min-width: 769px) {
+  .terminal-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    min-height: 54px !important;
+    height: auto !important;
+    padding: 4px 12px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .brand-box {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 210px !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .brand-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    white-space: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .chapters-nav-desktop {
+    flex: 0 1 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
 }
 
-.brand-box {
-  flex: 0 0 auto !important;
-  min-width: 190px !important;
-  max-width: 240px !important;
-  overflow: hidden !important;
-}
+/* IPHONE & MOBILE (< 768px): FULL LOGO + TRADING PRO ULTIMATE™ TITLE 100% VISIBLE */
+@media screen and (max-width: 768px) {
+  .terminal-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    overflow: visible !important;
+    background: linear-gradient(180deg, rgba(10, 15, 29, 0.98) 0%, rgba(7, 10, 18, 0.98) 100%) !important;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.35) !important;
+  }
 
-.chapters-nav-desktop {
-  flex: 0 1 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  min-width: 0 !important;
-  overflow-x: auto !important;
-  scrollbar-width: none !important;
-}
-.chapters-nav-desktop::-webkit-scrollbar {
-  display: none !important;
+  .brand-box {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    gap: 6px !important;
+    margin: 0 auto !important;
+  }
+
+  .institutional-site-logo {
+    height: 60px !important;
+    width: auto !important;
+    max-width: 240px !important;
+    display: block !important;
+    margin: 0 auto !important;
+    border-radius: 10px !important;
+    border: 2px solid rgba(245, 158, 11, 0.55) !important;
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.35) !important;
+  }
+
+  .brand-text-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    text-align: center !important;
+    overflow: visible !important;
+  }
+
+  .brand-title {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.5px !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    text-shadow: 0 2px 10px rgba(245, 158, 11, 0.4) !important;
+  }
+
+  .brand-subtitle {
+    display: block !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: #94a3b8 !important;
+    letter-spacing: 0.6px !important;
+    text-align: center !important;
+    margin-top: 2px !important;
+  }
 }
 
 .chapter-dropdown-btn {
@@ -720,86 +810,33 @@ body.tpu-layout-landscape-split #main-terminal-body,
   letter-spacing: 0.3px !important;
 }
 
-/* TOP MONITOR CONTROL BAR: ZERO-COLLISION SWATCHES & BUTTONS */
+/* ENSURE MEGA ASSET DROPDOWN & CHAPTER MENUS ARE NEVER CLIPPED */
+.active-asset-bar {
+  overflow: visible !important;
+  z-index: 500 !important;
+}
+
+#asset-mega-dropdown.mega-asset-dropdown {
+  z-index: 999999 !important;
+}
+
+/* TOP MONITOR CONTROL BAR: FULL BRAND NAME VISIBILITY ON IPHONE & PC */
 #cbMonitorControlBarV18 {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 8px !important;
   padding: 4px 12px !important;
-  height: 42px !important;
   min-height: 42px !important;
+  height: auto !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
-}
-
-.cb-brand-tag {
-  flex: 0 0 auto !important;
-}
-
-.cb-center-controls {
-  flex: 0 1 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  min-width: 0 !important;
-}
-
-.cb-swatches-wrap {
-  display: flex !important;
-  align-items: center !important;
-  gap: 2px !important;
-  flex: 0 1 auto !important;
   overflow-x: auto !important;
-  scrollbar-width: none !important;
-}
-.cb-swatches-wrap::-webkit-scrollbar {
-  display: none !important;
 }
 
-.cb-right-controls {
-  flex: 0 0 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-/* Laptop and standard PC screen safety: auto-collapse swatches if width < 1550px */
-@media (max-width: 1550px) {
-  .cb-swatches-wrap {
-    display: none !important;
-  }
-}
-
-/* MACRO GLOBE TRACK & ON-CHART TIMELINE PINS */
-.macro-timeline-track {
-  position: absolute;
-  bottom: 26px;
-  left: 0;
-  right: 68px;
-  height: 24px;
-  pointer-events: none;
-  z-index: 15;
-}
-.macro-globe-marker {
-  position: absolute;
-  bottom: 2px;
-  transform: translateX(-50%);
-  pointer-events: auto;
-  display: inline-flex;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(56, 189, 248, 0.7);
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
-  border-radius: 12px;
-  padding: 1px 6px;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  user-select: none;
-}
-.macro-globe-marker:hover {
-  transform: translateX(-50%) scale(1.12);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
-  border-color: #38bdf8;
-  z-index: 30;
+.cb-badge-title {
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  color: #fbbf24 !important;
+  letter-spacing: 0.4px !important;
+  white-space: nowrap !important;
 }

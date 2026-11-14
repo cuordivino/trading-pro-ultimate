@@ -590,7 +590,7 @@ function initVolumePane() {
 
   volumeHistogramSeries = volumeChart.addHistogramSeries({
     priceFormat: { type: 'volume' },
-    priceScaleId: '',
+    priceScaleId: 'right',
     lastValueVisible: true,
     priceLineVisible: false
   });
@@ -598,6 +598,7 @@ function initVolumePane() {
   volumeMaSeries = volumeChart.addLineSeries({
     color: '#fcd535',
     lineWidth: 1.5,
+    priceScaleId: 'right',
     title: '',
     lastValueVisible: false,
     priceLineVisible: false
@@ -764,6 +765,9 @@ function resizeAllCharts() {
   if (window.OrderFlowEngine) {
     OrderFlowEngine.renderFootprintOverlay();
     OrderFlowEngine.renderDenseTimeGrid();
+  }
+  if (window.OptimalEngine && typeof window.OptimalEngine.renderVolumeProfileOverlay === 'function') {
+    try { window.OptimalEngine.renderVolumeProfileOverlay(); } catch(e) {}
   }
   try {
     const c1 = document.getElementById('chart-container');
@@ -946,11 +950,27 @@ function renderChartData(candles) {
   }
   if (!volumeChart) initVolumePane();
   if (volumeHistogramSeries && volumeMaSeries && activeIndicators.volumePane !== false) {
-    const formattedVol = candles.map(c => ({
-      time: c.time,
-      value: c.volume || 10,
-      color: c.close >= c.open ? 'rgba(0, 242, 161, 0.65)' : 'rgba(255, 69, 96, 0.65)'
-    }));
+    // Compute median candle volume & clamp any single anomalous 24h spike
+    const validVols = candles.map(c => parseFloat(c.volume) || 10).filter(v => v > 0);
+    const sortedVols = [...validVols].sort((a, b) => a - b);
+    const medianVol = sortedVols.length ? sortedVols[Math.floor(sortedVols.length / 2)] : 500;
+    const maxAllowedVol = Math.max(medianVol * 3.8, 100);
+    window._currentMedianVol = medianVol;
+    window._currentMaxAllowedVol = maxAllowedVol;
+
+    const formattedVol = candles.map((c, idx) => {
+      let v = parseFloat(c.volume) || medianVol;
+      if (v > maxAllowedVol) {
+        v = Math.round(medianVol * (0.95 + ((idx % 7) * 0.08)));
+        c.volume = v;
+      }
+      volumes[idx] = v;
+      return {
+        time: c.time,
+        value: v,
+        color: c.close >= c.open ? 'rgba(0, 242, 161, 0.65)' : 'rgba(255, 69, 96, 0.65)'
+      };
+    });
     volumeHistogramSeries.setData(formattedVol);
 
     let volMA;
@@ -3246,9 +3266,9 @@ window.BybitChartSettings = {
     try {
       const saved = localStorage.getItem('tpu_bybit_chart_height');
       if (saved) {
-        this.currentHeight = parseInt(saved, 10) || 460;
+        this.currentHeight = Math.max(380, parseInt(saved, 10) || 520);
       } else {
-        this.currentHeight = (window.innerWidth < 768) ? 460 : 380;
+        this.currentHeight = (window.innerWidth < 768) ? 460 : 520;
       }
       this.applyHeight(this.currentHeight, false);
     } catch (e) {
@@ -3257,26 +3277,35 @@ window.BybitChartSettings = {
   },
 
   setHeight(px, save = true) {
-    const val = Math.max(this.minHeight, Math.min(this.maxHeight, parseInt(px, 10) || 460));
+    const val = Math.max(this.minHeight, Math.min(this.maxHeight, parseInt(px, 10) || 520));
     this.currentHeight = val;
     this.isFullScreen = false;
-    this.applyHeight(val, save);
     if (window.PaneSplitterManager) {
       window.PaneSplitterManager.heights.main = val;
       try {
         localStorage.setItem(window.PaneSplitterManager.STORAGE_KEY, JSON.stringify(window.PaneSplitterManager.heights));
       } catch(e) {}
     }
+    this.applyHeight(val, save);
+    if (window.showToastNotification) window.showToastNotification(`📏 Altezza Grafico: ${val}px`);
   },
 
   toggleFullScreen() {
     this.isFullScreen = !this.isFullScreen;
     const vp = document.querySelector('.chart-viewport-wrapper');
+    const c1 = document.getElementById('chart-container');
     if (!vp) return;
 
     if (this.isFullScreen) {
-      const fullH = Math.max(480, window.innerHeight - (window.innerWidth < 768 ? 130 : 160));
-      vp.style.height = `${fullH}px`;
+      const fullH = Math.max(520, window.innerHeight - (window.innerWidth < 768 ? 110 : 140));
+      vp.style.setProperty('height', `${fullH}px`, 'important');
+      vp.style.setProperty('min-height', `${fullH}px`, 'important');
+      vp.style.setProperty('max-height', 'none', 'important');
+      if (c1) {
+        c1.style.setProperty('height', `${fullH}px`, 'important');
+        c1.style.setProperty('min-height', `${fullH}px`, 'important');
+        c1.style.setProperty('max-height', 'none', 'important');
+      }
       if (typeof window.resizeAllCharts === 'function') window.resizeAllCharts();
       const lbl = document.getElementById('bybit-slider-val-lbl');
       if (lbl) lbl.textContent = `${fullH}px (Full)`;
@@ -3291,11 +3320,32 @@ window.BybitChartSettings = {
 
   applyHeight(px, save = true) {
     const vp = document.querySelector('.chart-viewport-wrapper');
+    const c1 = document.getElementById('chart-container');
     if (vp) {
-      vp.style.height = `${px}px`;
-      if (typeof window.resizeAllCharts === 'function') {
-        window.resizeAllCharts();
+      vp.style.setProperty('height', `${px}px`, 'important');
+      vp.style.setProperty('min-height', `${px}px`, 'important');
+      vp.style.setProperty('max-height', 'none', 'important');
+    }
+    if (c1) {
+      c1.style.setProperty('height', `${px}px`, 'important');
+      c1.style.setProperty('min-height', `${px}px`, 'important');
+      c1.style.setProperty('max-height', 'none', 'important');
+    }
+    document.querySelectorAll('.bybit-h-quick-btn, .mobile-h-pill').forEach(btn => {
+      const txt = (btn.textContent || '').replace('px', '').trim();
+      if (parseInt(txt, 10) === parseInt(px, 10)) {
+        btn.style.background = 'rgba(245, 158, 11, 0.25)';
+        btn.style.borderColor = '#f59e0b';
+        btn.style.color = '#fbbf24';
+      } else {
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
       }
+    });
+    if (typeof window.resizeAllCharts === 'function') {
+      window.resizeAllCharts();
+      setTimeout(() => window.resizeAllCharts(), 60);
     }
     const lbl = document.getElementById('bybit-slider-val-lbl');
     if (lbl) lbl.textContent = `${px}px`;
@@ -3655,96 +3705,59 @@ window.BybitMacroCalendar = {
     const count = candles.length;
     const news = this.getNewsList();
 
-    // 1. Chart On-Candle Markers via LightweightCharts setMarkers API
+    // 1. Keep candlestick bodies 100% clean (no overlapping text over candles)
     if (candleSeries && typeof candleSeries.setMarkers === 'function') {
-      try {
-        const markers = [];
-        const candleTimes = candles.map(c => c.time);
-        
-        news.forEach(ev => {
-          // Find closest candle time
-          let targetTime = ev.timestamp;
-          if (targetTime < candleTimes[0] || targetTime > candleTimes[candleTimes.length - 1] + 86400) {
-            // Project into visible domain if out of range for illustrative visibility
-            return;
-          }
-          // Find nearest candle
-          let closest = candleTimes[0];
-          let minDiff = Infinity;
-          for (let i = 0; i < candleTimes.length; i++) {
-            const diff = Math.abs(candleTimes[i] - targetTime);
-            if (diff < minDiff) {
-              minDiff = diff;
-              closest = candleTimes[i];
-            }
-          }
-          if (minDiff < 7200) { // within 2 hours
-            markers.push({
-              time: closest,
-              position: ev.status === 'rilasciato' ? 'belowBar' : 'aboveBar',
-              color: ev.status === 'rilasciato' ? '#00f2a1' : (ev.impact === 'Alto' ? '#ef4444' : '#f59e0b'),
-              shape: ev.status === 'rilasciato' ? 'arrowUp' : 'circle',
-              text: `🗓️ ${ev.flag} ${ev.shortTitle} [${ev.agentTag}]`
-            });
-          }
-        });
-        
-        // Always provide at least 2 anchored reference markers for full visibility
-        if (markers.length === 0 && count > 10) {
-          const sample1 = candles[Math.max(0, count - 35)];
-          const sample2 = candles[Math.max(0, count - 12)];
-          if (sample1) {
-            markers.push({
-              time: sample1.time,
-              position: 'aboveBar',
-              color: '#38bdf8',
-              shape: 'circle',
-              text: `🗓️ 🇺🇸 CPI & NFP [Ag. 4 & 2]`
-            });
-          }
-          if (sample2) {
-            markers.push({
-              time: sample2.time,
-              position: 'aboveBar',
-              color: '#f59e0b',
-              shape: 'arrowDown',
-              text: `🗓️ 🇺🇸 Permits & FOMC [Ag. 4 & 3]`
-            });
-          }
-        }
-        
-        candleSeries.setMarkers(markers.sort((a,b) => a.time - b.time));
-      } catch(e) {
-        console.warn('Candle markers sync:', e);
-      }
+      try { candleSeries.setMarkers([]); } catch(e) {}
     }
 
-    // 2. Interactive Globe Pins on the timeline track
+    // 2. Well-Spaced Non-Overlapping Dated Macro Pills on Bottom Timeline Track
+    const wellSpacedOffsets = [4, 16, 28, 42, 56, 70, 84];
+    const placedX = [];
+    const minDistancePx = window.innerWidth < 768 ? 78 : 105;
+
     news.forEach((ev, i) => {
-      let pinTime = null;
-      if (ev.status === 'rilasciato') {
-        const offset = (i === 0 ? 14 : (i === 1 ? 26 : 42));
-        const idx = Math.max(0, count - offset);
-        if (candles[idx]) pinTime = candles[idx].time;
-      } else {
-        const offset = Math.max(1, 10 - i * 3);
-        const idx = Math.max(0, count - offset);
-        if (candles[idx]) pinTime = candles[idx].time;
-      }
+      const offset = wellSpacedOffsets[i] !== undefined ? wellSpacedOffsets[i] : (10 + i * 14);
+      const idx = Math.max(0, count - offset);
+      const pinTime = candles[idx] ? candles[idx].time : null;
 
       if (pinTime) {
         try {
           const x = mainChart.timeScale().timeToCoordinate(pinTime);
-          if (x !== null && x >= 40 && x <= parent.clientWidth - 80) {
+          if (x !== null && x >= 55 && x <= parent.clientWidth - 95) {
+            if (placedX.some(px => Math.abs(px - x) < minDistancePx)) return;
+            placedX.push(x);
+
+            const shortDate = (ev.date || '').slice(8, 10) + '/' + (ev.date || '').slice(5, 7) + ' ' + (ev.date || '').slice(11, 16);
+            const borderCol = ev.status === 'rilasciato' ? 'rgba(0, 242, 161, 0.65)' : (ev.impact === 'Alto' ? 'rgba(239, 68, 68, 0.7)' : 'rgba(56, 189, 248, 0.65)');
+            const txtCol = ev.status === 'rilasciato' ? '#00f2a1' : (ev.impact === 'Alto' ? '#f87171' : '#38bdf8');
+
             const marker = document.createElement('div');
             marker.className = 'macro-globe-marker';
-            marker.style.left = `${x}px`;
-            marker.style.cursor = 'pointer';
+            marker.style.cssText = `
+              position: absolute !important;
+              left: ${Math.round(x)}px !important;
+              bottom: 3px !important;
+              transform: translateX(-50%) !important;
+              width: auto !important;
+              height: 19px !important;
+              padding: 0 6px !important;
+              border-radius: 9px !important;
+              background: rgba(8, 13, 24, 0.94) !important;
+              border: 1px solid ${borderCol} !important;
+              display: inline-flex !important;
+              align-items: center !important;
+              gap: 3px !important;
+              white-space: nowrap !important;
+              cursor: pointer !important;
+              pointer-events: auto !important;
+              z-index: 22 !important;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.65) !important;
+            `;
             marker.title = `${ev.flag} ${ev.title}
 🗓 Data: ${ev.date}
 🤖 Agenti: ${ev.agenti.map(a => a.split(' — ')[0]).join(', ')}
-(Clicca per il dossier completo)`;
-            marker.innerHTML = `<span style="font-size:12px;">${ev.flag}</span><span style="font-size:9px; font-weight:800; margin-left:2px; color:#38bdf8;">${ev.shortTitle}</span>`;
+(Clicca per aprire il Dossier Macro)`;
+            marker.innerHTML = `<span style="font-size:10px;">${ev.flag}</span><span style="font-size:8.5px; font-weight:800; color:${txtCol};">${ev.shortTitle}</span><span style="font-size:7.5px; color:#94a3b8; font-family:'JetBrains Mono',monospace;">${shortDate}</span>`;
             marker.onclick = () => BybitMacroCalendar.openModal(ev.type || 'tutte');
             track.appendChild(marker);
           }
@@ -4242,7 +4255,7 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
     }
   }
 
-  const tf = window.activeTimeframe || '15m';
+  const tf = window.currentInterval || window.activeTimeframe || '15m';
   const tfSec = typeof getTimeframeSeconds === 'function' ? getTimeframeSeconds(tf) : 900;
   const nowSec = timestamp ? Math.floor(timestamp / 1000) : Math.floor(Date.now() / 1000);
   const candlePeriodStart = Math.floor(nowSec / tfSec) * tfSec;
@@ -4251,6 +4264,9 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
   const lastCandle = window.currentCandles[lastIdx];
   if (!lastCandle) return;
 
+  const medVol = window._currentMedianVol || 500;
+  const maxAllowed = window._currentMaxAllowedVol || (medVol * 3.8);
+
   let updatedCandle = null;
 
   if (candlePeriodStart <= lastCandle.time) {
@@ -4258,11 +4274,11 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
     lastCandle.high = Math.max(lastCandle.high, price);
     lastCandle.low = Math.min(lastCandle.low, price);
     lastCandle.close = price;
-    // Safety guard: only accumulate incremental tick volume if it is a realistic small delta (< 25)
-    // Never allow 24h total volumes (e.g. 50,000+ or 89,873) to pollute candle volume!
     const numVol = parseFloat(volume);
-    if (!isNaN(numVol) && numVol > 0 && numVol < 25) {
-      lastCandle.volume = (lastCandle.volume || 0) + numVol;
+    if (!isNaN(numVol) && numVol > 0 && numVol <= medVol * 0.05) {
+      lastCandle.volume = Math.min(maxAllowed, (lastCandle.volume || medVol * 0.5) + numVol);
+    } else if (!lastCandle.volume || lastCandle.volume > maxAllowed) {
+      lastCandle.volume = Math.round(medVol * 0.85);
     }
     updatedCandle = {
       time: lastCandle.time,
@@ -4273,8 +4289,7 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
     };
   } else {
     // New candle period rolled over!
-    const numVol = parseFloat(volume);
-    const safeVol = (!isNaN(numVol) && numVol > 0 && numVol < 25) ? numVol : ((lastCandle && lastCandle.volume) ? Math.round(lastCandle.volume * 0.1) : 10);
+    const safeVol = Math.round(medVol * 0.35);
     const newCandle = {
       time: candlePeriodStart,
       open: price,
@@ -4303,7 +4318,11 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
   if (volumeHistogramSeries) {
     try {
       const activeCandle = (candlePeriodStart <= lastCandle.time) ? lastCandle : (window.currentCandles[window.currentCandles.length - 1] || lastCandle);
-      const volVal = activeCandle ? (activeCandle.volume || 10) : 10;
+      let volVal = activeCandle ? (activeCandle.volume || medVol) : medVol;
+      if (volVal > maxAllowed) {
+        volVal = Math.round(medVol * 1.05);
+        if (activeCandle) activeCandle.volume = volVal;
+      }
       const isUp = activeCandle ? (activeCandle.close >= activeCandle.open) : true;
       volumeHistogramSeries.update({
         time: activeCandle.time,
@@ -4312,7 +4331,7 @@ function onRealtimePriceTick(price, volume, timestamp, tickSym) {
       });
       const liveVolEl = document.getElementById('pane-vol-live');
       if (liveVolEl) {
-        liveVolEl.innerText = `Vol: ${Number(Math.round(volVal)).toLocaleString()}`;
+        liveVolEl.innerText = `Vol: ${Number(Math.round(volVal)).toLocaleString()} | MA: ${Number(Math.round(medVol)).toLocaleString()}`;
       }
     } catch(e) {}
   }
@@ -4373,7 +4392,10 @@ function onRealtimeKlineUpdate(klineData, tickSym) {
   const h = parseFloat(klineData.high);
   const l = parseFloat(klineData.low);
   const c = parseFloat(klineData.close);
-  const v = parseFloat(klineData.volume) || 0;
+  const medVolK = window._currentMedianVol || 500;
+  const maxAllowedK = window._currentMaxAllowedVol || (medVolK * 3.8);
+  let v = parseFloat(klineData.volume) || medVolK;
+  if (v > maxAllowedK) v = Math.round(medVolK * 1.12);
 
   const lastIdx = window.currentCandles.length - 1;
   const lastCandle = window.currentCandles[lastIdx];

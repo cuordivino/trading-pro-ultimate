@@ -574,7 +574,7 @@ window.PaneSplitterManager = {
   STORAGE_KEY: 'tpu_pane_heights_v4',
 
   heights: {
-    main: 380,
+    main: 520,
     vol: 90,
     mom: 115,
     mom2: 120
@@ -644,22 +644,36 @@ window.PaneSplitterManager = {
 
   applyDomHeights: function() {
     const mainWrap = document.querySelector('.chart-viewport-wrapper');
+    const c1 = document.getElementById('chart-container');
     const volPane = document.getElementById('chart-volume-pane');
     const momPane = document.getElementById('chart-momentum-pane');
     const sub2Pane = document.getElementById('chart-sub2-pane');
 
-    if (mainWrap) mainWrap.style.height = `${this.heights.main}px`;
+    const mainH = Math.max(220, parseInt(this.heights.main, 10) || 520);
+    if (mainWrap) {
+      mainWrap.style.setProperty('height', `${mainH}px`, 'important');
+      mainWrap.style.setProperty('min-height', `${mainH}px`, 'important');
+      mainWrap.style.setProperty('max-height', 'none', 'important');
+    }
+    if (c1) {
+      c1.style.setProperty('height', `${mainH}px`, 'important');
+      c1.style.setProperty('min-height', `${mainH}px`, 'important');
+      c1.style.setProperty('max-height', 'none', 'important');
+    }
     if (volPane) {
-      volPane.style.height = `${this.heights.vol}px`;
+      volPane.style.setProperty('height', `${this.heights.vol}px`, 'important');
+      volPane.style.setProperty('min-height', `${this.heights.vol}px`, 'important');
       volPane.style.display = this.heights.vol > 0 ? 'flex' : 'none';
     }
     if (momPane) {
-      momPane.style.height = `${this.heights.mom}px`;
+      momPane.style.setProperty('height', `${this.heights.mom}px`, 'important');
+      momPane.style.setProperty('min-height', `${this.heights.mom}px`, 'important');
       momPane.style.display = this.heights.mom > 0 ? 'flex' : 'none';
     }
     if (sub2Pane) {
       const h2 = this.heights.mom2 || 90;
-      sub2Pane.style.height = `${h2}px`;
+      sub2Pane.style.setProperty('height', `${h2}px`, 'important');
+      sub2Pane.style.setProperty('min-height', `${h2}px`, 'important');
       sub2Pane.style.display = h2 > 0 ? 'flex' : 'none';
     }
 

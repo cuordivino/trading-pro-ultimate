@@ -244,7 +244,7 @@ window.BybitEngine = {
 
   // 4. BYBIT WEBSOCKET FOR ZERO-LATENCY TICKS
   getKlineInterval: function(tf) {
-    tf = (tf || window.activeTimeframe || '15m').toLowerCase();
+    tf = (tf || window.currentInterval || window.activeTimeframe || '15m').toLowerCase();
     if (tf === '1s' || tf === '1m') return '1';
     if (tf === '3m') return '3';
     if (tf === '5m') return '5';
@@ -333,7 +333,7 @@ window.BybitEngine = {
 
             if (msg.data.length && window.onRealtimePriceTick) {
               const latestTrade = msg.data[0];
-              window.onRealtimePriceTick(parseFloat(latestTrade.p), parseFloat(latestTrade.v), latestTrade.T, this.currentSymbol);
+              window.onRealtimePriceTick(parseFloat(latestTrade.p), 0, latestTrade.T, this.currentSymbol);
             }
           }
         } catch (err) {}

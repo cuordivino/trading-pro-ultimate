@@ -260,20 +260,25 @@ window.OptimalEngine = {
     }
 
     if (!canvas) return;
+    const parentEl = document.getElementById('chart-container') || overlay;
     const rect = overlay.getBoundingClientRect();
-    canvas.width = overlay.clientWidth || rect.width || 300;
-    canvas.height = overlay.clientHeight || rect.height || 400;
+    const cssW = Math.max(260, overlay.clientWidth || Math.round(rect.width) || (parentEl ? parentEl.clientWidth - 68 : 760));
+    const cssH = Math.max(180, overlay.clientHeight || Math.round(rect.height) || (parentEl ? parentEl.clientHeight - 26 : 440));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
 
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
 
     const candleSeries = window.mainCandleSeries;
     const numBins = vp.bins.length;
     const maxBinVol = vp.maxBinVol || 1;
 
-    // SCALABLE WIDTH ("allungabili"): follows user setting (140px - 600px)
-    const userWidth = this.volumeProfileWidth || 220;
-    const maxProfileWidth = Math.max(70, Math.min(canvas.width * 0.70, userWidth));
+    // Compact institutional width (never stretches or covers candlesticks)
+    const userWidth = this.volumeProfileWidth || 135;
+    const maxProfileWidth = Math.max(55, Math.min(cssW * 0.18, userWidth));
     const isRight = (this.volumeProfileStyle === 'right' || !this.volumeProfileStyle);
     const isLeft = (this.volumeProfileStyle === 'left');
     const isFloating = (this.volumeProfileStyle === 'floating');
@@ -285,23 +290,23 @@ window.OptimalEngine = {
         if (coord !== null && !isNaN(coord)) return coord;
       }
       const norm = (price - vp.minPrice) / ((vp.maxPrice - vp.minPrice) || 1);
-      return canvas.height - (norm * canvas.height);
+      return cssH - (norm * cssH);
     };
 
-    // 1. Draw POC Ray across chart (clean golden dashed ray)
+    // 1. Draw POC Ray across chart (subtle golden dashed ray)
     if (this.volumeProfileShowPocRay && vp.poc) {
       const pocY = getPriceY(vp.poc);
-      if (pocY >= 0 && pocY <= canvas.height) {
-        ctx.strokeStyle = '#fcd535';
-        ctx.lineWidth = 1.4;
+      if (pocY >= 0 && pocY <= cssH) {
+        ctx.strokeStyle = 'rgba(252, 213, 53, 0.55)';
+        ctx.lineWidth = 1.1;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
         if (isRight) {
           ctx.moveTo(0, pocY);
-          ctx.lineTo(canvas.width - maxProfileWidth - 10, pocY);
+          ctx.lineTo(cssW - maxProfileWidth - 6, pocY);
         } else {
-          ctx.moveTo(maxProfileWidth + 10, pocY);
-          ctx.lineTo(canvas.width, pocY);
+          ctx.moveTo(maxProfileWidth + 6, pocY);
+          ctx.lineTo(cssW, pocY);
         }
         ctx.stroke();
         ctx.setLineDash([]);
@@ -311,26 +316,26 @@ window.OptimalEngine = {
     // 2. Draw VAH and VAL subtle reference lines across chart
     if (vp.vah) {
       const vahY = getPriceY(vp.vah);
-      if (vahY >= 0 && vahY <= canvas.height) {
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.40)';
+      if (vahY >= 0 && vahY <= cssH) {
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 4]);
         ctx.beginPath();
         ctx.moveTo(0, vahY);
-        ctx.lineTo(canvas.width, vahY);
+        ctx.lineTo(cssW, vahY);
         ctx.stroke();
         ctx.setLineDash([]);
       }
     }
     if (vp.val) {
       const valY = getPriceY(vp.val);
-      if (valY >= 0 && valY <= canvas.height) {
-        ctx.strokeStyle = 'rgba(168, 85, 247, 0.40)';
+      if (valY >= 0 && valY <= cssH) {
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.28)';
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 4]);
         ctx.beginPath();
         ctx.moveTo(0, valY);
-        ctx.lineTo(canvas.width, valY);
+        ctx.lineTo(cssW, valY);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -341,13 +346,13 @@ window.OptimalEngine = {
     // 3. Render Volume Histogram Bars (Strictly positioned: Right, Left, or Floating)
     vp.bins.forEach((b, idx) => {
       const y = getPriceY(b.price);
-      if (y < -20 || y > canvas.height + 20) return;
+      if (y < -20 || y > cssH + 20) return;
 
-      let barH = 5;
+      let barH = 4;
       if (idx < numBins - 1) {
         const nextY = getPriceY(vp.bins[idx + 1].price);
         if (nextY != null && !isNaN(nextY)) {
-          barH = Math.max(2, Math.min(22, Math.abs(y - nextY) * 0.90));
+          barH = Math.max(2, Math.min(16, Math.abs(y - nextY) * 0.85));
         }
       }
 
@@ -358,30 +363,22 @@ window.OptimalEngine = {
       // Determine bar position
       let barX = 0;
       if (isRight) {
-        // Ancorato a Destra: grows from right margin inward to the left
-        barX = canvas.width - barW - 2;
+        barX = cssW - barW - 2;
       } else if (isLeft) {
-        // Ancorato a Sinistra: grows from left margin inward to the right
         barX = 2;
       } else {
-        // Flottante sulle Candele: positioned over middle
-        barX = Math.max(10, canvas.width * 0.60 - barW);
+        barX = Math.max(10, cssW * 0.60 - barW);
       }
 
-      // Bar fill colors
+      // Bar fill colors (semi-transparent so candles underneath remain 100% readable)
       if (isPoc) {
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.92)';
-        ctx.shadowColor = 'rgba(245, 158, 11, 0.6)';
-        ctx.shadowBlur = 6;
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.72)';
       } else if (inVa) {
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.45)';
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
       } else {
-        ctx.fillStyle = 'rgba(100, 116, 139, 0.22)';
-        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(100, 116, 139, 0.16)';
       }
       ctx.fillRect(barX, y - barH / 2, barW, barH);
-      ctx.shadowBlur = 0;
 
       if (isPoc) {
         ctx.strokeStyle = '#fcd535';
@@ -389,39 +386,16 @@ window.OptimalEngine = {
         ctx.strokeRect(barX, y - barH / 2, barW, barH);
       }
 
-      // 4. NUMERIC LABELS ("devono essere visibili con numeri")
-      if (this.volumeProfileShowValues) {
-        const canDrawLabel = isPoc || (Math.abs(y - lastLabelY) >= 11 && b.vol >= maxBinVol * 0.12);
-        if (canDrawLabel) {
-          lastLabelY = y;
-          const volTxt = b.vol >= 1000 ? (b.vol / 1000).toFixed(1) + 'k' : Math.round(b.vol);
-          const fullTxt = `${Number(b.price).toFixed(prec)} (${volTxt})`;
-
-          ctx.font = isPoc ? 'bold 9px "JetBrains Mono", monospace' : '8px "JetBrains Mono", monospace';
-          ctx.fillStyle = isPoc ? '#fcd535' : (inVa ? '#38bdf8' : '#94a3b8');
-
-          if (isRight) {
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(fullTxt, barX - 5, y);
-          } else {
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(fullTxt, barX + barW + 5, y);
-          }
-        }
-      }
-
       // ONLY for POC: Draw a single crisp institutional badge on the anchored edge
       if (isPoc) {
         const pocVolTxt = b.vol >= 1000 ? (b.vol / 1000).toFixed(1) + 'k' : Math.round(b.vol);
         const pocLabel = `POC ${curr}${Number(b.price).toFixed(prec)} (${pocVolTxt})`;
-        ctx.font = 'bold 9px "JetBrains Mono", monospace';
+        ctx.font = 'bold 9.5px "JetBrains Mono", monospace';
         const txtW = ctx.measureText(pocLabel).width;
-        const badgeW = txtW + 12;
-        const badgeX = isRight ? (canvas.width - badgeW - 4) : 4;
+        const badgeW = txtW + 10;
+        const badgeX = isRight ? (cssW - badgeW - 4) : 4;
 
-        ctx.fillStyle = '#0b0f19';
+        ctx.fillStyle = 'rgba(11, 15, 25, 0.92)';
         ctx.strokeStyle = '#fcd535';
         ctx.lineWidth = 1;
         ctx.fillRect(badgeX, y - 8, badgeW, 16);
@@ -437,12 +411,12 @@ window.OptimalEngine = {
     // 5. Subtle VAH / VAL labels on the anchored edge
     const drawLevelBadge = (price, label, color, bg) => {
       const y = getPriceY(price);
-      if (y < 10 || y > canvas.height - 10) return;
+      if (y < 10 || y > cssH - 10) return;
       const text = `${label}: ${curr}${Number(price).toFixed(prec)}`;
-      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
       const txtW = ctx.measureText(text).width;
       const bW = txtW + 8;
-      const bX = isRight ? (canvas.width - bW - 4) : 4;
+      const bX = isRight ? (cssW - bW - 4) : 4;
 
       ctx.fillStyle = bg;
       ctx.strokeStyle = color;
