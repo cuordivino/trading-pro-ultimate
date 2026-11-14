@@ -1502,3 +1502,578 @@ window.UniversalStreamEngine = {
   }
 };
 setTimeout(() => window.UniversalStreamEngine.init(), 600);
+
+
+// =============================================================================
+// MULTI-EXCHANGE DEDICATED BUDGET ALLOCATOR v22.0 (Min 10,00 € -> Max Disponibile)
+// Calibrazione separata per singolo Exchange pre-impostato con Saldo Cassaforte
+// =============================================================================
+class MultiExchangeBudgetAllocatorV22 {
+  constructor() {
+    this.version = "22.0.0-MULTI-EXCHANGE-10EUR-TO-MAX";
+    this.MIN_ALLOCATION_EUR = 10.00;
+    this.activeOrderExchange = localStorage.getItem("TPU_ACTIVE_ORDER_EXCHANGE_V22") || "bybit";
+
+    this.exchanges = {
+      bybit: {
+        id: "bybit",
+        name: "Bybit Unified Trading",
+        shortName: "Bybit",
+        icon: "🟡",
+        enabledForMethod: true,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 1450.00,
+        allocatedMethodBudgetEur: 250.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 18.40
+      },
+      binance: {
+        id: "binance",
+        name: "Binance Futures & Spot",
+        shortName: "Binance",
+        icon: "🟠",
+        enabledForMethod: true,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 3200.00,
+        allocatedMethodBudgetEur: 500.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 42.15
+      },
+      bitget: {
+        id: "bitget",
+        name: "Bitget Pro Trader",
+        shortName: "Bitget",
+        icon: "🔵",
+        enabledForMethod: true,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 850.00,
+        allocatedMethodBudgetEur: 100.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 9.80
+      },
+      okx: {
+        id: "okx",
+        name: "OKX Margin & Perp",
+        shortName: "OKX",
+        icon: "⚫",
+        enabledForMethod: true,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 1200.00,
+        allocatedMethodBudgetEur: 10.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 1.25
+      },
+      kraken: {
+        id: "kraken",
+        name: "Kraken Pro",
+        shortName: "Kraken",
+        icon: "🟣",
+        enabledForMethod: false,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 640.00,
+        allocatedMethodBudgetEur: 50.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 0.00
+      },
+      ibkr_mt5: {
+        id: "ibkr_mt5",
+        name: "Interactive Brokers / MT5",
+        shortName: "IBKR / MT5",
+        icon: "🏛️",
+        enabledForMethod: true,
+        accountType: "DEMO",
+        availableTraderBalanceEur: 5000.00,
+        allocatedMethodBudgetEur: 1000.00,
+        autoCompoundProfits: true,
+        accumulatedNetProfitEur: 64.90
+      }
+    };
+
+    this.loadSavedState();
+    Object.keys(this.exchanges).forEach(k => this.enforceAllocationBounds(k));
+  }
+
+  loadSavedState() {
+    try {
+      const raw = localStorage.getItem("TPU_MULTI_EXCHANGE_ALLOCATOR_V22");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        Object.keys(parsed).forEach(k => {
+          if (this.exchanges[k]) {
+            this.exchanges[k] = { ...this.exchanges[k], ...parsed[k] };
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("[Allocator v22] Stato iniziale caricato.");
+    }
+  }
+
+  saveState() {
+    try {
+      localStorage.setItem("TPU_MULTI_EXCHANGE_ALLOCATOR_V22", JSON.stringify(this.exchanges));
+      localStorage.setItem("TPU_ACTIVE_ORDER_EXCHANGE_V22", this.activeOrderExchange);
+    } catch (e) {}
+  }
+
+  enforceAllocationBounds(exchangeId) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+
+    const maxAvailable = Math.max(0, +(parseFloat(ex.availableTraderBalanceEur) || 0).toFixed(2));
+    ex.availableTraderBalanceEur = maxAvailable;
+
+    if (maxAvailable < this.MIN_ALLOCATION_EUR) {
+      ex.allocatedMethodBudgetEur = 0;
+      ex.enabledForMethod = false;
+      ex.untouchedVaultBalanceEur = maxAvailable;
+      ex.allocationPercentage = 0;
+      ex.insufficientBalance = true;
+      ex.statusMessage = `⚠️ Saldo insufficiente (Minimo richiesto: 10,00 €)`;
+      return ex;
+    }
+
+    ex.insufficientBalance = false;
+    let alloc = parseFloat(ex.allocatedMethodBudgetEur);
+    if (isNaN(alloc) || alloc < this.MIN_ALLOCATION_EUR) {
+      alloc = this.MIN_ALLOCATION_EUR;
+    }
+    if (alloc > maxAvailable) {
+      alloc = maxAvailable;
+    }
+
+    ex.allocatedMethodBudgetEur = +alloc.toFixed(2);
+    ex.untouchedVaultBalanceEur = +Math.max(0, maxAvailable - ex.allocatedMethodBudgetEur).toFixed(2);
+    ex.allocationPercentage = maxAvailable > 0 ? +((ex.allocatedMethodBudgetEur / maxAvailable) * 100).toFixed(1) : 0;
+    ex.statusMessage = ex.enabledForMethod
+      ? `✅ Attivo: ${ex.allocatedMethodBudgetEur.toFixed(2)} € gestiti su ${maxAvailable.toFixed(2)} € (${ex.allocationPercentage}%)`
+      : `⏸️ Disattivato per questo metodo (Cassaforte: ${maxAvailable.toFixed(2)} €)`;
+    return ex;
+  }
+
+  setExchangeEnabled(exchangeId, enabled) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+    if (ex.availableTraderBalanceEur < this.MIN_ALLOCATION_EUR) {
+      ex.enabledForMethod = false;
+      if (window.showToast) window.showToast(`⚠️ Saldo insufficiente su ${ex.name} (Minimo richiesto: 10,00 €)`, "warning");
+    } else {
+      ex.enabledForMethod = !!enabled;
+      if (ex.enabledForMethod && ex.allocatedMethodBudgetEur < this.MIN_ALLOCATION_EUR) {
+        ex.allocatedMethodBudgetEur = this.MIN_ALLOCATION_EUR;
+      }
+    }
+    this.enforceAllocationBounds(exchangeId);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    return ex;
+  }
+
+  setAccountType(exchangeId, accountType) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+    ex.accountType = accountType === "REAL" ? "REAL" : "DEMO";
+    this.enforceAllocationBounds(exchangeId);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    if (window.showToast) window.showToast(`${ex.icon} ${ex.shortName}: Impostato Conto ${ex.accountType === 'REAL' ? '💎 REALE' : '🧪 DEMO'}`, "info");
+    return ex;
+  }
+
+  setExchangeManagedBudget(exchangeId, amountEur) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+    ex.allocatedMethodBudgetEur = parseFloat(amountEur) || this.MIN_ALLOCATION_EUR;
+    this.enforceAllocationBounds(exchangeId);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    return ex;
+  }
+
+  setExchangeQuickPreset(exchangeId, presetType) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+    const maxAvail = ex.availableTraderBalanceEur;
+    if (maxAvail < this.MIN_ALLOCATION_EUR) {
+      this.enforceAllocationBounds(exchangeId);
+      this.renderAllContainers();
+      return ex;
+    }
+    if (presetType === "min10") {
+      ex.allocatedMethodBudgetEur = this.MIN_ALLOCATION_EUR;
+    } else if (presetType === "25") {
+      ex.allocatedMethodBudgetEur = Math.max(this.MIN_ALLOCATION_EUR, +(maxAvail * 0.25).toFixed(2));
+    } else if (presetType === "50") {
+      ex.allocatedMethodBudgetEur = Math.max(this.MIN_ALLOCATION_EUR, +(maxAvail * 0.50).toFixed(2));
+    } else if (presetType === "75") {
+      ex.allocatedMethodBudgetEur = Math.max(this.MIN_ALLOCATION_EUR, +(maxAvail * 0.75).toFixed(2));
+    } else if (presetType === "100") {
+      ex.allocatedMethodBudgetEur = maxAvail;
+    }
+    ex.enabledForMethod = true;
+    this.enforceAllocationBounds(exchangeId);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    if (window.showToast) {
+      window.showToast(`${ex.icon} ${ex.shortName}: Budget allocato a ${ex.allocatedMethodBudgetEur.toFixed(2)} € (Cassaforte: ${ex.untouchedVaultBalanceEur.toFixed(2)} €)`, "success");
+    }
+    return ex;
+  }
+
+  updateExchangeTraderBalance(exchangeId, newAvailableBalanceEur, accountType) {
+    const ex = this.exchanges[exchangeId];
+    if (!ex) return null;
+    ex.availableTraderBalanceEur = Math.max(0, parseFloat(newAvailableBalanceEur) || 0);
+    if (accountType) ex.accountType = accountType;
+    this.enforceAllocationBounds(exchangeId);
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    return ex;
+  }
+
+  setActiveOrderExchange(exchangeId) {
+    if (!this.exchanges[exchangeId]) return;
+    this.activeOrderExchange = exchangeId;
+    this.saveState();
+    this.renderAllContainers();
+    this.syncWithEngines();
+    const ex = this.exchanges[exchangeId];
+    if (window.showToast) {
+      window.showToast(`🏦 Exchange Operativo: ${ex.icon} ${ex.name} (Budget Gestito: ${ex.allocatedMethodBudgetEur.toFixed(2)} €)`, "info");
+    }
+  }
+
+  getGlobalSummary() {
+    let totalAvailableEur = 0;
+    let totalManagedEur = 0;
+    let totalVaultProtectedEur = 0;
+    let totalNetProfitEur = 0;
+    let activeExchangesCount = 0;
+
+    Object.values(this.exchanges).forEach(ex => {
+      this.enforceAllocationBounds(ex.id);
+      totalAvailableEur += ex.availableTraderBalanceEur;
+      if (ex.enabledForMethod && !ex.insufficientBalance) {
+        activeExchangesCount++;
+        totalManagedEur += ex.allocatedMethodBudgetEur;
+        totalVaultProtectedEur += ex.untouchedVaultBalanceEur;
+      } else {
+        totalVaultProtectedEur += ex.availableTraderBalanceEur;
+      }
+      totalNetProfitEur += (ex.accumulatedNetProfitEur || 0);
+    });
+
+    return {
+      activeExchangesCount,
+      totalAvailableEur: +totalAvailableEur.toFixed(2),
+      totalManagedEur: +totalManagedEur.toFixed(2),
+      totalVaultProtectedEur: +totalVaultProtectedEur.toFixed(2),
+      totalNetProfitEur: +totalNetProfitEur.toFixed(2)
+    };
+  }
+
+  calibrateOrderForExchange(exchangeId, params = {}) {
+    const targetId = exchangeId || this.activeOrderExchange || "bybit";
+    const ex = this.enforceAllocationBounds(targetId);
+    const riskPct = parseFloat(params.riskPct) || (window.TradingEngine ? window.TradingEngine.macroSettings.riskPerTrade : 1.0) || 1.0;
+    const entryPrice = parseFloat(params.entryPrice) || window.activePrice || 80000;
+    const stopLossPrice = parseFloat(params.stopLossPrice) || +(entryPrice * 0.985).toFixed(4);
+    const takeProfitPrice = parseFloat(params.takeProfitPrice) || +(entryPrice * 1.04).toFixed(4);
+
+    if (!ex || !ex.enabledForMethod || ex.allocatedMethodBudgetEur < this.MIN_ALLOCATION_EUR) {
+      return {
+        allowed: false,
+        exchangeId: targetId,
+        exchangeName: ex ? ex.name : targetId,
+        reason: ex && ex.insufficientBalance
+          ? "⚠️ Saldo insufficiente (Minimo richiesto: 10,00 €)"
+          : "Exchange disabilitato o budget allocato inferiore a 10,00 €."
+      };
+    }
+
+    const effectiveBudget = ex.autoCompoundProfits
+      ? +(ex.allocatedMethodBudgetEur + (ex.accumulatedNetProfitEur || 0)).toFixed(2)
+      : ex.allocatedMethodBudgetEur;
+
+    // Micro-budget precision risk (e.g. 1% of 10.00 € = 0.10 € max loss)
+    const riskAmountEur = Math.max(0.10, +(effectiveBudget * (riskPct / 100)).toFixed(2));
+    const stopDistancePct = Math.max(0.0015, Math.abs(entryPrice - stopLossPrice) / Math.max(0.0001, entryPrice));
+    let notionalPositionEur = +(riskAmountEur / stopDistancePct).toFixed(2);
+
+    // Micro-budget minimum order & safety leverage cap (max 10x on allocated budget only)
+    const minMicroNotional = Math.max(10.00, +(effectiveBudget * 1.2).toFixed(2));
+    const maxAllowedNotional = +(effectiveBudget * 10).toFixed(2);
+    if (notionalPositionEur < minMicroNotional) notionalPositionEur = minMicroNotional;
+    if (notionalPositionEur > maxAllowedNotional) notionalPositionEur = maxAllowedNotional;
+
+    const leverageUsed = Math.max(1, Math.min(10, Math.ceil(notionalPositionEur / Math.max(1, effectiveBudget))));
+    const requiredMarginEur = Math.min(effectiveBudget, +(notionalPositionEur / leverageUsed).toFixed(2));
+    const units = entryPrice > 0 ? +(notionalPositionEur / entryPrice).toFixed(entryPrice > 100 ? 5 : 3) : 0;
+    const expectedProfitEur = +(units * Math.abs(takeProfitPrice - entryPrice)).toFixed(2);
+
+    return {
+      allowed: true,
+      exchangeId: ex.id,
+      exchangeName: ex.name,
+      exchangeIcon: ex.icon,
+      accountType: ex.accountType,
+      totalTraderBalanceEur: ex.availableTraderBalanceEur,
+      managedBudgetEur: effectiveBudget,
+      allocatedBaseEur: ex.allocatedMethodBudgetEur,
+      untouchedBalanceEur: ex.untouchedVaultBalanceEur,
+      riskPct,
+      riskAmountEur,
+      requiredMarginEur,
+      notionalPositionEur,
+      units,
+      leverageNumeric: leverageUsed,
+      leverageUsed: `${leverageUsed}x`,
+      entryPrice,
+      stopLossPrice,
+      takeProfitPrice,
+      expectedProfitEur
+    };
+  }
+
+  syncWithEngines() {
+    try {
+      const activeEx = this.enforceAllocationBounds(this.activeOrderExchange || "bybit");
+      if (activeEx) {
+        localStorage.setItem("capital", String(activeEx.allocatedMethodBudgetEur || 10));
+        if (window.TradingEngine && window.TradingEngine.macroSettings) {
+          window.TradingEngine.macroSettings.maxCap = activeEx.allocatedMethodBudgetEur || 10;
+        }
+      }
+      if (window.BybitEngine && typeof window.BybitEngine.recalcBybitOrderMetrics === "function") {
+        window.BybitEngine.recalcBybitOrderMetrics();
+      }
+      if (window.OptimalEngine && typeof window.OptimalEngine.recalculateOptimalPosition === "function") {
+        window.OptimalEngine.recalculateOptimalPosition();
+      }
+    } catch (e) {}
+  }
+
+  buildAllocatorHTML(compact = false) {
+    const sum = this.getGlobalSummary();
+    const activeCal = this.calibrateOrderForExchange(this.activeOrderExchange, {
+      riskPct: window.TradingEngine?.macroSettings?.riskPerTrade || 1.0,
+      entryPrice: window.activePrice || 65800,
+      stopLossPrice: (window.activePrice || 65800) * 0.985,
+      takeProfitPrice: (window.activePrice || 65800) * 1.045
+    });
+
+    const cardsHtml = Object.values(this.exchanges).map(ex => {
+      this.enforceAllocationBounds(ex.id);
+      const isSelected = this.activeOrderExchange === ex.id;
+      const maxSlider = Math.max(10, ex.availableTraderBalanceEur);
+      const curAlloc = ex.insufficientBalance ? 0 : ex.allocatedMethodBudgetEur;
+      const cal = this.calibrateOrderForExchange(ex.id, {
+        riskPct: window.TradingEngine?.macroSettings?.riskPerTrade || 1.0,
+        entryPrice: window.activePrice || 65800,
+        stopLossPrice: (window.activePrice || 65800) * 0.985,
+        takeProfitPrice: (window.activePrice || 65800) * 1.045
+      });
+
+      return `
+        <div class="v22-exchange-card ${ex.enabledForMethod && !ex.insufficientBalance ? 'active-ex' : 'inactive-ex'} ${isSelected ? 'selected-ex' : ''}" style="background:rgba(10,16,29,0.95); border:2px solid ${isSelected ? '#f59e0b' : (ex.enabledForMethod && !ex.insufficientBalance ? 'rgba(0,242,161,0.45)' : 'rgba(148,163,184,0.2)')}; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+          
+          <!-- Row 1: Exchange Title, Account Mode (DEMO/REAL) & ON/OFF Switch -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div style="display:flex; align-items:center; gap:7px; cursor:pointer;" onclick="window.MultiExchangeAllocator.setActiveOrderExchange('${ex.id}')">
+              <span style="font-size:18px;">${ex.icon}</span>
+              <div>
+                <div style="font-size:13px; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px;">
+                  <span>${ex.name}</span>
+                  ${isSelected ? '<span style="font-size:9px; background:#f59e0b; color:#000; padding:1px 6px; border-radius:4px; font-weight:900;">ATTIVO SU ORDINI</span>' : ''}
+                </div>
+                <div style="font-size:10px; color:#94a3b8;">P&amp;L Netto Metodo: <b style="color:${ex.accumulatedNetProfitEur >= 0 ? '#00f2a1' : '#f43f5e'}; font-family:var(--font-mono);">${ex.accumulatedNetProfitEur >= 0 ? '+' : ''}${ex.accumulatedNetProfitEur.toFixed(2)} €</b></div>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:6px;">
+              <!-- Demo / Real Selector -->
+              <div style="display:inline-flex; background:#060911; border:1px solid rgba(255,255,255,0.15); border-radius:6px; overflow:hidden;">
+                <button type="button" onclick="window.MultiExchangeAllocator.setAccountType('${ex.id}', 'DEMO')" style="padding:5px 8px; font-size:10px; font-weight:800; border:none; cursor:pointer; min-height:32px; background:${ex.accountType === 'DEMO' ? '#0ea5e9' : 'transparent'}; color:${ex.accountType === 'DEMO' ? '#000' : '#94a3b8'};">🧪 Demo</button>
+                <button type="button" onclick="window.MultiExchangeAllocator.setAccountType('${ex.id}', 'REAL')" style="padding:5px 8px; font-size:10px; font-weight:800; border:none; cursor:pointer; min-height:32px; background:${ex.accountType === 'REAL' ? '#f59e0b' : 'transparent'}; color:${ex.accountType === 'REAL' ? '#000' : '#94a3b8'};">💎 Reale</button>
+              </div>
+
+              <!-- Switch ON/OFF -->
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeEnabled('${ex.id}', ${!ex.enabledForMethod})" style="padding:5px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; min-height:32px; border:1px solid ${ex.enabledForMethod && !ex.insufficientBalance ? '#00f2a1' : '#64748b'}; background:${ex.enabledForMethod && !ex.insufficientBalance ? 'rgba(0,242,161,0.18)' : 'rgba(100,116,139,0.15)'}; color:${ex.enabledForMethod && !ex.insufficientBalance ? '#00f2a1' : '#cbd5e1'};">
+                ${ex.enabledForMethod && !ex.insufficientBalance ? '🟢 ATTIVO' : '⚪ OFF'}
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 2: Available Trader Balance vs Allocated Method Budget -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:3px;">Saldo Conto Trader (€)</label>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <input type="number" step="10" min="0" value="${ex.availableTraderBalanceEur}" onchange="window.MultiExchangeAllocator.updateExchangeTraderBalance('${ex.id}', this.value)" style="width:100%; background:#060a12; border:1px solid #334155; color:#fff; font-family:var(--font-mono); font-size:13px; font-weight:800; padding:5px 7px; border-radius:5px;">
+                <span style="font-size:11px; font-weight:900; color:#94a3b8;">€</span>
+              </div>
+            </div>
+
+            <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.45); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#fbbf24; text-transform:uppercase; margin-bottom:3px;">Budget Gestito Metodo (€)</label>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <input type="number" step="1" min="10" max="${ex.availableTraderBalanceEur}" value="${curAlloc}" ${ex.insufficientBalance ? 'disabled' : ''} onchange="window.MultiExchangeAllocator.setExchangeManagedBudget('${ex.id}', this.value)" style="width:100%; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:13px; font-weight:900; padding:5px 7px; border-radius:5px;">
+                <span style="font-size:11px; font-weight:900; color:#fbbf24;">€</span>
+              </div>
+            </div>
+          </div>
+
+          ${ex.insufficientBalance ? `
+            <div style="background:rgba(239,68,68,0.18); border:1px solid #ef4444; color:#fca5a5; padding:8px 10px; border-radius:6px; font-size:11px; font-weight:800; text-align:center;">
+              ⚠️ Saldo insufficiente (Minimo richiesto: 10,00 €) — Operatività bloccata su ${ex.shortName}
+            </div>
+          ` : `
+            <!-- Row 3: Fluid Slider (Min 10,00 € -> Max Available) -->
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between; font-size:10px; font-family:var(--font-mono);">
+                <span style="color:#94a3b8;">Min: <b style="color:#fff;">10,00 €</b></span>
+                <span style="color:#fbbf24; font-weight:800;">Allocato: ${ex.allocatedMethodBudgetEur.toFixed(2)} € (${ex.allocationPercentage}%)</span>
+                <span style="color:#94a3b8;">Max: <b style="color:#00f2a1;">${ex.availableTraderBalanceEur.toFixed(2)} €</b></span>
+              </div>
+              <input type="range" min="10" max="${maxSlider}" step="1" value="${curAlloc}" oninput="window.MultiExchangeAllocator.setExchangeManagedBudget('${ex.id}', this.value)" style="width:100%; accent-color:#f59e0b; cursor:pointer; height:8px;">
+            </div>
+
+            <!-- Row 4: 5 Ergonomic Quick Preset Buttons -->
+            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:5px;">
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeQuickPreset('${ex.id}', 'min10')" style="min-height:36px; padding:4px 3px; font-size:10px; font-weight:800; border-radius:6px; cursor:pointer; background:${Math.abs(curAlloc - 10) < 0.01 ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${Math.abs(curAlloc - 10) < 0.01 ? '#000' : '#e2e8f0'}; border:1px solid rgba(245,158,11,0.4);">Min 10 €</button>
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeQuickPreset('${ex.id}', '25')" style="min-height:36px; padding:4px 3px; font-size:10px; font-weight:800; border-radius:6px; cursor:pointer; background:${Math.abs(ex.allocationPercentage - 25) < 1.5 ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${Math.abs(ex.allocationPercentage - 25) < 1.5 ? '#000' : '#e2e8f0'}; border:1px solid rgba(255,255,255,0.15);">25%</button>
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeQuickPreset('${ex.id}', '50')" style="min-height:36px; padding:4px 3px; font-size:10px; font-weight:800; border-radius:6px; cursor:pointer; background:${Math.abs(ex.allocationPercentage - 50) < 1.5 ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${Math.abs(ex.allocationPercentage - 50) < 1.5 ? '#000' : '#e2e8f0'}; border:1px solid rgba(255,255,255,0.15);">50%</button>
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeQuickPreset('${ex.id}', '75')" style="min-height:36px; padding:4px 3px; font-size:10px; font-weight:800; border-radius:6px; cursor:pointer; background:${Math.abs(ex.allocationPercentage - 75) < 1.5 ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${Math.abs(ex.allocationPercentage - 75) < 1.5 ? '#000' : '#e2e8f0'}; border:1px solid rgba(255,255,255,0.15);">75%</button>
+              <button type="button" onclick="window.MultiExchangeAllocator.setExchangeQuickPreset('${ex.id}', '100')" style="min-height:36px; padding:4px 3px; font-size:10px; font-weight:800; border-radius:6px; cursor:pointer; background:${Math.abs(ex.allocationPercentage - 100) < 0.5 ? '#00f2a1' : 'rgba(0,242,161,0.12)'}; color:${Math.abs(ex.allocationPercentage - 100) < 0.5 ? '#000' : '#00f2a1'}; border:1px solid rgba(0,242,161,0.45);">100% Max</button>
+            </div>
+          `}
+
+          <!-- Row 5: Vault Protected Capital & Live Order Calibration -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; background:rgba(0,242,161,0.06); border:1px solid rgba(0,242,161,0.28); border-radius:6px; padding:6px 9px; font-size:10.5px;">
+            <div>
+              <span style="color:#94a3b8;">🛡️ Capitale Protetto Non Toccato (Cassaforte):</span>
+              <b style="color:#00f2a1; font-family:var(--font-mono); margin-left:4px;">${ex.untouchedVaultBalanceEur.toFixed(2)} €</b>
+            </div>
+            ${cal.allowed ? `
+              <div style="font-family:var(--font-mono); font-size:9.5px; color:#38bdf8;">
+                Rischio Trade: <b>${cal.riskAmountEur.toFixed(2)} €</b> • Margine: <b>${cal.requiredMarginEur.toFixed(2)} €</b> (${cal.leverageUsed})
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="v22-multiexchange-panel" style="background:linear-gradient(180deg, rgba(12,19,34,0.98) 0%, rgba(7,11,20,0.98) 100%); border:2px solid #f59e0b; border-radius:12px; padding:14px; margin:10px 0; box-shadow:0 8px 26px rgba(0,0,0,0.65);">
+        
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(245,158,11,0.3); padding-bottom:10px;">
+          <div>
+            <div style="font-size:14px; font-weight:900; color:#fbbf24; letter-spacing:0.3px;">
+              🏦 Allocazione Budget per Singolo Exchange Pre-Impostato (Min 10,00 € ➔ Max Disponibile)
+            </div>
+            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+              MultiExchangeBudgetAllocatorV22 • Isolamento ferreo del capitale: l'Auto-Trader opera <b>solo</b> sull'importo allocato (anche da 10,00 €), lasciando intoccabile il Saldo Cassaforte.
+            </div>
+          </div>
+          <span style="background:rgba(0,242,161,0.16); border:1px solid #00f2a1; color:#00f2a1; font-size:10px; font-weight:900; padding:4px 9px; border-radius:6px; font-family:var(--font-mono);">
+            v22.0 ATTIVO (${sum.activeExchangesCount}/6 Exchange)
+          </span>
+        </div>
+
+        <!-- Global Multi-Exchange Telemetry Bar -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:8px; margin-bottom:14px;">
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:9.5px; color:#94a3b8; font-weight:800; text-transform:uppercase;">Saldo Totale Conti Trader</div>
+            <div style="font-size:15px; font-weight:900; color:#fff; font-family:var(--font-mono); margin-top:2px;">${sum.totalAvailableEur.toLocaleString('it-IT', {minimumFractionDigits:2})} €</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.5); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:9.5px; color:#fbbf24; font-weight:800; text-transform:uppercase;">Totale Budget Gestito</div>
+            <div style="font-size:15px; font-weight:900; color:#fbbf24; font-family:var(--font-mono); margin-top:2px;">${sum.totalManagedEur.toLocaleString('it-IT', {minimumFractionDigits:2})} €</div>
+          </div>
+          <div style="background:rgba(0,242,161,0.1); border:1px solid rgba(0,242,161,0.45); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:9.5px; color:#00f2a1; font-weight:800; text-transform:uppercase;">🛡️ Totale Protetto Non Toccato</div>
+            <div style="font-size:15px; font-weight:900; color:#00f2a1; font-family:var(--font-mono); margin-top:2px;">${sum.totalVaultProtectedEur.toLocaleString('it-IT', {minimumFractionDigits:2})} €</div>
+          </div>
+          <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.45); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:9.5px; color:#38bdf8; font-weight:800; text-transform:uppercase;">P&amp;L Netto Multi-Exchange</div>
+            <div style="font-size:15px; font-weight:900; color:${sum.totalNetProfitEur >= 0 ? '#00f2a1' : '#f43f5e'}; font-family:var(--font-mono); margin-top:2px;">${sum.totalNetProfitEur >= 0 ? '+' : ''}${sum.totalNetProfitEur.toLocaleString('it-IT', {minimumFractionDigits:2})} €</div>
+          </div>
+        </div>
+
+        <!-- Active Exchange Order Calibration Banner -->
+        ${activeCal.allowed ? `
+          <div style="background:rgba(56,189,248,0.09); border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:11px;">
+            <div>
+              <span style="color:#38bdf8; font-weight:900;">⚡ Calibrazione Live Auto-Trader su ${activeCal.exchangeIcon} ${activeCal.exchangeName} (${activeCal.accountType}):</span>
+              <span style="color:#e2e8f0; margin-left:4px;">Base Calcolo = <b style="color:#fbbf24;">${activeCal.managedBudgetEur.toFixed(2)} €</b> (Cassaforte Intoccabile: <b style="color:#00f2a1;">${activeCal.untouchedBalanceEur.toFixed(2)} €</b>)</span>
+            </div>
+            <div style="font-family:var(--font-mono); color:#fff;">
+              Rischio (${activeCal.riskPct}%): <b style="color:#f87171;">${activeCal.riskAmountEur.toFixed(2)} €</b> | Size Nominale: <b style="color:#38bdf8;">${activeCal.notionalPositionEur.toFixed(2)} €</b> | Margine: <b style="color:#fbbf24;">${activeCal.requiredMarginEur.toFixed(2)} €</b> (${activeCal.leverageUsed})
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Grid of 6 Pre-Configured Exchanges -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(${compact ? '270px' : '320px'}, 1fr)); gap:10px;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  renderAllContainers() {
+    const ids = [
+      "v22-allocator-order-dock",
+      "v22-allocator-automated-dock",
+      "v22-allocator-optimal-dock",
+      "v22-allocator-ced-dock",
+      "v22-allocator-modal-body"
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const isCompact = (id === "v22-allocator-order-dock" || id === "v22-allocator-automated-dock");
+        el.innerHTML = this.buildAllocatorHTML(isCompact);
+      }
+    });
+  }
+
+  openModal() {
+    let modal = document.getElementById("v22-multiexchange-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "v22-multiexchange-modal";
+      modal.style.cssText = "position:fixed; inset:0; background:rgba(3,7,18,0.88); backdrop-filter:blur(6px); z-index:999999; display:flex; align-items:center; justify-content:center; padding:14px; overflow-y:auto;";
+      modal.innerHTML = `
+        <div style="width:100%; max-width:1180px; max-height:92vh; overflow-y:auto; background:#070b14; border:2px solid #f59e0b; border-radius:14px; padding:16px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.85);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:16px; font-weight:900; color:#fbbf24;">🏦 GESTIONE SEPARATA BUDGET MULTI-EXCHANGE v22.0 (DA 10,00 € AL MASSIMO DISPONIBILE)</span>
+            <button type="button" onclick="document.getElementById('v22-multiexchange-modal').style.display='none'" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fff; font-weight:900; border-radius:8px; padding:6px 12px; cursor:pointer;">✕ Chiudi</button>
+          </div>
+          <div id="v22-allocator-modal-body"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    modal.style.display = "flex";
+    this.renderAllContainers();
+  }
+}
+
+window.MultiExchangeBudgetAllocatorV22 = MultiExchangeBudgetAllocatorV22;
+window.MultiExchangeAllocator = new MultiExchangeBudgetAllocatorV22();
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (window.MultiExchangeAllocator) {
+      window.MultiExchangeAllocator.renderAllContainers();
+      window.MultiExchangeAllocator.syncWithEngines();
+    }
+  }, 350);
+});

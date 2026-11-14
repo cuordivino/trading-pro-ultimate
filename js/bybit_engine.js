@@ -737,15 +737,25 @@ window.BybitEngine = {
     this.recalcBybitOrderMetrics();
   },
 
-  // PERCENTAGE PILLS (10%, 25%, 50%, 75%, 100%)
+  // PERCENTAGE PILLS (Min 10€, 25%, 50%, 75%, 100% of Allocated Exchange Budget)
   setBalancePercent: function(pct) {
-    const cap = parseFloat(localStorage.getItem('capital') || 25000);
+    const alloc = window.MultiExchangeAllocator;
+    const exId = alloc ? alloc.activeOrderExchange : 'bybit';
+    if (alloc && pct === 10) {
+      alloc.setExchangeQuickPreset(exId, 'min10');
+    } else if (alloc && [25, 50, 75, 100].includes(pct)) {
+      alloc.setExchangeQuickPreset(exId, String(pct));
+    }
+    const activeEx = alloc ? alloc.enforceAllocationBounds(exId) : null;
+    const cap = (activeEx && activeEx.allocatedMethodBudgetEur >= 10)
+      ? activeEx.allocatedMethodBudgetEur
+      : parseFloat(localStorage.getItem('capital') || 250);
     const lev = this.currentLeverage || 10;
     const currentPrice = this.tickerData.lastPrice || 80000;
 
-    const maxMargin = cap * (pct / 100);
-    const nominal = maxMargin * lev;
-    const qty = (nominal / currentPrice);
+    const maxMargin = pct === 10 ? Math.min(cap, 10) : (cap * (pct / 100));
+    const nominal = Math.max(10, maxMargin * Math.min(10, lev));
+    const qty = currentPrice > 0 ? (nominal / currentPrice) : 0;
 
     const qtyInput = document.getElementById('bb-order-qty');
     if (qtyInput) qtyInput.value = qty.toFixed(qty < 1 ? 4 : 2);

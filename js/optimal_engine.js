@@ -597,6 +597,52 @@ window.OptimalEngine = {
       </div>
     `;
   },
+  renderOptimalUI: function() {
+    const container = document.getElementById('optimal-engine-view-container');
+    if (!container) return;
+    const s = this.optimalSetup || {
+      symbol: window.currentSymbol || 'BTCUSDT',
+      side: 'LONG',
+      entryPrice: window.activePrice || 65800,
+      stopLoss: +((window.activePrice || 65800) * 0.982).toFixed(2),
+      tp1: +((window.activePrice || 65800) * 1.028).toFixed(2),
+      tp2: +((window.activePrice || 65800) * 1.055).toFixed(2),
+      tp3: +((window.activePrice || 65800) * 1.09).toFixed(2),
+      rrRatio: '1 : 3.20',
+      convexScore: 92,
+      expectedROI: '+32.0% (con leva 10x)',
+      reason: 'Setup Asimmetrico convesso calibrato sul POC locale e sul Budget Allocato del singolo Exchange.'
+    };
+    const alloc = window.MultiExchangeAllocator;
+    const cal = alloc ? alloc.calibrateOrderForExchange(alloc.activeOrderExchange, {
+      riskPct: 1.0,
+      entryPrice: s.entryPrice,
+      stopLossPrice: s.stopLoss,
+      takeProfitPrice: s.tp2
+    }) : null;
+
+    container.innerHTML = `
+      <div style="padding:14px; display:flex; flex-direction:column; gap:14px;">
+        <div class="window-card" style="padding:14px; border:1px solid rgba(0,242,161,0.4);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div>
+              <span style="font-size:15px; font-weight:900; color:#00f2a1;">🎯 POSIZIONE OTTIMALE CONVESSA &amp; AUTO-PILOT (${s.symbol})</span>
+              <div style="font-size:11px; color:#94a3b8;">Calibrazione automatica su singolo exchange pre-impostato (Min 10,00 € ➔ Max Disponibile)</div>
+            </div>
+            <span style="background:rgba(0,242,161,0.18); color:#00f2a1; border:1px solid #00f2a1; padding:4px 10px; border-radius:6px; font-weight:900; font-family:var(--font-mono);">Score: ${s.convexScore}/100 (${s.rrRatio})</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-family:var(--font-mono); font-size:12px;">
+            <div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:6px;">Entry: <b style="color:#fff;">${s.entryPrice}</b></div>
+            <div style="background:rgba(239,68,68,0.1); padding:8px; border-radius:6px;">Stop Loss: <b style="color:#f87171;">${s.stopLoss}</b></div>
+            <div style="background:rgba(0,242,161,0.1); padding:8px; border-radius:6px;">TP1 / TP2: <b style="color:#00f2a1;">${s.tp1} / ${s.tp2}</b></div>
+            ${cal && cal.allowed ? `<div style="background:rgba(245,158,11,0.12); padding:8px; border-radius:6px;">Budget ${cal.exchangeIcon}: <b style="color:#fbbf24;">${cal.managedBudgetEur.toFixed(2)} €</b> (Rischio: ${cal.riskAmountEur.toFixed(2)} €)</div>` : ''}
+          </div>
+        </div>
+        <div id="v22-allocator-optimal-dock">${alloc ? alloc.buildAllocatorHTML(false) : ''}</div>
+      </div>
+    `;
+  },
+
   renderOptimalCards: function() {
     this.renderOptimalUI();
     this.renderVolumeProfileOverlay();

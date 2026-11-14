@@ -357,6 +357,11 @@ window.TradingEngine = {
           </div>
         </div>
 
+        <!-- MULTI-EXCHANGE DEDICATED BUDGET ALLOCATOR v22.0 (Min 10,00 € -> Max Disponibile) -->
+        <div id="v22-allocator-automated-dock">
+          ${window.MultiExchangeAllocator ? window.MultiExchangeAllocator.buildAllocatorHTML(true) : ''}
+        </div>
+
         <!-- MACRO SETTINGS SUMMARY & TUNE BUTTON -->
         <div class="bot-macro-summary-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -579,6 +584,18 @@ window.TradingEngine = {
     const s = this.macroSettings;
     const now = new Date();
     const timeStr = now.toTimeString().split(' ')[0];
+    const alloc = window.MultiExchangeAllocator;
+    const exId = alloc ? alloc.activeOrderExchange : 'bybit';
+    const cal = alloc ? alloc.calibrateOrderForExchange(exId, {
+      riskPct: s.riskPerTrade,
+      entryPrice: opp.entry,
+      stopLossPrice: opp.stopLoss,
+      takeProfitPrice: opp.tp2
+    }) : { allowed: true, managedBudgetEur: s.maxCap, riskAmountEur: +(s.maxCap * (s.riskPerTrade / 100)).toFixed(2), requiredMarginEur: 10, leverageUsed: '5x', exchangeName: 'Bybit' };
+    if (!cal.allowed) {
+      if (window.showToast) window.showToast(cal.reason, 'warning');
+      return;
+    }
 
     const newRecord = {
       id: Date.now(),
