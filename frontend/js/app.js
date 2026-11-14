@@ -1811,8 +1811,14 @@ class MultiExchangeBudgetAllocatorV22 {
     if (notionalPositionEur < minMicroNotional) notionalPositionEur = minMicroNotional;
     if (notionalPositionEur > maxAllowedNotional) notionalPositionEur = maxAllowedNotional;
 
-    const leverageUsed = Math.max(1, Math.min(10, Math.ceil(notionalPositionEur / Math.max(1, effectiveBudget))));
-    const requiredMarginEur = Math.min(effectiveBudget, +(notionalPositionEur / leverageUsed).toFixed(2));
+    const v24Res = window.LeverageMatrixV24
+      ? window.LeverageMatrixV24.resolveEffectiveLeverageForTrade({ symbol: window.currentSymbol || "BTCUSDT", riskPerTradePct: riskPct })
+      : null;
+    const leverageUsed = v24Res
+      ? v24Res.appliedLeverage
+      : Math.max(1, Math.min(10, Math.ceil(notionalPositionEur / Math.max(1, effectiveBudget))));
+    notionalPositionEur = Math.min(+(effectiveBudget * leverageUsed).toFixed(2), Math.max(notionalPositionEur, +(effectiveBudget * Math.min(leverageUsed, 2)).toFixed(2)));
+    const requiredMarginEur = Math.min(effectiveBudget, +(notionalPositionEur / Math.max(1, leverageUsed)).toFixed(2));
     const units = entryPrice > 0 ? +(notionalPositionEur / entryPrice).toFixed(entryPrice > 100 ? 5 : 3) : 0;
     const expectedProfitEur = +(units * Math.abs(takeProfitPrice - entryPrice)).toFixed(2);
 
@@ -2847,4 +2853,799 @@ document.addEventListener("DOMContentLoaded", () => {
       window.BasketTimingEngineV23.syncWithEngines();
     }
   }, 450);
+});
+
+
+// =============================================================================
+// HIERARCHICAL MULTI-TIER LEVERAGE MATRIX ENGINE v24.0
+// 4 Livelli Simultanei:
+// A) Leva Consigliata & Ottimale AI (Rischio % + ATR Stop-Loss + Tipo Mercato)
+// B) Leva Manuale Globale (Totale Operazioni + Margine Isolato/Cross + Max Cap)
+// C) Leva Settoriale per Tipologia di Titoli (6 Partizioni)
+// D) Leva Chirurgica per Singolo Specifico Titolo (348+ Asset del Paniere)
+// =============================================================================
+class HierarchicalLeverageMatrixV24 {
+  constructor() {
+    this.version = "24.0.0-HIERARCHICAL-LEVERAGE-MATRIX";
+
+    this.globalLeverageConfig = {
+      controlMode: "AI_OPTIMAL_RECOMMENDED", // "AI_OPTIMAL_RECOMMENDED" | "MANUAL_GLOBAL_ALL"
+      manualGlobalLeverage: 5,
+      globalMaxLeverageCap: 100,
+      riskPerTradePct: 1.0,
+      marketRegime: "STRONG_TREND", // "STRONG_TREND" | "RANGE" | "HIGH_VOL"
+      marginMode: "ISOLATED", // "ISOLATED" | "CROSS"
+      safetyLiquidationBufferFactor: 3.0
+    };
+
+    this.sectorLeverageProfiles = {
+      cryptoMajors: {
+        id: "cryptoMajors",
+        label: "🪙 Crypto Majors (BTC, ETH, SOL, BNB, XRP)",
+        mode: "AI_RECOMMENDED", // "AI_RECOMMENDED" | "MANUAL_SECTOR"
+        recommendedBaseLev: 8,
+        recommendedRange: [2, 15],
+        maxAllowedLev: 100,
+        manualSectorLev: 8,
+        typicalAtrStopPct: 1.2
+      },
+      cryptoAltDeFi: {
+        id: "cryptoAltDeFi",
+        label: "⚡ Altcoin High-Beta & DeFi (SUI, FET, RENDER, LINK)",
+        mode: "AI_RECOMMENDED",
+        recommendedBaseLev: 4,
+        recommendedRange: [1, 7],
+        maxAllowedLev: 50,
+        manualSectorLev: 4,
+        typicalAtrStopPct: 2.5
+      },
+      globalIndices: {
+        id: "globalIndices",
+        label: "🏛️ Indici Mondiali (Nasdaq 100, S&P 500, DAX 40, FTSE MIB)",
+        mode: "AI_RECOMMENDED",
+        recommendedBaseLev: 12,
+        recommendedRange: [5, 25],
+        maxAllowedLev: 100,
+        manualSectorLev: 12,
+        typicalAtrStopPct: 0.55
+      },
+      techStocks: {
+        id: "techStocks",
+        label: "💻 Azioni Tech & Blue-Chip (NVDA, TSLA, AAPL, MSFT)",
+        mode: "AI_RECOMMENDED",
+        recommendedBaseLev: 3,
+        recommendedRange: [1, 5],
+        maxAllowedLev: 20,
+        manualSectorLev: 3,
+        typicalAtrStopPct: 1.5
+      },
+      forexPairs: {
+        id: "forexPairs",
+        label: "💱 Forex Majors & Cross (EUR/USD, GBP/USD, USD/JPY)",
+        mode: "AI_RECOMMENDED",
+        recommendedBaseLev: 20,
+        recommendedRange: [10, 30],
+        maxAllowedLev: 200,
+        manualSectorLev: 20,
+        typicalAtrStopPct: 0.30
+      },
+      commoditiesGold: {
+        id: "commoditiesGold",
+        label: "🥇 Materie Prime & Oro (XAU/USD, Argento, WTI)",
+        mode: "AI_RECOMMENDED",
+        recommendedBaseLev: 10,
+        recommendedRange: [5, 20],
+        maxAllowedLev: 100,
+        manualSectorLev: 10,
+        typicalAtrStopPct: 0.65
+      }
+    };
+
+    this.singleAssetOverrides = {
+      "BTCUSDT": { symbol: "BTCUSDT", sector: "cryptoMajors", mode: "AI_RECOMMENDED", customLeverage: 8, partitionPct: 15 },
+      "GC=F": { symbol: "GC=F", sector: "commoditiesGold", mode: "AI_RECOMMENDED", customLeverage: 12, partitionPct: 10 },
+      "NVDA": { symbol: "NVDA", sector: "techStocks", mode: "MANUAL_ASSET", customLeverage: 4, partitionPct: 10 },
+      "EURUSD=X": { symbol: "EURUSD=X", sector: "forexPairs", mode: "AI_RECOMMENDED", customLeverage: 20, partitionPct: 8 }
+    };
+
+    this.loadSavedState();
+  }
+
+  loadSavedState() {
+    try {
+      const raw = localStorage.getItem("TPU_LEVERAGE_MATRIX_V24");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.globalLeverageConfig) {
+          this.globalLeverageConfig = { ...this.globalLeverageConfig, ...parsed.globalLeverageConfig };
+        }
+        if (parsed.sectorLeverageProfiles) {
+          Object.keys(parsed.sectorLeverageProfiles).forEach(k => {
+            if (this.sectorLeverageProfiles[k]) {
+              this.sectorLeverageProfiles[k] = {
+                ...this.sectorLeverageProfiles[k],
+                ...parsed.sectorLeverageProfiles[k]
+              };
+            }
+          });
+        }
+        if (parsed.singleAssetOverrides) {
+          this.singleAssetOverrides = parsed.singleAssetOverrides;
+        }
+      }
+    } catch (e) {}
+  }
+
+  saveState() {
+    try {
+      localStorage.setItem("TPU_LEVERAGE_MATRIX_V24", JSON.stringify({
+        globalLeverageConfig: this.globalLeverageConfig,
+        sectorLeverageProfiles: this.sectorLeverageProfiles,
+        singleAssetOverrides: this.singleAssetOverrides
+      }));
+    } catch (e) {}
+  }
+
+  inferSectorForSymbol(symbol) {
+    const s = String(symbol || "BTCUSDT").toUpperCase();
+    const asset = window.getAssetBySymbol ? window.getAssetBySymbol(s) : null;
+    if (s.includes("=X") || (asset && asset.cat === "forex")) return "forexPairs";
+    if (s.includes("=F") || ["XAUUSD", "GC=F", "SI=F", "CL=F"].includes(s) || (asset && asset.cat === "commodities")) return "commoditiesGold";
+    if (s.startsWith("^") || ["SPY", "QQQ", "NAS100", "FTSEMIB.MI"].includes(s) || (asset && asset.cat === "indices")) return "globalIndices";
+    if (["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"].includes(s)) return "cryptoMajors";
+    if (s.endsWith("USDT") || (asset && asset.cat === "crypto")) return "cryptoAltDeFi";
+    return "techStocks";
+  }
+
+  computeRecommendedOptimalLeverage({
+    sectorId = "cryptoMajors",
+    riskPerTradePct = null,
+    stopLossDistancePct = null,
+    marketRegime = null
+  } = {}) {
+    const sector = this.sectorLeverageProfiles[sectorId] || this.sectorLeverageProfiles.cryptoMajors;
+    const riskPct = parseFloat(riskPerTradePct) || this.globalLeverageConfig.riskPerTradePct || 1.0;
+    const regime = marketRegime || this.globalLeverageConfig.marketRegime || "STRONG_TREND";
+    const effectiveStopPct = Math.max(0.15, parseFloat(stopLossDistancePct) || sector.typicalAtrStopPct || 1.0);
+
+    const safeLiquidationCeiling = Math.max(1, Math.floor(100 / (effectiveStopPct * this.globalLeverageConfig.safetyLiquidationBufferFactor)));
+    const riskDrivenLeverage = Math.round((riskPct * 4.5) / effectiveStopPct);
+
+    let optimalLev = Math.min(safeLiquidationCeiling, Math.max(sector.recommendedRange[0], riskDrivenLeverage));
+
+    if (regime === "STRONG_TREND") {
+      optimalLev = Math.min(sector.recommendedRange[1], Math.round(optimalLev * 1.15));
+    } else if (regime === "HIGH_VOL") {
+      optimalLev = Math.max(sector.recommendedRange[0], Math.round(optimalLev * 0.7));
+    }
+
+    optimalLev = Math.max(1, Math.min(sector.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, optimalLev));
+
+    return {
+      recommendedLeverage: optimalLev,
+      safeLiquidationCeiling,
+      sectorRange: `${sector.recommendedRange[0]}x – ${sector.recommendedRange[1]}x`,
+      maxSectorLev: sector.maxAllowedLev,
+      estimatedLiquidationDistancePct: +(100 / optimalLev).toFixed(2),
+      effectiveStopPct
+    };
+  }
+
+  resolveEffectiveLeverageForTrade({
+    symbol = null,
+    sectorId = null,
+    riskPerTradePct = null,
+    stopLossDistancePct = null,
+    marketRegime = null
+  } = {}) {
+    const sym = (symbol || window.currentSymbol || "BTCUSDT").toUpperCase();
+    const secId = sectorId || (this.singleAssetOverrides[sym]?.sector) || this.inferSectorForSymbol(sym);
+    const sector = this.sectorLeverageProfiles[secId] || this.sectorLeverageProfiles.cryptoMajors;
+    const aiRec = this.computeRecommendedOptimalLeverage({
+      sectorId: secId,
+      riskPerTradePct,
+      stopLossDistancePct,
+      marketRegime
+    });
+
+    const assetOverride = this.singleAssetOverrides[sym];
+    let appliedLeverage = aiRec.recommendedLeverage;
+    let source = "🧠 Leva Consigliata & Ottimale AI";
+    let tier = "LEVEL_A_AI_OPTIMAL";
+
+    // Priority: 1. Single Asset -> 2. Sector Manual -> 3. Global Manual -> 4. AI Recommended
+    if (assetOverride && assetOverride.mode === "MANUAL_ASSET") {
+      appliedLeverage = Math.max(1, Math.min(sector.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, parseInt(assetOverride.customLeverage, 10) || aiRec.recommendedLeverage));
+      source = `🎯 Leva Manuale Singolo Titolo (${sym})`;
+      tier = "LEVEL_D_SINGLE_ASSET";
+    } else if (sector && sector.mode === "MANUAL_SECTOR") {
+      appliedLeverage = Math.max(1, Math.min(sector.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, parseInt(sector.manualSectorLev, 10) || aiRec.recommendedLeverage));
+      source = `🥧 Leva Manuale Settoriale (${sector.label.split('(')[0].trim()})`;
+      tier = "LEVEL_C_SECTOR";
+    } else if (this.globalLeverageConfig.controlMode === "MANUAL_GLOBAL_ALL") {
+      appliedLeverage = Math.max(1, Math.min(sector.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, parseInt(this.globalLeverageConfig.manualGlobalLeverage, 10) || 5));
+      source = "🌐 Leva Manuale Globale (Totale Operazioni)";
+      tier = "LEVEL_B_GLOBAL";
+    }
+
+    const liqDistancePct = +(100 / Math.max(1, appliedLeverage)).toFixed(2);
+    const highLeverageWarning = appliedLeverage > Math.max(aiRec.recommendedLeverage * 1.4, aiRec.safeLiquidationCeiling);
+
+    return {
+      symbol: sym,
+      sectorId: secId,
+      appliedLeverage,
+      source,
+      tier,
+      aiRecommendedWas: aiRec.recommendedLeverage,
+      safeLiquidationCeiling: aiRec.safeLiquidationCeiling,
+      sectorRange: aiRec.sectorRange,
+      liquidationDistancePct: liqDistancePct,
+      highLeverageWarning,
+      warningText: highLeverageWarning
+        ? `⚠️ Attenzione: Leva Manuale (${appliedLeverage}x) alta rispetto all'ATR (Consigliata AI: ${aiRec.recommendedLeverage}x)`
+        : null
+    };
+  }
+
+  // Actions
+  applyOptimalToAllPartitions() {
+    this.globalLeverageConfig.controlMode = "AI_OPTIMAL_RECOMMENDED";
+    Object.values(this.sectorLeverageProfiles).forEach(sec => {
+      sec.mode = "AI_RECOMMENDED";
+      const rec = this.computeRecommendedOptimalLeverage({ sectorId: sec.id });
+      sec.manualSectorLev = rec.recommendedLeverage;
+    });
+    Object.values(this.singleAssetOverrides).forEach(ov => {
+      ov.mode = "AI_RECOMMENDED";
+      const rec = this.computeRecommendedOptimalLeverage({ sectorId: ov.sector });
+      ov.customLeverage = rec.recommendedLeverage;
+    });
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.BasketTimingEngineV23) window.BasketTimingEngineV23.renderAllContainers();
+    if (window.showToast) window.showToast("⚡ Leva Ottimale Consigliata AI applicata a tutte le partizioni e ai singoli titoli!", "success");
+  }
+
+  setGlobalMode(mode) {
+    this.globalLeverageConfig.controlMode = mode === "MANUAL_GLOBAL_ALL" ? "MANUAL_GLOBAL_ALL" : "AI_OPTIMAL_RECOMMENDED";
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.showToast) {
+      window.showToast(
+        this.globalLeverageConfig.controlMode === "MANUAL_GLOBAL_ALL"
+          ? `🌐 Leva Globale Manuale attiva a ${this.globalLeverageConfig.manualGlobalLeverage}x`
+          : "🧠 Leva Globale impostata su Auto Ottimale AI",
+        "info"
+      );
+    }
+  }
+
+  setGlobalManualLeverage(lev) {
+    const val = Math.max(1, Math.min(200, parseInt(lev, 10) || 5));
+    this.globalLeverageConfig.manualGlobalLeverage = Math.min(val, this.globalLeverageConfig.globalMaxLeverageCap);
+    this.globalLeverageConfig.controlMode = "MANUAL_GLOBAL_ALL";
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+  }
+
+  setGlobalMaxCap(cap) {
+    this.globalLeverageConfig.globalMaxLeverageCap = Math.max(1, Math.min(200, parseInt(cap, 10) || 100));
+    if (this.globalLeverageConfig.manualGlobalLeverage > this.globalLeverageConfig.globalMaxLeverageCap) {
+      this.globalLeverageConfig.manualGlobalLeverage = this.globalLeverageConfig.globalMaxLeverageCap;
+    }
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+  }
+
+  setMarginMode(mode) {
+    this.globalLeverageConfig.marginMode = mode === "CROSS" ? "CROSS" : "ISOLATED";
+    if (window.BybitEngine && typeof window.BybitEngine.setMarginMode === "function") {
+      window.BybitEngine.setMarginMode(this.globalLeverageConfig.marginMode.toLowerCase());
+    }
+    this.saveState();
+    this.renderAllContainers();
+  }
+
+  setGlobalRiskOrRegime(key, val) {
+    if (key === "riskPerTradePct") {
+      this.globalLeverageConfig.riskPerTradePct = Math.max(0.1, Math.min(10, parseFloat(val) || 1.0));
+      if (window.TradingEngine && window.TradingEngine.macroSettings) {
+        window.TradingEngine.macroSettings.riskPerTrade = this.globalLeverageConfig.riskPerTradePct;
+      }
+    } else if (key === "marketRegime") {
+      this.globalLeverageConfig.marketRegime = val;
+    }
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.BasketTimingEngineV23) window.BasketTimingEngineV23.renderAllContainers();
+  }
+
+  setSectorMode(sectorId, mode) {
+    const sec = this.sectorLeverageProfiles[sectorId];
+    if (!sec) return;
+    sec.mode = mode === "MANUAL_SECTOR" ? "MANUAL_SECTOR" : "AI_RECOMMENDED";
+    if (sec.mode === "AI_RECOMMENDED") {
+      sec.manualSectorLev = this.computeRecommendedOptimalLeverage({ sectorId }).recommendedLeverage;
+    }
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.BasketTimingEngineV23) window.BasketTimingEngineV23.renderAllContainers();
+  }
+
+  setSectorManualLeverage(sectorId, lev) {
+    const sec = this.sectorLeverageProfiles[sectorId];
+    if (!sec) return;
+    sec.mode = "MANUAL_SECTOR";
+    sec.manualSectorLev = Math.max(1, Math.min(sec.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, parseInt(lev, 10) || sec.recommendedBaseLev));
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.BasketTimingEngineV23) window.BasketTimingEngineV23.renderAllContainers();
+  }
+
+  upsertSingleAssetOverride(symbol, customLeverage, partitionPct, mode = "MANUAL_ASSET") {
+    const sym = (symbol || document.getElementById("v24-asset-select")?.value || "BTCUSDT").toUpperCase().trim();
+    const secId = this.inferSectorForSymbol(sym);
+    const sec = this.sectorLeverageProfiles[secId] || this.sectorLeverageProfiles.cryptoMajors;
+    const rec = this.computeRecommendedOptimalLeverage({ sectorId: secId }).recommendedLeverage;
+
+    const levVal = customLeverage !== undefined
+      ? parseInt(customLeverage, 10)
+      : parseInt(document.getElementById("v24-asset-lev-input")?.value, 10) || rec;
+    const pctVal = partitionPct !== undefined
+      ? parseFloat(partitionPct)
+      : parseFloat(document.getElementById("v24-asset-pct-input")?.value) || 10;
+
+    this.singleAssetOverrides[sym] = {
+      symbol: sym,
+      sector: secId,
+      mode: mode,
+      customLeverage: Math.max(1, Math.min(sec.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, levVal)),
+      partitionPct: Math.max(1, Math.min(100, pctVal))
+    };
+
+    if (window.BasketTimingEngineV23 && window.BasketTimingEngineV23.basketConfig) {
+      window.BasketTimingEngineV23.basketConfig.customPinnedAssets[sym] = this.singleAssetOverrides[sym].partitionPct;
+      window.BasketTimingEngineV23.saveState();
+    }
+
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.BasketTimingEngineV23) window.BasketTimingEngineV23.renderAllContainers();
+    if (window.showToast) {
+      window.showToast(`🎯 ${sym}: Partizione ${pctVal}% con Leva ${this.singleAssetOverrides[sym].mode === 'MANUAL_ASSET' ? this.singleAssetOverrides[sym].customLeverage + 'x (Manuale)' : rec + 'x (Consigliata AI)'}`, "success");
+    }
+  }
+
+  setSingleAssetMode(symbol, mode) {
+    const ov = this.singleAssetOverrides[symbol];
+    if (!ov) return;
+    ov.mode = mode === "MANUAL_ASSET" ? "MANUAL_ASSET" : "AI_RECOMMENDED";
+    if (ov.mode === "AI_RECOMMENDED") {
+      ov.customLeverage = this.computeRecommendedOptimalLeverage({ sectorId: ov.sector }).recommendedLeverage;
+    }
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+  }
+
+  setSingleAssetLeverage(symbol, lev) {
+    const ov = this.singleAssetOverrides[symbol];
+    if (!ov) return;
+    const sec = this.sectorLeverageProfiles[ov.sector] || this.sectorLeverageProfiles.cryptoMajors;
+    ov.mode = "MANUAL_ASSET";
+    ov.customLeverage = Math.max(1, Math.min(sec.maxAllowedLev, this.globalLeverageConfig.globalMaxLeverageCap, parseInt(lev, 10) || 5));
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+  }
+
+  setSingleAssetPartitionPct(symbol, pct) {
+    const ov = this.singleAssetOverrides[symbol];
+    if (!ov) return;
+    ov.partitionPct = Math.max(1, Math.min(100, parseFloat(pct) || 10));
+    if (window.BasketTimingEngineV23 && window.BasketTimingEngineV23.basketConfig) {
+      window.BasketTimingEngineV23.basketConfig.customPinnedAssets[symbol] = ov.partitionPct;
+    }
+    this.saveState();
+    this.renderAllContainers();
+  }
+
+  removeSingleAssetOverride(symbol) {
+    delete this.singleAssetOverrides[symbol];
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+  }
+
+  realignActiveSymbolToOptimal() {
+    const sym = (window.currentSymbol || "BTCUSDT").toUpperCase();
+    const secId = this.inferSectorForSymbol(sym);
+    if (this.singleAssetOverrides[sym]) {
+      this.singleAssetOverrides[sym].mode = "AI_RECOMMENDED";
+      this.singleAssetOverrides[sym].customLeverage = this.computeRecommendedOptimalLeverage({ sectorId: secId }).recommendedLeverage;
+    }
+    if (this.sectorLeverageProfiles[secId]) {
+      this.sectorLeverageProfiles[secId].mode = "AI_RECOMMENDED";
+    }
+    this.globalLeverageConfig.controlMode = "AI_OPTIMAL_RECOMMENDED";
+    this.saveState();
+    this.syncToOrderPanel();
+    this.renderAllContainers();
+    if (window.showToast) window.showToast(`⚡ Leva riallineata al valore Ottimale AI per ${sym}!`, "success");
+  }
+
+  syncToOrderPanel() {
+    try {
+      const resolved = this.resolveEffectiveLeverageForTrade({
+        symbol: window.currentSymbol || "BTCUSDT"
+      });
+      if (typeof window.updateLeverage === "function") {
+        window.updateLeverage(resolved.appliedLeverage);
+      } else if (window.BybitEngine) {
+        window.BybitEngine.currentLeverage = resolved.appliedLeverage;
+        const levIn = document.getElementById("leverage-input");
+        const levSl = document.getElementById("leverage-slider");
+        if (levIn) levIn.value = resolved.appliedLeverage;
+        if (levSl) levSl.value = resolved.appliedLeverage;
+        window.BybitEngine.recalcBybitOrderMetrics();
+      }
+    } catch (e) {}
+  }
+
+  buildLeverageMatrixHTML(compact = false) {
+    const g = this.globalLeverageConfig;
+    const alloc = window.MultiExchangeAllocator;
+    const activeExId = alloc ? alloc.activeOrderExchange : "bybit";
+    const activeEx = alloc && alloc.exchanges[activeExId] ? alloc.exchanges[activeExId] : { allocatedMethodBudgetEur: 250, shortName: "Bybit", icon: "🟡" };
+    const baseBudgetEur = Math.max(10, activeEx.allocatedMethodBudgetEur || 250);
+
+    const activeSym = (window.currentSymbol || "BTCUSDT").toUpperCase();
+    const activeResolved = this.resolveEffectiveLeverageForTrade({ symbol: activeSym });
+
+    const globalQuickLevs = [1, 2, 3, 5, 10, 15, 20, 25, 50, 100];
+    const globalQuickBtns = globalQuickLevs.map(lv => {
+      const isCur = g.controlMode === "MANUAL_GLOBAL_ALL" && g.manualGlobalLeverage === lv;
+      return `
+        <button type="button" onclick="window.LeverageMatrixV24.setGlobalManualLeverage(${lv})" style="min-height:34px; padding:4px 7px; font-size:10.5px; font-weight:900; font-family:var(--font-mono); border-radius:6px; cursor:pointer; background:${isCur ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${isCur ? '#000' : '#e2e8f0'}; border:1px solid ${isCur ? '#f59e0b' : 'rgba(255,255,255,0.16)'};">
+          ${lv === 1 ? '1x Spot' : lv + 'x'}
+        </button>
+      `;
+    }).join("");
+
+    // Sector cards (Level C)
+    const basketCats = window.BasketTimingEngineV23?.basketConfig?.categories || {};
+    const sectorRowsHtml = Object.values(this.sectorLeverageProfiles).map(sec => {
+      const rec = this.computeRecommendedOptimalLeverage({ sectorId: sec.id });
+      const isManual = sec.mode === "MANUAL_SECTOR";
+      const effLev = isManual ? sec.manualSectorLev : rec.recommendedLeverage;
+      const liqDist = +(100 / Math.max(1, effLev)).toFixed(1);
+      const partPct = basketCats[sec.id] ? basketCats[sec.id].pct : 15;
+      const partEur = +((baseBudgetEur * (partPct / 100))).toFixed(2);
+      const notionalEur = +(partEur * effLev).toFixed(2);
+      const isHighWarn = isManual && sec.manualSectorLev > Math.max(rec.recommendedLeverage * 1.4, rec.safeLiquidationCeiling);
+
+      return `
+        <div style="background:rgba(15,23,42,0.9); border:1px solid ${isManual ? '#f59e0b' : 'rgba(0,242,161,0.35)'}; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:7px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div>
+              <div style="font-size:11.5px; font-weight:900; color:#fff;">${sec.label}</div>
+              <div style="font-size:10px; color:#94a3b8;">
+                Partizione: <b style="color:#fbbf24;">${partPct}% (${partEur.toFixed(2)} €)</b> ➔ Nozionale Leva: <b style="color:#38bdf8;">${notionalEur.toFixed(2)} €</b>
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span style="font-size:10px; font-family:var(--font-mono); background:rgba(0,242,161,0.14); border:1px solid rgba(0,242,161,0.45); color:#00f2a1; padding:2px 7px; border-radius:5px; font-weight:800;">
+                💡 Consigliata AI: ${rec.recommendedLeverage}x (${rec.sectorRange})
+              </span>
+              <div style="display:inline-flex; background:#060911; border:1px solid rgba(255,255,255,0.16); border-radius:6px; overflow:hidden;">
+                <button type="button" onclick="window.LeverageMatrixV24.setSectorMode('${sec.id}', 'AI_RECOMMENDED')" style="padding:4px 7px; font-size:9.5px; font-weight:900; border:none; cursor:pointer; min-height:28px; background:${!isManual ? '#00f2a1' : 'transparent'}; color:${!isManual ? '#000' : '#94a3b8'};">🤖 Auto AI</button>
+                <button type="button" onclick="window.LeverageMatrixV24.setSectorMode('${sec.id}', 'MANUAL_SECTOR')" style="padding:4px 7px; font-size:9.5px; font-weight:900; border:none; cursor:pointer; min-height:28px; background:${isManual ? '#f59e0b' : 'transparent'}; color:${isManual ? '#000' : '#94a3b8'};">🖐️ Manuale</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 78px 115px; gap:8px; align-items:center;">
+            <input type="range" min="1" max="${Math.min(sec.maxAllowedLev, g.globalMaxLeverageCap)}" step="1" value="${effLev}" oninput="window.LeverageMatrixV24.setSectorManualLeverage('${sec.id}', this.value)" style="width:100%; accent-color:${isManual ? '#f59e0b' : '#00f2a1'}; cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:2px;">
+              <input type="number" min="1" max="${Math.min(sec.maxAllowedLev, g.globalMaxLeverageCap)}" step="1" value="${effLev}" onchange="window.LeverageMatrixV24.setSectorManualLeverage('${sec.id}', this.value)" style="width:100%; background:#060a12; border:1px solid ${isManual ? '#f59e0b' : '#00f2a1'}; color:#fff; font-family:var(--font-mono); font-size:12px; font-weight:900; padding:4px 5px; border-radius:5px; text-align:right;">
+              <span style="font-size:11px; font-weight:900; color:#fbbf24;">x</span>
+            </div>
+            <div style="text-align:right; font-family:var(--font-mono); font-size:10px; color:#94a3b8;">
+              Liq. <b style="color:#00f2a1;">-${liqDist}%</b> (Max ${sec.maxAllowedLev}x)
+            </div>
+          </div>
+
+          ${isHighWarn ? `
+            <div style="background:rgba(245,158,11,0.16); border:1px solid #f59e0b; color:#fde68a; padding:5px 8px; border-radius:5px; font-size:10px; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+              <span>⚠️ Attenzione: Leva Manuale (${sec.manualSectorLev}x) alta rispetto all'ATR (Consigliata: ${rec.recommendedLeverage}x)</span>
+              <button type="button" onclick="window.LeverageMatrixV24.setSectorMode('${sec.id}', 'AI_RECOMMENDED')" style="background:#f59e0b; color:#000; border:none; border-radius:4px; padding:2px 7px; font-size:9.5px; font-weight:900; cursor:pointer;">⚡ Riallinea a ${rec.recommendedLeverage}x</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join("");
+
+    // Single Asset Overrides (Level D)
+    const allAssets = (window.GlobalMarketAssets && window.GlobalMarketAssets.length)
+      ? window.GlobalMarketAssets
+      : [{ symbol: "BTCUSDT", name: "Bitcoin" }, { symbol: "ETHUSDT", name: "Ethereum" }, { symbol: "SOLUSDT", name: "Solana" }, { symbol: "NVDA", name: "NVIDIA" }, { symbol: "TSLA", name: "Tesla" }, { symbol: "UCG.MI", name: "UniCredit" }, { symbol: "GC=F", name: "Gold Futures" }, { symbol: "EURUSD=X", name: "EUR/USD" }];
+
+    const assetOptionsHtml = allAssets.slice(0, 350).map(a =>
+      `<option value="${a.symbol}" ${a.symbol === activeSym ? 'selected' : ''}>${a.symbol} — ${a.name || a.cat || ''}</option>`
+    ).join("");
+
+    const singleAssetCardsHtml = Object.values(this.singleAssetOverrides).map(ov => {
+      const sec = this.sectorLeverageProfiles[ov.sector] || this.sectorLeverageProfiles.cryptoMajors;
+      const rec = this.computeRecommendedOptimalLeverage({ sectorId: ov.sector });
+      const isMan = ov.mode === "MANUAL_ASSET";
+      const effLev = isMan ? ov.customLeverage : rec.recommendedLeverage;
+      const marginEur = +((baseBudgetEur * ((ov.partitionPct || 10) / 100))).toFixed(2);
+      const notionalEur = +(marginEur * effLev).toFixed(2);
+      const liqDist = +(100 / Math.max(1, effLev)).toFixed(2);
+      const warn = isMan && effLev > Math.max(rec.recommendedLeverage * 1.4, rec.safeLiquidationCeiling);
+
+      return `
+        <div style="background:rgba(12,19,35,0.95); border:1px solid ${isMan ? '#f59e0b' : '#38bdf8'}; border-radius:8px; padding:9px 10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:13px; font-weight:900; color:#fff; font-family:var(--font-mono); cursor:pointer;" onclick="if(window.selectAsset) window.selectAsset('${ov.symbol}')">🎯 ${ov.symbol}</span>
+              <span style="font-size:9.5px; background:rgba(0,242,161,0.14); color:#00f2a1; border:1px solid rgba(0,242,161,0.4); padding:1px 6px; border-radius:4px; font-family:var(--font-mono);">💡 AI: ${rec.recommendedLeverage}x</span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:4px;">
+              <button type="button" onclick="window.LeverageMatrixV24.setSingleAssetMode('${ov.symbol}', 'AI_RECOMMENDED')" style="padding:3px 7px; font-size:9.5px; font-weight:900; border-radius:5px; cursor:pointer; border:1px solid #00f2a1; background:${!isMan ? '#00f2a1' : 'transparent'}; color:${!isMan ? '#000' : '#00f2a1'};">🤖 AI (${rec.recommendedLeverage}x)</button>
+              <button type="button" onclick="window.LeverageMatrixV24.setSingleAssetMode('${ov.symbol}', 'MANUAL_ASSET')" style="padding:3px 7px; font-size:9.5px; font-weight:900; border-radius:5px; cursor:pointer; border:1px solid #f59e0b; background:${isMan ? '#f59e0b' : 'transparent'}; color:${isMan ? '#000' : '#fbbf24'};">🖐️ Manuale (${effLev}x)</button>
+              <button type="button" onclick="window.LeverageMatrixV24.removeSingleAssetOverride('${ov.symbol}')" style="background:rgba(239,68,68,0.18); border:1px solid #ef4444; color:#f87171; border-radius:5px; padding:2px 6px; font-size:10px; font-weight:900; cursor:pointer;">✕</button>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:90px 1fr 72px; gap:6px; align-items:center;">
+            <div>
+              <span style="font-size:8.5px; color:#94a3b8; display:block;">Quota Budget %</span>
+              <input type="number" min="1" max="100" step="1" value="${ov.partitionPct || 10}" onchange="window.LeverageMatrixV24.setSingleAssetPartitionPct('${ov.symbol}', this.value)" style="width:100%; background:#060a12; border:1px solid #38bdf8; color:#38bdf8; font-family:var(--font-mono); font-size:11.5px; font-weight:900; padding:3px 5px; border-radius:4px;">
+            </div>
+            <div>
+              <span style="font-size:8.5px; color:#94a3b8; display:block;">Slider Leva Titolo (1x – ${Math.min(sec.maxAllowedLev, g.globalMaxLeverageCap)}x)</span>
+              <input type="range" min="1" max="${Math.min(sec.maxAllowedLev, g.globalMaxLeverageCap)}" step="1" value="${effLev}" oninput="window.LeverageMatrixV24.setSingleAssetLeverage('${ov.symbol}', this.value)" style="width:100%; accent-color:#f59e0b; cursor:pointer;">
+            </div>
+            <div>
+              <span style="font-size:8.5px; color:#94a3b8; display:block;">Leva (x)</span>
+              <input type="number" min="1" max="${Math.min(sec.maxAllowedLev, g.globalMaxLeverageCap)}" step="1" value="${effLev}" onchange="window.LeverageMatrixV24.setSingleAssetLeverage('${ov.symbol}', this.value)" style="width:100%; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:11.5px; font-weight:900; padding:3px 5px; border-radius:4px; text-align:right;">
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:10px; font-family:var(--font-mono); background:rgba(255,255,255,0.03); padding:5px 8px; border-radius:5px;">
+            <span>Margine: <b style="color:#fbbf24;">${marginEur.toFixed(2)} €</b></span>
+            <span>Nozionale (${effLev}x): <b style="color:#38bdf8;">${notionalEur.toFixed(2)} €</b></span>
+            <span>Distanza Liq.: <b style="color:#00f2a1;">-${liqDist}%</b></span>
+          </div>
+
+          ${warn ? `
+            <div style="background:rgba(245,158,11,0.16); border:1px solid #f59e0b; color:#fde68a; padding:4px 7px; border-radius:4px; font-size:9.5px; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+              <span>⚠️ Leva alta rispetto all'ATR (Consigliata: ${rec.recommendedLeverage}x)</span>
+              <button type="button" onclick="window.LeverageMatrixV24.setSingleAssetMode('${ov.symbol}', 'AI_RECOMMENDED')" style="background:#f59e0b; color:#000; border:none; border-radius:3px; padding:1px 6px; font-size:9px; font-weight:900; cursor:pointer;">Riallinea ${rec.recommendedLeverage}x</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div class="v24-leverage-matrix-panel" style="background:linear-gradient(180deg, rgba(12,18,34,0.98) 0%, rgba(6,10,20,0.98) 100%); border:2px solid #a855f7; border-radius:12px; padding:14px; margin:12px 0; box-shadow:0 10px 30px rgba(0,0,0,0.75); display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- =================================================================
+             LIVELLO A: LEVA CONSIGLIATA & OTTIMALE AUTOMATICA AI
+             ================================================================= -->
+        <div style="background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.45); border-radius:10px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div>
+              <div style="font-size:14px; font-weight:900; color:#e879f9;">
+                🧠 LIVELLO A — Leva Consigliata &amp; Ottimale Automatica AI (1x ➔ 200x per Partizione)
+              </div>
+              <div style="font-size:10.5px; color:#cbd5e1; margin-top:2px;">
+                Priorità attiva: <b>1. Singolo Titolo ➔ 2. Settore ➔ 3. Globale ➔ 4. Ottimale Consigliata AI</b>
+              </div>
+            </div>
+
+            <button type="button" onclick="window.LeverageMatrixV24.applyOptimalToAllPartitions()" style="min-height:38px; padding:7px 13px; background:linear-gradient(135deg, #00f2a1, #10b981); color:#000; font-weight:900; font-size:11px; border:none; border-radius:8px; cursor:pointer; box-shadow:0 0 15px rgba(0,242,161,0.35);">
+              ⚡ Applica Leva Ottimale Consigliata a Tutte le Partizioni
+            </button>
+          </div>
+
+          <!-- Active Asset Live Recommendation Banner -->
+          <div style="background:rgba(0,242,161,0.1); border:1px solid rgba(0,242,161,0.45); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div style="font-size:11.5px; font-weight:900; color:#fff;">
+              💡 Leva Consigliata Ottimale (${activeSym}): <span style="color:#00f2a1; font-family:var(--font-mono); font-size:14px;">${activeResolved.aiRecommendedWas}x</span>
+              <span style="color:#94a3b8; font-weight:700; margin-left:6px;">(Liquidazione protetta a <b>-${activeResolved.liquidationDistancePct}%</b> di distanza • Range Settore: ${activeResolved.sectorRange})</span>
+            </div>
+            <div style="font-size:11px; font-family:var(--font-mono); color:#fbbf24; font-weight:900;">
+              Leva Applicata Ora: <span style="background:#f59e0b; color:#000; padding:2px 7px; border-radius:4px;">${activeResolved.appliedLeverage}x</span> (${activeResolved.source})
+            </div>
+          </div>
+
+          ${activeResolved.highLeverageWarning ? `
+            <div style="background:rgba(245,158,11,0.18); border:1px solid #f59e0b; color:#fde68a; padding:7px 10px; border-radius:6px; font-size:11px; font-weight:800; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span>${activeResolved.warningText}</span>
+              <button type="button" onclick="window.LeverageMatrixV24.realignActiveSymbolToOptimal()" style="background:#f59e0b; color:#000; border:none; border-radius:5px; padding:4px 10px; font-size:10.5px; font-weight:900; cursor:pointer;">⚡ Riallinea in 1 Click (${activeResolved.aiRecommendedWas}x)</button>
+            </div>
+          ` : ''}
+
+          <!-- Risk % & Market Regime Inputs driving AI Leverage -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Rischio Pre-Definito per Trade (%)</label>
+              <select onchange="window.LeverageMatrixV24.setGlobalRiskOrRegime('riskPerTradePct', this.value)" style="width:100%; min-height:32px; background:#060a12; border:1px solid #00f2a1; color:#00f2a1; font-family:var(--font-mono); font-size:11.5px; font-weight:900; border-radius:5px; margin-top:3px; padding:3px 6px;">
+                ${[0.5, 1.0, 1.5, 2.0, 3.0, 5.0].map(r => `<option value="${r}" ${Math.abs(g.riskPerTradePct - r) < 0.05 ? 'selected' : ''}>${r.toFixed(1)}% del Budget Partizione</option>`).join("")}
+              </select>
+            </div>
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Regime di Mercato Rilevato</label>
+              <select onchange="window.LeverageMatrixV24.setGlobalRiskOrRegime('marketRegime', this.value)" style="width:100%; min-height:32px; background:#060a12; border:1px solid #38bdf8; color:#38bdf8; font-size:11.5px; font-weight:800; border-radius:5px; margin-top:3px; padding:3px 6px;">
+                <option value="STRONG_TREND" ${g.marketRegime === 'STRONG_TREND' ? 'selected' : ''}>🚀 Trend Direzionale Forte (Boost +15%)</option>
+                <option value="RANGE" ${g.marketRegime === 'RANGE' ? 'selected' : ''}>⚖️ Range / Equilibrio Standard</option>
+                <option value="HIGH_VOL" ${g.marketRegime === 'HIGH_VOL' ? 'selected' : ''}>🛡️ Alta Volatilità ATR (Riduzione -30%)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================
+             LIVELLO B: LEVA MANUALE PER IL TOTALE DELLE OPERAZIONI (OVERRIDE GLOBALE)
+             ================================================================= -->
+        <div style="border:1px solid rgba(245,158,11,0.4); border-radius:10px; padding:12px; background:rgba(12,18,32,0.85);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+            <div style="font-size:13.5px; font-weight:900; color:#fbbf24;">
+              🌐 LIVELLO B — Leva Globale (Totale Operazioni): Override Manuale &amp; Modalità Margine
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <button type="button" onclick="window.LeverageMatrixV24.setGlobalMode('AI_OPTIMAL_RECOMMENDED')" style="min-height:34px; padding:5px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${g.controlMode === 'AI_OPTIMAL_RECOMMENDED' ? '#00f2a1' : 'rgba(255,255,255,0.06)'}; color:${g.controlMode === 'AI_OPTIMAL_RECOMMENDED' ? '#000' : '#e2e8f0'}; border:1px solid #00f2a1;">
+                🤖 Auto Ottimale AI
+              </button>
+              <button type="button" onclick="window.LeverageMatrixV24.setGlobalMode('MANUAL_GLOBAL_ALL')" style="min-height:34px; padding:5px 10px; font-size:10.5px; font-weight:900; border-radius:6px; cursor:pointer; background:${g.controlMode === 'MANUAL_GLOBAL_ALL' ? '#f59e0b' : 'rgba(255,255,255,0.06)'}; color:${g.controlMode === 'MANUAL_GLOBAL_ALL' ? '#000' : '#e2e8f0'}; border:1px solid #f59e0b;">
+                🖐️ Fissa Manuale Globale (${g.manualGlobalLeverage}x)
+              </button>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:8px; margin-bottom:8px;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#fbbf24;">Leva Globale Manuale (1x – ${g.globalMaxLeverageCap}x)</label>
+              <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                <input type="range" min="1" max="${g.globalMaxLeverageCap}" step="1" value="${g.manualGlobalLeverage}" oninput="window.LeverageMatrixV24.setGlobalManualLeverage(this.value)" style="flex:1; accent-color:#f59e0b; cursor:pointer;">
+                <input type="number" min="1" max="${g.globalMaxLeverageCap}" value="${g.manualGlobalLeverage}" onchange="window.LeverageMatrixV24.setGlobalManualLeverage(this.value)" style="width:62px; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:12px; font-weight:900; padding:4px; border-radius:5px; text-align:right;">
+                <span style="font-size:11px; font-weight:900; color:#fbbf24;">x</span>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Modalità Margine Partizioni</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:4px;">
+                <button type="button" onclick="window.LeverageMatrixV24.setMarginMode('ISOLATED')" style="min-height:32px; font-size:10px; font-weight:900; border-radius:5px; cursor:pointer; background:${g.marginMode === 'ISOLATED' ? '#00f2a1' : 'rgba(255,255,255,0.05)'}; color:${g.marginMode === 'ISOLATED' ? '#000' : '#94a3b8'}; border:1px solid #00f2a1;">🛡️ Isolato (Consigliato)</button>
+                <button type="button" onclick="window.LeverageMatrixV24.setMarginMode('CROSS')" style="min-height:32px; font-size:10px; font-weight:900; border-radius:5px; cursor:pointer; background:${g.marginMode === 'CROSS' ? '#f59e0b' : 'rgba(255,255,255,0.05)'}; color:${g.marginMode === 'CROSS' ? '#000' : '#94a3b8'}; border:1px solid #f59e0b;">🔗 Cross Margin</button>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:7px 9px;">
+              <label style="display:block; font-size:9.5px; font-weight:800; color:#94a3b8;">Tetto Max Sicurezza (Global Max Cap)</label>
+              <input type="number" min="1" max="200" step="5" value="${g.globalMaxLeverageCap}" onchange="window.LeverageMatrixV24.setGlobalMaxCap(this.value)" style="width:100%; background:#060a12; border:1px solid #38bdf8; color:#38bdf8; font-family:var(--font-mono); font-size:12px; font-weight:900; padding:4px 6px; border-radius:5px; margin-top:4px;">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(62px, 1fr)); gap:5px;">
+            ${globalQuickBtns}
+          </div>
+        </div>
+
+        <!-- =================================================================
+             LIVELLO C: LEVA SETTORIALE PER TIPOLOGIA DI TITOLI (6 PARTIZIONI)
+             ================================================================= -->
+        <div style="border:1px solid rgba(0,242,161,0.35); border-radius:10px; padding:12px; background:rgba(10,18,30,0.85);">
+          <div style="font-size:13.5px; font-weight:900; color:#00f2a1; margin-bottom:8px;">
+            🥧 LIVELLO C — Leva Settoriale per Tipologia di Titoli (Auto Ottimale o Manuale per ciascuna delle 6 Partizioni)
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(${compact ? '260px' : '320px'}, 1fr)); gap:8px;">
+            ${sectorRowsHtml}
+          </div>
+        </div>
+
+        <!-- =================================================================
+             LIVELLO D: LEVA CHIRURGICA PER OGNI SINGOLO SPECIFICO TITOLO A PIACERE (348+ ASSET)
+             ================================================================= -->
+        <div style="border:1px solid rgba(56,189,248,0.45); border-radius:10px; padding:12px; background:rgba(9,15,28,0.9);">
+          <div style="font-size:13.5px; font-weight:900; color:#38bdf8; margin-bottom:6px;">
+            🎯 LIVELLO D — Partizioni &amp; Leva Chirurgica per Singolo Titolo Specifico (348+ Asset del Paniere)
+          </div>
+          <div style="font-size:10.5px; color:#94a3b8; margin-bottom:8px;">
+            Scegli qualsiasi titolo e imposta la sua Partizione di Budget e la sua Leva Specifica (Consigliata AI oppure Manuale a piacere).
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:10px; background:rgba(56,189,248,0.07); padding:8px; border-radius:8px; border:1px solid rgba(56,189,248,0.28);">
+            <select id="v24-asset-select" style="flex:1; min-width:170px; min-height:36px; background:#060a12; border:1px solid #38bdf8; color:#fff; font-size:11.5px; font-weight:800; border-radius:6px; padding:4px 8px;">
+              ${assetOptionsHtml}
+            </select>
+            <div style="display:flex; align-items:center; gap:3px;">
+              <span style="font-size:10px; color:#94a3b8;">Quota:</span>
+              <input type="number" id="v24-asset-pct-input" min="1" max="100" value="12" style="width:56px; min-height:34px; background:#060a12; border:1px solid #38bdf8; color:#38bdf8; font-family:var(--font-mono); font-size:12px; font-weight:900; border-radius:5px; padding:3px 5px; text-align:right;">
+              <span style="font-size:11px; font-weight:900; color:#38bdf8;">%</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:3px;">
+              <span style="font-size:10px; color:#fbbf24;">Leva:</span>
+              <input type="number" id="v24-asset-lev-input" min="1" max="200" value="10" style="width:58px; min-height:34px; background:#060a12; border:1px solid #f59e0b; color:#fbbf24; font-family:var(--font-mono); font-size:12px; font-weight:900; border-radius:5px; padding:3px 5px; text-align:right;">
+              <span style="font-size:11px; font-weight:900; color:#fbbf24;">x</span>
+            </div>
+            <button type="button" onclick="window.LeverageMatrixV24.upsertSingleAssetOverride(undefined, undefined, undefined, 'MANUAL_ASSET')" style="min-height:36px; padding:6px 11px; background:#f59e0b; color:#000; font-weight:900; font-size:11px; border:none; border-radius:6px; cursor:pointer;">
+              🖐️ Imposta Leva Manuale Titolo
+            </button>
+            <button type="button" onclick="window.LeverageMatrixV24.upsertSingleAssetOverride(undefined, undefined, undefined, 'AI_RECOMMENDED')" style="min-height:36px; padding:6px 11px; background:#00f2a1; color:#000; font-weight:900; font-size:11px; border:none; border-radius:6px; cursor:pointer;">
+              🤖 Usa Leva Consigliata AI
+            </button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(${compact ? '255px' : '295px'}, 1fr)); gap:8px;">
+            ${singleAssetCardsHtml}
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  renderAllContainers() {
+    const ids = [
+      "v24-leverage-order-dock",
+      "v24-leverage-automated-dock",
+      "v24-leverage-optimal-dock",
+      "v24-leverage-modal-body"
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const isCompact = (id === "v24-leverage-order-dock" || id === "v24-leverage-automated-dock");
+        el.innerHTML = this.buildLeverageMatrixHTML(isCompact);
+      }
+    });
+  }
+
+  openModal() {
+    let modal = document.getElementById("v24-leverage-matrix-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "v24-leverage-matrix-modal";
+      modal.style.cssText = "position:fixed; inset:0; background:rgba(3,7,18,0.90); backdrop-filter:blur(6px); z-index:999999; display:flex; align-items:center; justify-content:center; padding:12px; overflow-y:auto;";
+      modal.innerHTML = `
+        <div style="width:100%; max-width:1240px; max-height:92vh; overflow-y:auto; background:#070b14; border:2px solid #a855f7; border-radius:14px; padding:16px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.88);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:15px; font-weight:900; color:#e879f9;">⚡ MATRICE GERARCHICA LEVA FINANZIARIA A 4 LIVELLI v24.0 (OTTIMALE AI / GLOBALE / SETTORIALE / SINGOLO TITOLO)</span>
+            <button type="button" onclick="document.getElementById('v24-leverage-matrix-modal').style.display='none'" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fff; font-weight:900; border-radius:8px; padding:6px 12px; cursor:pointer;">✕ Chiudi</button>
+          </div>
+          <div id="v24-leverage-modal-body"></div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    modal.style.display = "flex";
+    this.renderAllContainers();
+  }
+}
+
+window.HierarchicalLeverageMatrixV24 = HierarchicalLeverageMatrixV24;
+window.LeverageMatrixV24 = new HierarchicalLeverageMatrixV24();
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (window.LeverageMatrixV24) {
+      window.LeverageMatrixV24.renderAllContainers();
+      window.LeverageMatrixV24.syncToOrderPanel();
+    }
+  }, 500);
 });

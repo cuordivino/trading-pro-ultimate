@@ -905,7 +905,10 @@ window.BybitEngine = {
     if (costElem) costElem.innerText = fmtMargin;
     if (liqElem) liqElem.innerText = fmtLiq;
     if (feeElem) feeElem.innerText = fmtFee;
-    if (sumLevElem) sumLevElem.innerText = `${lev}x`;
+    if (sumLevElem) {
+      const v24Info = window.LeverageMatrixV24 ? window.LeverageMatrixV24.resolveEffectiveLeverageForTrade({ symbol: this.currentSymbol }) : null;
+      sumLevElem.innerText = v24Info ? `${lev}x (Consigliata AI: ${v24Info.aiRecommendedWas}x)` : `${lev}x`;
+    }
 
     // 6. Stop Loss & Take Profit Previews and R:R
     const slInputEl = document.getElementById('t-sl');

@@ -639,6 +639,7 @@ window.OptimalEngine = {
           </div>
         </div>
         <div id="v22-allocator-optimal-dock">${alloc ? alloc.buildAllocatorHTML(false) : ''}</div>
+        <div id="v24-leverage-optimal-dock">${window.LeverageMatrixV24 ? window.LeverageMatrixV24.buildLeverageMatrixHTML(false) : ''}</div>
         <div id="v23-basket-timing-optimal-dock">${window.BasketTimingEngineV23 ? window.BasketTimingEngineV23.buildFullMatrixHTML(false) : ''}</div>
       </div>
     `;

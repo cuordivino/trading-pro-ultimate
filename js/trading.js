@@ -362,6 +362,11 @@ window.TradingEngine = {
           ${window.MultiExchangeAllocator ? window.MultiExchangeAllocator.buildAllocatorHTML(true) : ''}
         </div>
 
+        <!-- HIERARCHICAL MULTI-TIER LEVERAGE MATRIX v24.0 -->
+        <div id="v24-leverage-automated-dock">
+          ${window.LeverageMatrixV24 ? window.LeverageMatrixV24.buildLeverageMatrixHTML(true) : ''}
+        </div>
+
         <!-- BASKET PERCENTAGE MIXER + INTER-TRADE TIME CONDITIONER v23.0 -->
         <div id="v23-basket-timing-automated-dock">
           ${window.BasketTimingEngineV23 ? window.BasketTimingEngineV23.buildFullMatrixHTML(true) : ''}

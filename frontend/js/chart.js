@@ -3797,6 +3797,9 @@ window.BybitMacroCalendar = {
       <button type="button" id="v23-chart-dt-badge" style="font-size:9.5px; padding:3px 9px; background:rgba(0,242,161,0.16); color:#00f2a1; border:1px solid #00f2a1; border-radius:4px; font-weight:900; font-family:'JetBrains Mono',monospace; cursor:pointer;" onclick="window.BasketTimingEngineV23 && window.BasketTimingEngineV23.openModal()" title="Apri Condizionatore Tempo Inter-Operazione (1s-4h) & Paniere 348+ Titoli">
         ⏱️ Δt Ordini: 5.0s
       </button>
+      <button type="button" id="v24-chart-lev-badge" style="font-size:9.5px; padding:3px 9px; background:rgba(168,85,247,0.18); color:#e879f9; border:1px solid #a855f7; border-radius:4px; font-weight:900; font-family:'JetBrains Mono',monospace; cursor:pointer;" onclick="window.LeverageMatrixV24 && window.LeverageMatrixV24.openModal()" title="Apri Matrice Gerarchica Leva a 4 Livelli (Ottimale AI / Globale / Settoriale / Singolo Titolo)">
+        💡 Leva AI: ${window.LeverageMatrixV24 ? window.LeverageMatrixV24.resolveEffectiveLeverageForTrade({symbol: window.currentSymbol || 'BTCUSDT'}).appliedLeverage + 'x' : '8x'}
+      </button>
     `;
   },
 
