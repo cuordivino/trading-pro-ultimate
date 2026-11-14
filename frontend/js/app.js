@@ -2616,7 +2616,7 @@ class BasketMixerAndUltraTimingEngineV23 {
               </button>
             </div>
             <div style="display:flex; flex-wrap:wrap; gap:6px;">
-              ${pinnedPillsHtml || '<span style="font-size:10px; color:#94a3b8;">Nessun singolo titolo bloccato: il motore opera sull'intero paniere secondo le % dei 6 comparti.</span>'}
+              ${pinnedPillsHtml || '<span style="font-size:10px; color:#94a3b8;">Nessun singolo titolo bloccato: il motore opera su tutto il paniere secondo le % dei 6 comparti.</span>'}
             </div>
           </div>
         </div>
