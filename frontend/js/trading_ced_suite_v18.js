@@ -13,7 +13,7 @@
     constructor() {
       this.version = '18.0.0-CED-ALL-IN-ONE';
       this.activeTheme = localStorage.getItem('tpu_theme_v18') || '1-obsidian-oled';
-      this.layoutMode = localStorage.getItem('tpu_layout_v18') || 'auto';
+      this.layoutMode = localStorage.getItem('tpu_layout_v18') || 'single-0';
       this.selectedVoice = localStorage.getItem('tpu_ced_voice_v18') || 'master';
       this.approvedCount = parseInt(localStorage.getItem('tpu_ced_approved_count') || '14', 10);
       
@@ -217,7 +217,7 @@
     }
 
     applyLayout(mode) {
-      if (mode === 'split-90' || (mode === 'auto' && window.innerWidth >= 1024)) {
+      if (mode === 'split-90') {
         document.body.classList.add('tpu-layout-landscape-split');
       } else {
         document.body.classList.remove('tpu-layout-landscape-split');
@@ -225,12 +225,8 @@
     }
 
     handleResponsiveLayout() {
-      if (this.layoutMode === 'auto') {
-        if (window.innerWidth >= 1024) {
-          document.body.classList.add('tpu-layout-landscape-split');
-        } else {
-          document.body.classList.remove('tpu-layout-landscape-split');
-        }
+      if (this.layoutMode === 'split-90') {
+        document.body.classList.add('tpu-layout-landscape-split');
       }
     }
 
